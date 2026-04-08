@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Services/" />
+  <Folder Name="/src/Services/Auctions/">
+    <Project Path="src/Services/Auctions/Auctions.API/Auctions.API.csproj" />
+    <Project Path="src/Services/Auctions/Auctions.Application/Auctions.Application.csproj" />
+    <Project Path="src/Services/Auctions/Auctions.Domain/Auctions.Domain.csproj" />
+    <Project Path="src/Services/Auctions/Auctions.Infrastructure/Auctions.Infrastructure.csproj" />
+  </Folder>
+</Solution>
