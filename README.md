@@ -1,111 +1,149 @@
-# AuctionHub v2 - Микросервисная архитектура
+# AuHub - Modern Auction Platform
 
-## Статус проекта: В процессе миграции
-
-Проект находится в процессе полной переработки с монолитной архитектуры на микросервисную с использованием современного стека .NET 10.
+Современная платформа для онлайн-аукционов, построенная на микросервисной архитектуре с использованием .NET 10 и современных паттернов проектирования.
 
 ## Технологический стек
 
-- **.NET 10** (LTS) - последняя версия платформы
-- **FastEndpoints** - минималистичный подход к API вместо Controllers
+- **.NET 10 (LTS)** - платформа с поддержкой до 2028 года
+- **FastEndpoints** - высокопроизводительная альтернатива Controllers
 - **CQRS** - разделение команд и запросов
-- **Vertical Slice Architecture** - организация кода по фичам
-- **EF Core 10** + PostgreSQL
-- **SignalR** - real-time уведомления о ставках
-- **Docker** - контейнеризация сервисов
+- **Clean Architecture** - четкое разделение слоев
+- **EF Core 10** - ORM для работы с PostgreSQL
+- **PostgreSQL 16** - основная база данных
+- **Docker** - контейнеризация для простого развертывания
 - **FluentValidation** - валидация запросов
-- **Result Pattern** - обработка ошибок
+- **Result Pattern** - типобезопасная обработка ошибок
 
 ## Архитектура
 
-Проект разделен на независимые микросервисы:
+Проект построен на принципах Clean Architecture с разделением на слои:
 
 ```
-src/
-├── Services/
-│   ├── Auctions/          # Управление аукционами и ставками
-│   ├── Users/             # Аутентификация и управление пользователями
-│   └── Notifications/     # Real-time уведомления через SignalR
-└── Shared/                # Общие библиотеки
+Auctions.API          → FastEndpoints, HTTP
+    ↓
+Auctions.Application  → CQRS, Business Logic
+    ↓
+Auctions.Domain       → Entities, Value Objects
+    ↑
+Auctions.Infrastructure → EF Core, PostgreSQL
 ```
 
 ## Быстрый старт
 
 ### Требования
 
-- .NET 10 SDK
 - Docker Desktop
+- Git
 
-### Запуск инфраструктуры
-
-```bash
-# Запуск PostgreSQL в Docker
-docker-compose up -d postgres
-
-# Проверка что БД запустилась
-docker ps
-```
-
-### Запуск сервиса Auctions (после реализации)
+### Запуск проекта
 
 ```bash
-cd src/Services/Auctions/Auctions.API
-dotnet run
+# Клонировать репозиторий
+git clone https://github.com/jinxinzero7/AuHub.git
+cd AuHub
+
+# Запустить все сервисы (PostgreSQL + API)
+docker-compose up -d
+
+# Подождать 1-2 минуты пока все запустится
+docker-compose ps
 ```
 
-API будет доступно на `https://localhost:5001`
+### Доступ к приложению
 
-## План миграции
+- **API:** http://localhost:5108
+- **Swagger UI:** http://localhost:5108/swagger
 
-### ✅ Этап 1: Настройка инфраструктуры (текущий)
-- [x] Создание структуры проекта
-- [x] Docker Compose для PostgreSQL
-- [ ] Установка .NET 10 SDK
-- [ ] Проверка окружения
+### Тестирование
 
-### 🔄 Этап 2: Микросервис Auctions
-- [ ] Создание проектов (API, Application, Domain, Infrastructure)
-- [ ] Настройка FastEndpoints
-- [ ] Domain модели (Lot, Bid)
-- [ ] Базовые endpoints (Create Lot, Get Lots)
-- [ ] EF Core + миграции
+Открой Swagger UI и протестируй endpoints:
 
-### 📋 Этап 3: Микросервис Users
-- [ ] JWT аутентификация
-- [ ] Регистрация/вход
-- [ ] Управление профилем
+**POST /api/lots** - Создать лот:
+```json
+{
+  "title": "Vintage Watch",
+  "description": "Beautiful vintage watch from 1960s",
+  "startingPrice": 100,
+  "startTime": "2026-04-09T10:00:00Z",
+  "endTime": "2026-04-10T10:00:00Z",
+  "sellerId": "123e4567-e89b-12d3-a456-426614174000"
+}
+```
 
-### 📋 Этап 4: Микросервис Notifications
-- [ ] SignalR Hub
-- [ ] Real-time уведомления о ставках
-- [ ] Интеграция с Auctions
+**GET /api/lots** - Получить список лотов
 
-### 📋 Этап 5: Продвинутые фичи
-- [ ] Background Services для автозавершения аукционов
-- [ ] Оптимистичная блокировка для конкурентных ставок
-- [ ] API Gateway
-- [ ] Мониторинг и логирование
+## Особенности реализации
 
-## Отличия от старой версии
+### Domain-Driven Design
+- Entities с инкапсулированной бизнес-логикой
+- Фабричные методы вместо публичных конструкторов
+- Value Objects для сложных типов
 
-| Аспект | Старая версия | Новая версия |
-|--------|---------------|--------------|
-| Архитектура | Монолит | Микросервисы |
-| .NET версия | 9.0 | 10.0 (LTS) |
-| API подход | Controllers | FastEndpoints |
-| Организация кода | Слои (Layers) | Вертикальные слайсы |
-| Паттерны | Service Layer | CQRS |
-| Контейнеризация | Нет | Docker |
+### CQRS Pattern
+- Команды для изменения состояния (CreateLot)
+- Запросы для чтения данных (GetLots)
+- Разделение ответственности
 
-## Текущий прогресс
+### Vertical Slice Architecture
+- Код организован по фичам, а не по слоям
+- Каждая фича содержит: Command/Query, Handler, Validator, Endpoint
 
-**Общий прогресс:** ~5%
+### Автоматические миграции
+- Миграции применяются автоматически при старте API
+- Не требуется ручное выполнение команд
 
-- ✅ Структура проекта создана
-- ✅ Docker Compose настроен
-- 🔄 Установка окружения
-- ⏳ Реализация первого микросервиса
+## Структура проекта
 
----
+```
+AuHub/
+├── src/Services/Auctions/
+│   ├── Auctions.Domain/         # Entities, Value Objects, Interfaces
+│   ├── Auctions.Application/    # Commands, Queries, Handlers
+│   ├── Auctions.Infrastructure/ # EF Core, Repositories
+│   └── Auctions.API/            # FastEndpoints, Program.cs
+├── docker-compose.yml           # Оркестрация контейнеров
+├── Dockerfile                   # Сборка API образа
+└── DEMO_GUIDE.md               # Руководство для демонстрации
+```
 
-*Дипломный проект. Миграция начата 08.04.2026*
+## Полезные команды
+
+```bash
+# Посмотреть логи API
+docker-compose logs -f auctions-api
+
+# Остановить все сервисы
+docker-compose down
+
+# Пересобрать и запустить
+docker-compose up -d --build
+
+# Подключиться к PostgreSQL
+docker-compose exec postgres psql -U postgres -d auctionhub
+```
+
+## Roadmap
+
+### ✅ Реализовано
+- Микросервис Auctions с CQRS
+- Domain модели (Lot, Bid)
+- FastEndpoints (Create Lot, Get Lots)
+- EF Core + автоматические миграции
+- Docker контейнеризация
+- Swagger документация
+
+### 📋 В планах
+- Микросервис Users (JWT аутентификация)
+- Микросервис Notifications (SignalR)
+- Background Services для автозавершения аукционов
+- API Gateway
+- Unit & Integration тесты
+
+## Автор
+
+**jinxinzero7**  
+Дипломный проект, 2026
+
+## Лицензия
+
+MIT
