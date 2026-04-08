@@ -1,7 +1,9 @@
 using Auctions.Application;
 using Auctions.Infrastructure;
+using Auctions.Infrastructure.Data;
 using FastEndpoints;
 using FastEndpoints.Swagger;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +24,13 @@ builder.Services.SwaggerDocument(o =>
 });
 
 var app = builder.Build();
+
+// Apply migrations automatically
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<AuctionsDbContext>();
+    dbContext.Database.Migrate();
+}
 
 // Configure pipeline
 if (app.Environment.IsDevelopment())
