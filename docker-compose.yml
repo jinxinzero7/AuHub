@@ -1,9 +1,7 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: auctionhub-postgres
+    container_name: auhub-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -13,26 +11,33 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - auctionhub-network
+      - auhub-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-  # Auctions Service (добавим позже)
-  # auctions-api:
-  #   build:
-  #     context: .
-  #     dockerfile: src/Services/Auctions/Auctions.API/Dockerfile
-  #   ports:
-  #     - "5001:8080"
-  #   environment:
-  #     - ASPNETCORE_ENVIRONMENT=Development
-  #     - ConnectionStrings__DefaultConnection=Host=postgres;Database=auctionhub;Username=postgres;Password=postgres
-  #   depends_on:
-  #     - postgres
-  #   networks:
-  #     - auctionhub-network
+  auctions-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: auhub-api
+    ports:
+      - "5108:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=auctionhub;Username=postgres;Password=postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - auhub-network
 
 volumes:
   postgres_data:
 
 networks:
-  auctionhub-network:
+  auhub-network:
     driver: bridge
