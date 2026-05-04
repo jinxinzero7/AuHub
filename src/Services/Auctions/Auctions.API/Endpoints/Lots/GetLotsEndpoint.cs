@@ -19,17 +19,21 @@ public class GetLotsEndpoint : EndpointWithoutRequest<GetLotsResponse>
         Summary(s =>
         {
             s.Summary = "Get all auction lots";
-            s.Description = "Returns a list of all auction lots with optional filtering";
+            s.Description = "Returns a paginated list of auction lots with optional filtering";
         });
     }
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        var onlyActive = Query<bool>("onlyActive", false);
+        var onlyActive = Query<bool>("onlyActive", isRequired: false);
+        var page = Query<int>("page", isRequired: false);
+        var pageSize = Query<int>("pageSize", isRequired: false);
         
         var query = new GetLotsQuery
         {
-            OnlyActive = onlyActive
+            OnlyActive = onlyActive,
+            Page = page == 0 ? 1 : page,
+            PageSize = pageSize == 0 ? 10 : pageSize
         };
 
         var result = await _handler.HandleAsync(query, ct);
@@ -42,7 +46,7 @@ public class GetLotsEndpoint : EndpointWithoutRequest<GetLotsResponse>
         Response = new GetLotsResponse
         {
             Success = true,
-            Lots = result.Value.Select(l => new LotDto
+            Lots = result.Value.Lots.Select(l => new LotDto
             {
                 Id = l.Id,
                 Title = l.Title,
@@ -53,7 +57,11 @@ public class GetLotsEndpoint : EndpointWithoutRequest<GetLotsResponse>
                 EndTime = l.EndTime,
                 Status = l.Status,
                 BidsCount = l.BidsCount
-            }).ToList()
+            }).ToList(),
+            Page = result.Value.Page,
+            PageSize = result.Value.PageSize,
+            TotalCount = result.Value.TotalCount,
+            TotalPages = result.Value.TotalPages
         };
     }
 }
@@ -62,6 +70,10 @@ public record GetLotsResponse
 {
     public bool Success { get; init; }
     public List<LotDto> Lots { get; init; } = new();
+    public int Page { get; init; }
+    public int PageSize { get; init; }
+    public int TotalCount { get; init; }
+    public int TotalPages { get; init; }
     public string? Error { get; init; }
 }
 

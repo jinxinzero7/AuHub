@@ -55,7 +55,7 @@ public class Lot
         UpdatedAt = DateTime.UtcNow;
     }
 
-    public void PlaceBid(Guid bidderId, decimal amount)
+    public void PlaceBid(decimal amount)
     {
         if (Status != LotStatus.Active)
             throw new InvalidOperationException("Lot is not active");
@@ -66,8 +66,6 @@ public class Lot
         if (DateTime.UtcNow > EndTime)
             throw new InvalidOperationException("Auction has ended");
 
-        var bid = Bid.Create(Id, bidderId, amount);
-        _bids.Add(bid);
         CurrentPrice = amount;
         UpdatedAt = DateTime.UtcNow;
     }

@@ -7,5 +7,4 @@ public record CreateLotCommand
     public decimal StartingPrice { get; init; }
     public DateTime StartTime { get; init; }
     public DateTime EndTime { get; init; }
-    public Guid SellerId { get; init; }
 }

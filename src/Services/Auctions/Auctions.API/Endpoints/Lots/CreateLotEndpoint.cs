@@ -1,5 +1,6 @@
 using Auctions.Application.Commands.CreateLot;
 using FastEndpoints;
+using System.Security.Claims;
 
 namespace Auctions.API.Endpoints.Lots;
 
@@ -15,27 +16,33 @@ public class CreateLotEndpoint : Endpoint<CreateLotRequest, CreateLotResponse>
     public override void Configure()
     {
         Post("/api/lots");
-        AllowAnonymous();
+        Roles("Admin");
         Summary(s =>
         {
-            s.Summary = "Create a new auction lot";
-            s.Description = "Creates a new lot for auction with starting price and time range";
+            s.Summary = "Create a new auction lot (Admin only)";
+            s.Description = "Creates a new lot for auction with starting price and time range. Requires Admin role.";
         });
     }
 
     public override async Task HandleAsync(CreateLotRequest req, CancellationToken ct)
     {
+        var sellerIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(sellerIdClaim) || !Guid.TryParse(sellerIdClaim, out var sellerId))
+        {
+            ThrowError("Invalid user ID in token", 401);
+            return;
+        }
+        
         var command = new CreateLotCommand
         {
             Title = req.Title,
             Description = req.Description,
             StartingPrice = req.StartingPrice,
             StartTime = req.StartTime,
-            EndTime = req.EndTime,
-            SellerId = req.SellerId
+            EndTime = req.EndTime
         };
 
-        var result = await _handler.HandleAsync(command, ct);
+        var result = await _handler.HandleAsync(command, sellerId, ct);
 
         if (result.IsFailure)
         {
@@ -52,18 +59,6 @@ public class CreateLotEndpoint : Endpoint<CreateLotRequest, CreateLotResponse>
     }
 }
 
-// Placeholder endpoint for CreatedAt
-public class GetLotByIdEndpoint : EndpointWithoutRequest
-{
-    public override void Configure()
-    {
-        Get("/api/lots/{id}");
-        AllowAnonymous();
-    }
-
-    public override Task HandleAsync(CancellationToken ct) => Task.CompletedTask;
-}
-
 public record CreateLotRequest
 {
     public string Title { get; init; } = string.Empty;
@@ -71,7 +66,6 @@ public record CreateLotRequest
     public decimal StartingPrice { get; init; }
     public DateTime StartTime { get; init; }
     public DateTime EndTime { get; init; }
-    public Guid SellerId { get; init; }
 }
 
 public record CreateLotResponse

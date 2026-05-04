@@ -45,7 +45,7 @@ public class LotRepository : ILotRepository
 
     public Task UpdateAsync(Lot lot, CancellationToken cancellationToken = default)
     {
-        _context.Lots.Update(lot);
+        // Not needed - EF Core automatically tracks changes for entities loaded via GetByIdAsync
         return Task.CompletedTask;
     }
 

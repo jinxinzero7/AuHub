@@ -15,6 +15,7 @@ public class CreateLotCommandHandler
 
     public async Task<Result<Guid>> HandleAsync(
         CreateLotCommand command,
+        Guid sellerId,
         CancellationToken cancellationToken = default)
     {
         try
@@ -25,7 +26,7 @@ public class CreateLotCommandHandler
                 command.StartingPrice,
                 command.StartTime,
                 command.EndTime,
-                command.SellerId);
+                sellerId);
 
             await _lotRepository.AddAsync(lot, cancellationToken);
             await _lotRepository.SaveChangesAsync(cancellationToken);

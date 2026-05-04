@@ -23,8 +23,5 @@ public class CreateLotCommandValidator : AbstractValidator<CreateLotCommand>
 
         RuleFor(x => x.EndTime)
             .GreaterThan(x => x.StartTime).WithMessage("End time must be after start time");
-
-        RuleFor(x => x.SellerId)
-            .NotEmpty().WithMessage("Seller ID is required");
     }
 }
