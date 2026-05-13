@@ -1,4 +1,4 @@
-using Auctions.Domain.Common;
+using AuHub.Shared.Results;
 using Auctions.Domain.Interfaces;
 using Auctions.Domain.Entities;
 
@@ -28,6 +28,12 @@ public class PlaceBidCommandHandler
                 return Result.Failure<PlaceBidResponse>("Lot not found", 404);
             }
 
+            // Проверка: нельзя ставить на свой лот
+            if (lot.SellerId == command.BidderId)
+            {
+                return Result.Failure<PlaceBidResponse>("You cannot bid on your own lot", 403);
+            }
+
             // Валидация и обновление цены лота
             lot.PlaceBid(command.Amount);
 
@@ -37,6 +43,9 @@ public class PlaceBidCommandHandler
             // Сохранение bid через его репозиторий
             await _bidRepository.AddAsync(bid, cancellationToken);
             await _bidRepository.SaveChangesAsync(cancellationToken);
+            
+            // Сохранение обновленной цены лота
+            await _lotRepository.SaveChangesAsync(cancellationToken);
 
             var response = new PlaceBidResponse
             {

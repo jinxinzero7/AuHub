@@ -28,12 +28,17 @@ public class GetLotsEndpoint : EndpointWithoutRequest<GetLotsResponse>
         var onlyActive = Query<bool>("onlyActive", isRequired: false);
         var page = Query<int>("page", isRequired: false);
         var pageSize = Query<int>("pageSize", isRequired: false);
-        
+
+        if (page < 1)
+            page = 1;
+        if (pageSize < 1 || pageSize > 100)
+            pageSize = 10;
+
         var query = new GetLotsQuery
         {
             OnlyActive = onlyActive,
-            Page = page == 0 ? 1 : page,
-            PageSize = pageSize == 0 ? 10 : pageSize
+            Page = page,
+            PageSize = pageSize
         };
 
         var result = await _handler.HandleAsync(query, ct);

@@ -1,10 +1,10 @@
+using Auctions.Domain.Interfaces;
+using Auctions.Infrastructure.BackgroundServices;
+using Auctions.Infrastructure.Data;
+using Auctions.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Auctions.Domain.Interfaces;
-using Auctions.Infrastructure.Data;
-using Auctions.Infrastructure.Repositories;
-using Auctions.Infrastructure.BackgroundServices;
 
 namespace Auctions.Infrastructure;
 
@@ -14,17 +14,15 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        // Register DbContext
         services.AddDbContext<AuctionsDbContext>(options =>
-            options.UseNpgsql(
-                configuration.GetConnectionString("DefaultConnection"),
-                b => b.MigrationsAssembly(typeof(AuctionsDbContext).Assembly.FullName)));
+            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
 
+        // Register Repositories
         services.AddScoped<ILotRepository, LotRepository>();
         services.AddScoped<IBidRepository, BidRepository>();
-        services.AddScoped<IUserRepository, UserRepository>();
-        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
-        // Background Services
+        // Register Background Services
         services.AddHostedService<AuctionCompletionService>();
 
         return services;

@@ -1,6 +1,6 @@
 # AuHub - Modern Auction Platform
 
-Современная платформа для онлайн-аукционов, построенная на микросервисной архитектуре с использованием .NET 10 и современных паттернов проектирования.
+Современная платформа для онлайн-аукционов, построенная на **микросервисной архитектуре** с использованием .NET 10 и современных паттернов проектирования.
 
 ## Технологический стек
 
@@ -15,20 +15,65 @@
 - **Docker** - контейнеризация для простого развертывания
 - **FluentValidation** - валидация запросов
 - **Result Pattern** - типобезопасная обработка ошибок
+- **Ocelot** - API Gateway для маршрутизации запросов
 
-## Архитектура
-
-Проект построен на принципах Clean Architecture с разделением на слои:
+## Микросервисная архитектура
 
 ```
-Auctions.API          → FastEndpoints, HTTP
-    ↓
-Auctions.Application  → CQRS, Business Logic
-    ↓
-Auctions.Domain       → Entities, Value Objects
-    ↑
-Auctions.Infrastructure → EF Core, PostgreSQL
+                    ┌─────────────────┐
+                    │  API Gateway    │
+                    │   (Ocelot)      │
+                    │   Port: 5000    │
+                    └────────┬────────┘
+                             │
+                ┌────────────┴────────────┐
+                │                         │
+        ┌───────▼────────┐       ┌───────▼────────┐
+        │ Identity.API   │       │ Auctions.API   │
+        │  Port: 5109    │       │  Port: 5108    │
+        │                │       │                │
+        │ - Register     │       │ - Lots         │
+        │ - Login        │       │ - Bids         │
+        │ - RefreshToken │       │                │
+        │ - JWT Gen      │       │ JWT Validation │
+        └───────┬────────┘       └───────┬────────┘
+                │                        │
+        ┌───────▼────────┐       ┌───────▼────────┐
+        │  identity-db   │       │  auctions-db   │
+        │  PostgreSQL    │       │  PostgreSQL    │
+        │  Port: 5433    │       │  Port: 5432    │
+        └────────────────┘       └────────────────┘
 ```
+
+### Сервисы
+
+#### 1. Identity Service (Port: 5109)
+- **Ответственность:** Управление пользователями и аутентификация
+- **База данных:** identity-db (PostgreSQL)
+- **Endpoints:**
+  - `POST /api/auth/register` - Регистрация пользователя
+  - `POST /api/auth/login` - Вход в систему
+  - `POST /api/auth/refresh` - Обновление токена
+- **Технологии:** JWT, BCrypt, FastEndpoints
+
+#### 2. Auctions Service (Port: 5108)
+- **Ответственность:** Управление лотами и ставками
+- **База данных:** auctions-db (PostgreSQL)
+- **Endpoints:**
+  - `POST /api/lots` - Создание лота [Admin only]
+  - `GET /api/lots` - Список лотов [Public]
+  - `GET /api/lots/{id}` - Детали лота [Public]
+  - `POST /api/lots/{id}/publish` - Публикация лота [Owner only]
+  - `POST /api/lots/{id}/bids` - Создание ставки [Authenticated]
+  - `GET /api/lots/{id}/bids` - История ставок [Public]
+- **Технологии:** CQRS, Background Services, FastEndpoints
+
+#### 3. API Gateway (Port: 5000)
+- **Ответственность:** Единая точка входа, маршрутизация запросов
+- **Маршрутизация:**
+  - `/api/auth/*` → Identity Service
+  - `/api/lots/*` → Auctions Service
+- **Технологии:** Ocelot
 
 ## Быстрый старт
 
@@ -44,7 +89,7 @@ Auctions.Infrastructure → EF Core, PostgreSQL
 git clone https://github.com/jinxinzero7/AuHub.git
 cd AuHub
 
-# Запустить все сервисы (PostgreSQL + API)
+# Запустить все сервисы
 docker-compose up -d
 
 # Подождать 1-2 минуты пока все запустится
@@ -53,55 +98,62 @@ docker-compose ps
 
 ### Доступ к приложению
 
-- **API:** http://localhost:5108
-- **Swagger UI:** http://localhost:5108/swagger
+- **API Gateway:** http://localhost:5000
+- **Identity Service:** http://localhost:5109/swagger
+- **Auctions Service:** http://localhost:5108/swagger
 
-### Тестирование
+### Тестирование через Gateway
 
-Открой Swagger UI и протестируй endpoints.
-
-**Важно:** Большинство endpoints требуют JWT авторизацию. Смотри [AUTH_TESTING_GUIDE.md](AUTH_TESTING_GUIDE.md) для полной инструкции.
-
-#### Быстрый старт:
-
-1. **Регистрация Admin:**
-```json
-POST /api/auth/register
-{
-  "email": "admin@auhub.com",
-  "password": "Admin123!",
-  "name": "Admin User",
-  "role": 1
-}
+**1. Регистрация Admin:**
+```bash
+curl -X POST http://localhost:5000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@auhub.com",
+    "password": "Admin123!",
+    "name": "Admin User",
+    "role": 1
+  }'
 ```
 
-2. **Авторизация в Swagger:**
-   - Скопируй `accessToken` из ответа
-   - Нажми **Authorize** в Swagger UI
-   - Введи: `Bearer {accessToken}`
-
-3. **Создать лот (только Admin):**
-```json
-POST /api/lots
-{
-  "title": "Vintage Watch",
-  "description": "Beautiful vintage watch from 1960s",
-  "startingPrice": 100,
-  "startTime": "2026-05-04T21:00:00Z",
-  "endTime": "2026-05-04T21:10:00Z"
-}
+**2. Логин:**
+```bash
+curl -X POST http://localhost:5000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@auhub.com",
+    "password": "Admin123!"
+  }'
 ```
 
-**Примечание:** `sellerId` автоматически берется из JWT токена
+**3. Создать лот (с JWT токеном):**
+```bash
+curl -X POST http://localhost:5000/api/lots \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {accessToken}" \
+  -d '{
+    "title": "Vintage Watch",
+    "description": "Beautiful vintage watch from 1960s",
+    "startingPrice": 100,
+    "startTime": "2026-05-14T21:00:00Z",
+    "endTime": "2026-05-14T21:10:00Z"
+  }'
+```
 
 ## Особенности реализации
+
+### Микросервисная архитектура
+- **Независимые сервисы:** Каждый сервис имеет свою БД и может разворачиваться отдельно
+- **API Gateway:** Единая точка входа для всех клиентов
+- **Shared библиотека:** Общий Result Pattern для всех сервисов
+- **JWT валидация:** Auctions Service валидирует JWT локально, не зависит от доступности Identity
 
 ### JWT Authentication & Authorization
 - **Access Token:** 30 минут
 - **Refresh Token:** 30 дней
 - **Роли:** Admin (создание лотов), User (ставки)
-- **Защита endpoints:** role-based и ownership-based
-- **Валидация паролей:** мин 8 символов, заглавная, строчная, цифра, спецсимвол
+- **Локальная валидация:** Auctions Service проверяет JWT без обращения к Identity
+- **Независимость:** Auctions продолжает работать даже если Identity недоступен
 
 ### Domain-Driven Design
 - Entities с инкапсулированной бизнес-логикой
@@ -121,29 +173,79 @@ POST /api/lots
 - Автоматическое завершение истекших аукционов
 - Проверка каждую минуту
 
-### Автоматическое создание БД
-- БД создается автоматически при старте API (dev режим)
-- Не требуется ручное выполнение миграций
-
 ## Структура проекта
 
 ```
 AuHub/
-├── src/Services/Auctions/
-│   ├── Auctions.Domain/         # Entities, Value Objects, Interfaces
-│   ├── Auctions.Application/    # Commands, Queries, Handlers
-│   ├── Auctions.Infrastructure/ # EF Core, Repositories
-│   └── Auctions.API/            # FastEndpoints, Program.cs
-├── docker-compose.yml           # Оркестрация контейнеров
-├── Dockerfile                   # Сборка API образа
-└── DEMO_GUIDE.md               # Руководство для демонстрации
+├── src/
+│   ├── Shared/
+│   │   └── AuHub.Shared/              # Result Pattern, константы
+│   │
+│   ├── Services/
+│   │   ├── Identity/
+│   │   │   ├── Identity.Domain/       # User, RefreshToken entities
+│   │   │   ├── Identity.Application/  # Auth Commands, AuthService
+│   │   │   ├── Identity.Infrastructure/# IdentityDbContext, Repositories
+│   │   │   └── Identity.API/          # FastEndpoints, JWT generation
+│   │   │
+│   │   └── Auctions/
+│   │       ├── Auctions.Domain/       # Lot, Bid entities
+│   │       ├── Auctions.Application/  # CQRS Commands/Queries
+│   │       ├── Auctions.Infrastructure/# AuctionsDbContext, Background Services
+│   │       └── Auctions.API/          # FastEndpoints, JWT validation
+│   │
+│   └── Gateway/
+│       └── AuHub.Gateway/             # Ocelot API Gateway
+│
+├── Identity.Dockerfile
+├── Auctions.Dockerfile
+├── Gateway.Dockerfile
+└── docker-compose.yml
 ```
+
+## Тестирование
+
+### Автоматическое тестирование
+
+Проект включает комплексный тестовый скрипт, который проверяет все функции:
+
+```bash
+# Перезапустить с чистой БД
+docker-compose down
+docker-compose up -d
+
+# Подождать 20 секунд для инициализации
+# Запустить тесты
+powershell -ExecutionPolicy Bypass -File test_comprehensive_en.ps1
+```
+
+**Тестовый скрипт проверяет:**
+- ✅ Аутентификацию (регистрация, логин, валидация)
+- ✅ Авторизацию по ролям (Admin/User)
+- ✅ Создание и управление лотами
+- ✅ Систему ставок (включая проверку CurrentPrice в БД)
+- ✅ Завершение и отмену лотов
+- ✅ Валидацию всех входных данных
+
+**Результат:** 35 тестов за ~5 секунд
+
+### Ручное тестирование
+
+Смотри подробные инструкции:
+- `AUTH_TESTING_GUIDE.md` - тестирование JWT авторизации
+- `TEST_SCENARIO.md` - полный сценарий демонстрации
+- `DEMO_GUIDE.md` - шпаргалка для показа проекта
 
 ## Полезные команды
 
 ```bash
-# Посмотреть логи API
+# Посмотреть логи всех сервисов
+docker-compose logs -f
+
+# Посмотреть логи конкретного сервиса
+docker-compose logs -f identity-api
 docker-compose logs -f auctions-api
+docker-compose logs -f gateway
 
 # Остановить все сервисы
 docker-compose down
@@ -151,32 +253,33 @@ docker-compose down
 # Пересобрать и запустить
 docker-compose up -d --build
 
-# Подключиться к PostgreSQL
-docker-compose exec postgres psql -U postgres -d auctionhub
+# Подключиться к Identity DB
+docker-compose exec identity-db psql -U postgres -d identitydb
+
+# Подключиться к Auctions DB
+docker-compose exec auctions-db psql -U postgres -d auctionsdb
 ```
 
 ## Roadmap
 
 ### ✅ Реализовано
-- **Микросервис Auctions** с CQRS
-- **Domain модели:** Lot, Bid, User, RefreshToken
-- **JWT Authentication:** Register, Login, RefreshToken
-- **Authorization:** Role-based (Admin, User) + Ownership checks
-- **Endpoints:** 
-  - Auth: Register, Login, RefreshToken
-  - Lots: Create, Publish, Complete, Cancel, GetAll, GetById
-  - Bids: PlaceBid, GetBidsByLot
-- **Background Service:** автозавершение аукционов
-- **Пагинация** для списка лотов
-- **EF Core** + автоматическое создание БД
-- **Docker** контейнеризация
-- **Swagger** документация с JWT авторизацией
+- **Микросервисная архитектура** с API Gateway
+- **Identity Service:** Register, Login, RefreshToken
+- **Auctions Service:** Lots, Bids, Background Services
+- **API Gateway:** Ocelot для маршрутизации
+- **Shared библиотека:** Result Pattern
+- **JWT Authentication:** Генерация в Identity, валидация в Auctions
+- **Docker:** Отдельные контейнеры для каждого сервиса
+- **Независимость сервисов:** Auctions работает без Identity
 
 ### 📋 В планах
-- Микросервис Notifications (SignalR для real-time уведомлений)
-- API Gateway
+- Notifications Service (SignalR для real-time уведомлений)
 - Unit & Integration тесты
+- Frontend (React/Vue)
 - CI/CD pipeline
+- Kubernetes deployment
+- Monitoring (Prometheus, Grafana)
+- Distributed tracing (OpenTelemetry)
 
 ## Автор
 

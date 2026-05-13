@@ -26,6 +26,29 @@ public class CreateLotEndpoint : Endpoint<CreateLotRequest, CreateLotResponse>
 
     public override async Task HandleAsync(CreateLotRequest req, CancellationToken ct)
     {
+        var errors = new List<string>();
+        
+        if (string.IsNullOrEmpty(req.Title) || req.Title.Length < 3)
+            errors.Add("Title must be at least 3 characters");
+        if (req.Title.Length > 200)
+            errors.Add("Title must not exceed 200 characters");
+        if (string.IsNullOrEmpty(req.Description))
+            errors.Add("Description is required");
+        if (req.Description.Length > 2000)
+            errors.Add("Description must not exceed 2000 characters");
+        if (req.StartingPrice <= 0)
+            errors.Add("Starting price must be greater than 0");
+        if (req.StartTime <= DateTime.UtcNow)
+            errors.Add("Start time must be in the future");
+        if (req.EndTime <= req.StartTime)
+            errors.Add("End time must be after start time");
+
+        if (errors.Any())
+        {
+            ThrowError(string.Join("; ", errors), 400);
+            return;
+        }
+
         var sellerIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(sellerIdClaim) || !Guid.TryParse(sellerIdClaim, out var sellerId))
         {

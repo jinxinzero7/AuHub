@@ -1,15 +1,16 @@
 services:
-  postgres:
+  # Identity Database
+  identity-db:
     image: postgres:16-alpine
-    container_name: auhub-postgres
+    container_name: auhub-identity-db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: auctionhub
+      POSTGRES_DB: identitydb
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - identity_data:/var/lib/postgresql/data
     networks:
       - auhub-network
     healthcheck:
@@ -18,25 +19,88 @@ services:
       timeout: 5s
       retries: 5
 
+  # Auctions Database
+  auctions-db:
+    image: postgres:16-alpine
+    container_name: auhub-auctions-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: auctionsdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - auctions_data:/var/lib/postgresql/data
+    networks:
+      - auhub-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Identity Service
+  identity-api:
+    build:
+      context: .
+      dockerfile: Identity.Dockerfile
+    container_name: auhub-identity-api
+    ports:
+      - "5109:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=identity-db;Database=identitydb;Username=postgres;Password=postgres
+      - Jwt__Secret=AuHub-Super-Secret-Key-2026-Min-32-Chars-Long-For-Security!
+      - Jwt__Issuer=AuHub
+      - Jwt__Audience=AuHub-Users
+    depends_on:
+      identity-db:
+        condition: service_healthy
+    networks:
+      - auhub-network
+
+  # Auctions Service
   auctions-api:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: auhub-api
+      dockerfile: Auctions.Dockerfile
+    container_name: auhub-auctions-api
     ports:
       - "5108:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__DefaultConnection=Host=postgres;Database=auctionhub;Username=postgres;Password=postgres
+      - ConnectionStrings__DefaultConnection=Host=auctions-db;Database=auctionsdb;Username=postgres;Password=postgres
+      - Jwt__Secret=AuHub-Super-Secret-Key-2026-Min-32-Chars-Long-For-Security!
+      - Jwt__Issuer=AuHub
+      - Jwt__Audience=AuHub-Users
     depends_on:
-      postgres:
+      auctions-db:
         condition: service_healthy
     networks:
       - auhub-network
 
+  # API Gateway
+  gateway:
+    build:
+      context: .
+      dockerfile: Gateway.Dockerfile
+    container_name: auhub-gateway
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+    depends_on:
+      - identity-api
+      - auctions-api
+    networks:
+      - auhub-network
+
 volumes:
-  postgres_data:
+  identity_data:
+  auctions_data:
 
 networks:
   auhub-network:

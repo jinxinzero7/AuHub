@@ -1,4 +1,4 @@
-using Auctions.Domain.Common;
+using AuHub.Shared.Results;
 using Auctions.Domain.Entities;
 using Auctions.Domain.Interfaces;
 

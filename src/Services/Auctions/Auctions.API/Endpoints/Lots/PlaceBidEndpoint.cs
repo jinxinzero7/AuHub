@@ -25,6 +25,17 @@ public class PlaceBidEndpoint : Endpoint<PlaceBidRequest, PlaceBidResponse>
 
     public override async Task HandleAsync(PlaceBidRequest req, CancellationToken ct)
     {
+        if (req.Amount <= 0)
+        {
+            ThrowError("Bid amount must be greater than 0", 400);
+            return;
+        }
+        if (req.Amount > 999999999)
+        {
+            ThrowError("Bid amount exceeds maximum allowed value", 400);
+            return;
+        }
+
         var lotId = Route<Guid>("id");
         
         var bidderIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

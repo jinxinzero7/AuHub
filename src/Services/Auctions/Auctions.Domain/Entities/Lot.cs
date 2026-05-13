@@ -81,8 +81,14 @@ public class Lot
 
     public void Cancel()
     {
+        if (Status == LotStatus.Cancelled)
+            throw new InvalidOperationException("Lot is already cancelled");
+
         if (Status == LotStatus.Completed)
             throw new InvalidOperationException("Cannot cancel completed lot");
+
+        if (Status == LotStatus.Active && _bids.Count > 0)
+            throw new InvalidOperationException("Cannot cancel active lot with bids");
 
         Status = LotStatus.Cancelled;
         UpdatedAt = DateTime.UtcNow;

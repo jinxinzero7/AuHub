@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Shared\AuHub.Shared\AuHub.Shared.csproj" />
+  </ItemGroup>
+
 </Project>

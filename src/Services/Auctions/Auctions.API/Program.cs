@@ -1,8 +1,12 @@
 using Auctions.Application;
+using Auctions.Application.Commands.CreateLot;
+using Auctions.Application.Commands.PlaceBid;
 using Auctions.Infrastructure;
 using Auctions.Infrastructure.Data;
+using Auctions.API.Endpoints.Lots;
 using FastEndpoints;
 using FastEndpoints.Swagger;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -13,6 +17,13 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+// FluentValidation
+builder.Services.AddValidatorsFromAssemblyContaining<CreateLotCommandValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<PlaceBidCommandValidator>();
+
+// FastEndpoints
+builder.Services.AddFastEndpoints();
 
 // JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
