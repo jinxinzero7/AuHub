@@ -51,6 +51,7 @@ function Test-Endpoint {
             return ($response.Content | ConvertFrom-Json)
         } else {
             Write-Host "  FAIL: Expected $ExpectedStatus, got $($response.StatusCode)" -ForegroundColor Red
+            Write-Host "    Response: $($response.Content)" -ForegroundColor Yellow
             $script:failCount++
             return $null
         }
@@ -68,6 +69,15 @@ function Test-Endpoint {
         } else {
             Write-Host "  FAIL: Expected $ExpectedStatus, got $statusCode" -ForegroundColor Red
             Write-Host "    Error: $($_.Exception.Message)" -ForegroundColor Red
+            # Show response body for debugging
+            try {
+                $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
+                $responseBody = $reader.ReadToEnd()
+                $reader.Close()
+                Write-Host "    Response: $responseBody" -ForegroundColor Yellow
+            } catch {
+                Write-Host "    (Could not read response body)" -ForegroundColor Gray
+            }
             $script:failCount++
             return $null
         }
@@ -212,8 +222,8 @@ $lotBody = @{
     title = "Vintage Rolex Watch"
     description = "Rare Rolex Submariner from 1965"
     startingPrice = 5000
-    startTime = "2026-05-14T10:00:00Z"
-    endTime = "2026-05-14T12:00:00Z"
+    startTime = "2026-05-18T10:00:00Z"
+    endTime = "2026-05-18T12:00:00Z"
 } | ConvertTo-Json
 
 $adminHeaders = @{
@@ -258,8 +268,8 @@ $shortTitleBody = @{
     title = "AB"
     description = "Valid description"
     startingPrice = 100
-    startTime = "2026-05-14T10:00:00Z"
-    endTime = "2026-05-14T12:00:00Z"
+    startTime = "2026-05-18T10:00:00Z"
+    endTime = "2026-05-18T12:00:00Z"
 } | ConvertTo-Json
 
 Test-Endpoint `
@@ -273,11 +283,11 @@ Test-Endpoint `
 
 # 2.5 Validation: negative price
 $negativePriceBody = @{
-    title = "Valid Title"
+    title = "ValidTitle"
     description = "Valid description"
     startingPrice = -100
-    startTime = "2026-05-14T10:00:00Z"
-    endTime = "2026-05-14T12:00:00Z"
+    startTime = "2026-05-18T10:00:00Z"
+    endTime = "2026-05-18T12:00:00Z"
 } | ConvertTo-Json
 
 Test-Endpoint `
@@ -302,8 +312,8 @@ $lot2Body = @{
     title = "Second Test Lot"
     description = "For ownership test"
     startingPrice = 1000
-    startTime = "2026-05-14T10:00:00Z"
-    endTime = "2026-05-14T12:00:00Z"
+    startTime = "2026-05-18T10:00:00Z"
+    endTime = "2026-05-18T12:00:00Z"
 } | ConvertTo-Json
 
 $lot2Result = Test-Endpoint `
@@ -493,8 +503,8 @@ $lot3Body = @{
     title = "Lot for Cancel Test"
     description = "This lot will be cancelled"
     startingPrice = 500
-    startTime = "2026-05-14T10:00:00Z"
-    endTime = "2026-05-14T12:00:00Z"
+    startTime = "2026-05-18T10:00:00Z"
+    endTime = "2026-05-18T12:00:00Z"
 } | ConvertTo-Json
 
 $lot3Result = Test-Endpoint `
