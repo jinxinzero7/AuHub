@@ -34,15 +34,15 @@ public class GetLotImagesEndpoint : EndpointWithoutRequest
 
         var images = await _imageRepository.GetByLotIdAsync(lotId, ct);
 
+        var host = "http://localhost:5000";
         var result = new List<object>();
         foreach (var image in images)
         {
-            var presignedUrl = await _storageService.GetPresignedUrlAsync(image.ObjectName, 60, ct);
             result.Add(new
             {
                 image.Id,
                 image.FileName,
-                Url = presignedUrl,
+                Url = $"{host}/api/lots/{lotId}/images/{image.FileName}",
                 image.ContentType,
                 image.Size,
                 image.UploadedAt

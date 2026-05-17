@@ -61,8 +61,8 @@ public class CreateLotEndpoint : Endpoint<CreateLotRequest, CreateLotResponse>
             Title = req.Title,
             Description = req.Description,
             StartingPrice = req.StartingPrice,
-            StartTime = req.StartTime,
-            EndTime = req.EndTime
+            StartTime = req.StartTime.ToUniversalTime(),
+            EndTime = req.EndTime.ToUniversalTime()
         };
 
         var result = await _handler.HandleAsync(command, sellerId, ct);

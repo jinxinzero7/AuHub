@@ -1,4 +1,5 @@
 using Auctions.Application.Queries.GetLots;
+using Auctions.Application.Services;
 using FastEndpoints;
 
 namespace Auctions.API.Endpoints.Lots;
@@ -48,10 +49,18 @@ public class GetLotsEndpoint : EndpointWithoutRequest<GetLotsResponse>
             ThrowError(result.Error, result.StatusCode);
         }
 
-        Response = new GetLotsResponse
+        var lotDtos = new List<LotDto>();
+        foreach (var l in result.Value.Lots)
         {
-            Success = true,
-            Lots = result.Value.Lots.Select(l => new LotDto
+            string? coverImageUrl = null;
+            if (!string.IsNullOrEmpty(l.CoverImageUrl))
+            {
+                var fileName = l.CoverImageUrl.Split('/').Last();
+                var baseUrl = "http://localhost:5000";
+                coverImageUrl = $"{baseUrl}/api/lots/{l.Id}/images/{fileName}";
+            }
+
+            lotDtos.Add(new LotDto
             {
                 Id = l.Id,
                 Title = l.Title,
@@ -61,8 +70,15 @@ public class GetLotsEndpoint : EndpointWithoutRequest<GetLotsResponse>
                 StartTime = l.StartTime,
                 EndTime = l.EndTime,
                 Status = l.Status,
-                BidsCount = l.BidsCount
-            }).ToList(),
+                BidsCount = l.BidsCount,
+                CoverImageUrl = coverImageUrl
+            });
+        }
+
+        Response = new GetLotsResponse
+        {
+            Success = true,
+            Lots = lotDtos,
             Page = result.Value.Page,
             PageSize = result.Value.PageSize,
             TotalCount = result.Value.TotalCount,
@@ -93,4 +109,5 @@ public record LotDto
     public DateTime EndTime { get; init; }
     public string Status { get; init; } = string.Empty;
     public int BidsCount { get; init; }
+    public string? CoverImageUrl { get; init; }
 }

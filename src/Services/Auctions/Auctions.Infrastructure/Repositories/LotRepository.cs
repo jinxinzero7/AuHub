@@ -25,6 +25,7 @@ public class LotRepository : ILotRepository
     {
         return await _context.Lots
             .Include(l => l.Bids)
+            .Include(l => l.Images)
             .OrderByDescending(l => l.CreatedAt)
             .ToListAsync(cancellationToken);
     }
@@ -33,6 +34,7 @@ public class LotRepository : ILotRepository
     {
         return await _context.Lots
             .Include(l => l.Bids)
+            .Include(l => l.Images)
             .Where(l => l.Status == LotStatus.Active)
             .OrderBy(l => l.EndTime)
             .ToListAsync(cancellationToken);

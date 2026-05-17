@@ -76,6 +76,7 @@ services:
       - Jwt__Issuer=AuHub
       - Jwt__Audience=AuHub-Users
       - MinIO__Endpoint=minio:9000
+      - MinIO__ExternalEndpoint=http://localhost:9000
       - MinIO__AccessKey=${MINIO_ROOT_USER:-auhub-minio-admin}
       - MinIO__SecretKey=${MINIO_ROOT_PASSWORD:-AuHub_MinIO_2026_Secure!}
       - MinIO__BucketName=auhub-lots
@@ -125,6 +126,26 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # Frontend - Next.js
+  frontend:
+    build:
+      context: ../auhub-frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:5000
+        NEXT_PUBLIC_SITE_URL: http://localhost:3000
+    container_name: auhub-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:5000
+      - NEXT_PUBLIC_SITE_URL=http://localhost:3000
+      - INTERNAL_API_URL=http://gateway:8080
+    depends_on:
+      - gateway
+    networks:
+      - auhub-network
 
 volumes:
   identity_data:

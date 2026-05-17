@@ -19,6 +19,18 @@ public class LotImageRepository : ILotImageRepository
         return await _context.LotImages.FindAsync(new object[] { id }, ct);
     }
 
+    public async Task<LotImage?> GetByFileNameAsync(Guid lotId, string fileName, CancellationToken ct = default)
+    {
+        return await _context.LotImages
+            .FirstOrDefaultAsync(i => i.LotId == lotId && i.FileName == fileName, ct);
+    }
+
+    public async Task<LotImage?> GetByObjectNameAsync(Guid lotId, string objectName, CancellationToken ct = default)
+    {
+        return await _context.LotImages
+            .FirstOrDefaultAsync(i => i.LotId == lotId && i.ObjectName == objectName, ct);
+    }
+
     public async Task<IReadOnlyList<LotImage>> GetByLotIdAsync(Guid lotId, CancellationToken ct = default)
     {
         return await _context.LotImages

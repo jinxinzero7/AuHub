@@ -6,6 +6,14 @@ var builder = WebApplication.CreateBuilder(args);
 // 1. Configure CORS for Frontend + SignalR
 builder.Services.AddCors(options =>
 {
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.WithOrigins("http://localhost:3000", "https://auhub.yourdomain.com")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+
     options.AddPolicy("GatewayCorsPolicy", policy =>
     {
         policy.WithOrigins("http://localhost:3000", "https://auhub.yourdomain.com")

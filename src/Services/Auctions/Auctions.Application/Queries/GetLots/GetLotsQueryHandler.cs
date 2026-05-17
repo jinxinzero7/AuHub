@@ -37,7 +37,8 @@ public class GetLotsQueryHandler
                     StartTime = lot.StartTime,
                     EndTime = lot.EndTime,
                     Status = lot.Status.ToString(),
-                    BidsCount = lot.Bids.Count
+                    BidsCount = lot.Bids.Count,
+                    CoverImageUrl = lot.Images.FirstOrDefault()?.FileName
                 })
                 .ToList();
 

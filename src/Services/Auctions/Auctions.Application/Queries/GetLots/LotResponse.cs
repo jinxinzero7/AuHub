@@ -11,4 +11,5 @@ public record LotResponse
     public DateTime EndTime { get; init; }
     public string Status { get; init; } = string.Empty;
     public int BidsCount { get; init; }
+    public string? CoverImageUrl { get; init; }
 }
