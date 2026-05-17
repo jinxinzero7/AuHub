@@ -1,15 +1,20 @@
 using Auctions.Application;
 using Auctions.Application.Commands.CreateLot;
 using Auctions.Application.Commands.PlaceBid;
+using Auctions.Application.Services;
 using Auctions.Infrastructure;
 using Auctions.Infrastructure.Data;
+using Auctions.Infrastructure.Storage;
 using Auctions.API.Endpoints.Lots;
+using Auctions.API.Hubs;
+using Auctions.API.SignalR;
 using FastEndpoints;
 using FastEndpoints.Swagger;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Minio;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,6 +26,25 @@ builder.Services.AddInfrastructure(builder.Configuration);
 // FluentValidation
 builder.Services.AddValidatorsFromAssemblyContaining<CreateLotCommandValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<PlaceBidCommandValidator>();
+
+// SignalR Event Publisher
+builder.Services.AddScoped<IEventPublisher, SignalREventPublisher>();
+
+// MinIO Client
+var minioEndpoint = builder.Configuration["MinIO:Endpoint"] ?? "minio:9000";
+var minioAccessKey = builder.Configuration["MinIO:AccessKey"] ?? "auhub-minio-admin";
+var minioSecretKey = builder.Configuration["MinIO:SecretKey"] ?? "AuHub_MinIO_2026_Secure!";
+var minioBucket = builder.Configuration["MinIO:BucketName"] ?? "auhub-lots";
+var minioWithSSL = bool.Parse(builder.Configuration["MinIO:WithSSL"] ?? "false");
+
+var minioClient = new MinioClient()
+    .WithEndpoint(minioEndpoint)
+    .WithCredentials(minioAccessKey, minioSecretKey)
+    .WithSSL(minioWithSSL)
+    .Build();
+
+builder.Services.AddSingleton<IMinioClient>(minioClient);
+builder.Services.AddScoped<IImageStorageService>(_ => new MinioImageStorageService(minioClient, minioBucket));
 
 // FastEndpoints
 builder.Services.AddFastEndpoints();
@@ -44,8 +68,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-// FastEndpoints
-builder.Services.AddFastEndpoints();
+// CORS for Frontend + SignalR
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.WithOrigins("http://localhost:3000", "https://auhub.yourdomain.com")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
+// Swagger
 builder.Services.SwaggerDocument(o =>
 {
     o.DocumentSettings = s =>
@@ -62,8 +97,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AuctionsDbContext>();
-    
-    // Для dev окружения пересоздаем БД с новой схемой
+
     if (app.Environment.IsDevelopment())
     {
         dbContext.Database.EnsureDeleted();
@@ -73,9 +107,15 @@ using (var scope = app.Services.CreateScope())
     {
         dbContext.Database.Migrate();
     }
+
+    // Initialize MinIO bucket
+    var imageStorage = scope.ServiceProvider.GetRequiredService<IImageStorageService>();
+    await imageStorage.InitializeBucketAsync();
 }
 
 // Configure pipeline
+app.UseCors();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwaggerGen();
@@ -87,5 +127,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseFastEndpoints();
+
+// Map SignalR Hub
+app.MapHub<AuctionHub>("/hubs/auction");
 
 app.Run();

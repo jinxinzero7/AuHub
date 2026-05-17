@@ -10,6 +10,7 @@ public class AuctionsDbContext : DbContext
 
     public DbSet<Lot> Lots => Set<Lot>();
     public DbSet<Bid> Bids => Set<Bid>();
+    public DbSet<LotImage> LotImages => Set<LotImage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -17,6 +18,7 @@ public class AuctionsDbContext : DbContext
 
         ConfigureLot(modelBuilder);
         ConfigureBid(modelBuilder);
+        ConfigureLotImage(modelBuilder);
     }
 
     private void ConfigureLot(ModelBuilder modelBuilder)
@@ -52,6 +54,11 @@ public class AuctionsDbContext : DbContext
                 .HasForeignKey(b => b.LotId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            entity.HasMany(l => l.Images)
+                .WithOne()
+                .HasForeignKey(i => i.LotId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             entity.HasIndex(l => l.Status);
             entity.HasIndex(l => l.EndTime);
         });
@@ -74,6 +81,33 @@ public class AuctionsDbContext : DbContext
 
             entity.HasIndex(b => b.LotId);
             entity.HasIndex(b => b.PlacedAt);
+        });
+    }
+
+    private void ConfigureLotImage(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<LotImage>(entity =>
+        {
+            entity.ToTable("LotImages");
+
+            entity.HasKey(i => i.Id);
+
+            entity.Property(i => i.FileName)
+                .IsRequired()
+                .HasMaxLength(255);
+
+            entity.Property(i => i.ObjectName)
+                .IsRequired()
+                .HasMaxLength(500);
+
+            entity.Property(i => i.ContentType)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(i => i.Size)
+                .IsRequired();
+
+            entity.HasIndex(i => i.LotId);
         });
     }
 }

@@ -21,6 +21,7 @@ public static class DependencyInjection
         // Register Repositories
         services.AddScoped<ILotRepository, LotRepository>();
         services.AddScoped<IBidRepository, BidRepository>();
+        services.AddScoped<ILotImageRepository, LotImageRepository>();
 
         // Register Background Services
         services.AddHostedService<AuctionCompletionService>();

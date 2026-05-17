@@ -4,8 +4,8 @@ services:
     image: postgres:16-alpine
     container_name: auhub-identity-db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: identitydb
     ports:
       - "5433:5432"
@@ -24,8 +24,8 @@ services:
     image: postgres:16-alpine
     container_name: auhub-auctions-db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: auctionsdb
     ports:
       - "5432:5432"
@@ -50,8 +50,8 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__DefaultConnection=Host=identity-db;Database=identitydb;Username=postgres;Password=postgres
-      - Jwt__Secret=AuHub-Super-Secret-Key-2026-Min-32-Chars-Long-For-Security!
+      - ConnectionStrings__DefaultConnection=Host=identity-db;Database=identitydb;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+      - Jwt__Secret=${JWT_SECRET}
       - Jwt__Issuer=AuHub
       - Jwt__Audience=AuHub-Users
     depends_on:
@@ -71,12 +71,19 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__DefaultConnection=Host=auctions-db;Database=auctionsdb;Username=postgres;Password=postgres
-      - Jwt__Secret=AuHub-Super-Secret-Key-2026-Min-32-Chars-Long-For-Security!
+      - ConnectionStrings__DefaultConnection=Host=auctions-db;Database=auctionsdb;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+      - Jwt__Secret=${JWT_SECRET}
       - Jwt__Issuer=AuHub
       - Jwt__Audience=AuHub-Users
+      - MinIO__Endpoint=minio:9000
+      - MinIO__AccessKey=${MINIO_ROOT_USER:-auhub-minio-admin}
+      - MinIO__SecretKey=${MINIO_ROOT_PASSWORD:-AuHub_MinIO_2026_Secure!}
+      - MinIO__BucketName=auhub-lots
+      - MinIO__WithSSL=false
     depends_on:
       auctions-db:
+        condition: service_healthy
+      minio:
         condition: service_healthy
     networks:
       - auhub-network
@@ -98,9 +105,31 @@ services:
     networks:
       - auhub-network
 
+  # MinIO - Object Storage for images
+  minio:
+    image: minio/minio:latest
+    container_name: auhub-minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-auhub-minio-admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-AuHub_MinIO_2026_Secure!}
+    volumes:
+      - minio_data:/data
+    networks:
+      - auhub-network
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   identity_data:
   auctions_data:
+  minio_data:
 
 networks:
   auhub-network:

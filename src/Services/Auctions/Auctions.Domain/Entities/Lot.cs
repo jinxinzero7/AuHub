@@ -13,10 +13,17 @@ public class Lot
     public LotStatus Status { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
+    public Guid? WinnerId { get; private set; }
 
     // Navigation
     private readonly List<Bid> _bids = new();
     public IReadOnlyCollection<Bid> Bids => _bids.AsReadOnly();
+
+    private readonly List<LotImage> _images = new();
+    public IReadOnlyCollection<LotImage> Images => _images.AsReadOnly();
+
+    public string? CoverImageUrl => _images.FirstOrDefault()?.ObjectName;
+    public int ImagesCount => _images.Count;
 
     // Приватный конструктор для EF Core
     private Lot() { }
@@ -76,6 +83,7 @@ public class Lot
             throw new InvalidOperationException("Only active lots can be completed");
 
         Status = LotStatus.Completed;
+        WinnerId = _bids.OrderByDescending(b => b.Amount).Select(b => b.BidderId).FirstOrDefault();
         UpdatedAt = DateTime.UtcNow;
     }
 
@@ -92,5 +100,21 @@ public class Lot
 
         Status = LotStatus.Cancelled;
         UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void AddImage(LotImage image)
+    {
+        _images.Add(image);
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public bool RemoveImage(Guid imageId)
+    {
+        var image = _images.FirstOrDefault(i => i.Id == imageId);
+        if (image == null) return false;
+
+        _images.Remove(image);
+        UpdatedAt = DateTime.UtcNow;
+        return true;
     }
 }

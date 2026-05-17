@@ -1,6 +1,7 @@
 using AuHub.Shared.Results;
 using Auctions.Domain.Interfaces;
 using Auctions.Domain.Entities;
+using Auctions.Application.Services;
 
 namespace Auctions.Application.Commands.PlaceBid;
 
@@ -8,11 +9,16 @@ public class PlaceBidCommandHandler
 {
     private readonly ILotRepository _lotRepository;
     private readonly IBidRepository _bidRepository;
+    private readonly IEventPublisher _eventPublisher;
 
-    public PlaceBidCommandHandler(ILotRepository lotRepository, IBidRepository bidRepository)
+    public PlaceBidCommandHandler(
+        ILotRepository lotRepository,
+        IBidRepository bidRepository,
+        IEventPublisher eventPublisher)
     {
         _lotRepository = lotRepository;
         _bidRepository = bidRepository;
+        _eventPublisher = eventPublisher;
     }
 
     public async Task<Result<PlaceBidResponse>> HandleAsync(
@@ -28,24 +34,24 @@ public class PlaceBidCommandHandler
                 return Result.Failure<PlaceBidResponse>("Lot not found", 404);
             }
 
-            // Проверка: нельзя ставить на свой лот
             if (lot.SellerId == command.BidderId)
             {
                 return Result.Failure<PlaceBidResponse>("You cannot bid on your own lot", 403);
             }
 
-            // Валидация и обновление цены лота
             lot.PlaceBid(command.Amount);
 
-            // Создание bid через domain factory
             var bid = Bid.Create(lot.Id, command.BidderId, command.Amount);
 
-            // Сохранение bid через его репозиторий
             await _bidRepository.AddAsync(bid, cancellationToken);
             await _bidRepository.SaveChangesAsync(cancellationToken);
-            
-            // Сохранение обновленной цены лота
             await _lotRepository.SaveChangesAsync(cancellationToken);
+
+            await _eventPublisher.PublishNewBidAsync(
+                lot.Id,
+                lot.CurrentPrice,
+                command.BidderName,
+                cancellationToken);
 
             var response = new PlaceBidResponse
             {

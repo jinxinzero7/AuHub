@@ -1,4 +1,5 @@
 using Auctions.Domain.Interfaces;
+using Auctions.Application.Services;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
@@ -44,6 +45,7 @@ public class AuctionCompletionService : BackgroundService
     {
         using var scope = _serviceProvider.CreateScope();
         var lotRepository = scope.ServiceProvider.GetRequiredService<ILotRepository>();
+        var eventPublisher = scope.ServiceProvider.GetRequiredService<IEventPublisher>();
 
         var activeLots = await lotRepository.GetActiveLotsAsync(cancellationToken);
         var now = DateTime.UtcNow;
@@ -58,14 +60,28 @@ public class AuctionCompletionService : BackgroundService
             {
                 try
                 {
+                    var previousStatus = lot.Status;
                     lot.Complete();
-                    // UpdateAsync не нужен - EF Core автоматически отслеживает изменения
-                    
-                    _logger.LogInformation(
-                        "Completed auction {LotId} - {Title}. Final price: {Price}",
-                        lot.Id,
-                        lot.Title,
-                        lot.CurrentPrice);
+
+                    if (previousStatus != lot.Status)
+                    {
+                        var winnerName = lot.WinnerId.HasValue
+                            ? $"User {lot.WinnerId.Value.ToString()[..8]}..."
+                            : null;
+
+                        await eventPublisher.PublishLotCompletedAsync(
+                            lot.Id,
+                            lot.Title,
+                            lot.CurrentPrice,
+                            winnerName,
+                            cancellationToken);
+
+                        _logger.LogInformation(
+                            "Completed auction {LotId} - {Title}. Final price: {Price}",
+                            lot.Id,
+                            lot.Title,
+                            lot.CurrentPrice);
+                    }
                 }
                 catch (Exception ex)
                 {

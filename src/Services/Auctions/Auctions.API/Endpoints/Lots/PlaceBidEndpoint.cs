@@ -16,6 +16,7 @@ public class PlaceBidEndpoint : Endpoint<PlaceBidRequest, PlaceBidResponse>
     public override void Configure()
     {
         Post("/api/lots/{id}/bids");
+        Roles("Admin", "User");
         Summary(s =>
         {
             s.Summary = "Place a bid on a lot";
@@ -37,18 +38,23 @@ public class PlaceBidEndpoint : Endpoint<PlaceBidRequest, PlaceBidResponse>
         }
 
         var lotId = Route<Guid>("id");
-        
+
         var bidderIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(bidderIdClaim) || !Guid.TryParse(bidderIdClaim, out var bidderId))
         {
             ThrowError("Invalid user ID in token", 401);
             return;
         }
-        
+
+        var bidderName = User.FindFirst(ClaimTypes.Name)?.Value
+                         ?? User.FindFirst("name")?.Value
+                         ?? "Unknown";
+
         var command = new PlaceBidCommand
         {
             LotId = lotId,
             BidderId = bidderId,
+            BidderName = bidderName,
             Amount = req.Amount
         };
 
