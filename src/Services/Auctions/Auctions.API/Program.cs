@@ -97,16 +97,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AuctionsDbContext>();
-
-    if (app.Environment.IsDevelopment())
-    {
-        dbContext.Database.EnsureDeleted();
-        dbContext.Database.EnsureCreated();
-    }
-    else
-    {
-        dbContext.Database.Migrate();
-    }
+    dbContext.Database.Migrate();
 
     // Initialize MinIO bucket
     var imageStorage = scope.ServiceProvider.GetRequiredService<IImageStorageService>();

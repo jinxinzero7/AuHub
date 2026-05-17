@@ -63,17 +63,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
-    
-    // Для dev окружения пересоздаем БД с новой схемой
-    if (app.Environment.IsDevelopment())
-    {
-        dbContext.Database.EnsureDeleted();
-        dbContext.Database.EnsureCreated();
-    }
-    else
-    {
-        dbContext.Database.Migrate();
-    }
+    dbContext.Database.Migrate();
 }
 
 // Configure pipeline
