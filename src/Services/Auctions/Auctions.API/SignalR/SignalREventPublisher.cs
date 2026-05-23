@@ -35,4 +35,16 @@ public class SignalREventPublisher : IEventPublisher
             timestamp = DateTime.UtcNow
         }, ct);
     }
+
+    public async Task PublishUserNotificationAsync(Guid userId, string type, string message, Guid? lotId, CancellationToken ct = default)
+    {
+        await _hubContext.Clients.Group($"user-{userId}").SendAsync("NewNotification", new
+        {
+            userId,
+            type,
+            message,
+            lotId,
+            timestamp = DateTime.UtcNow
+        }, ct);
+    }
 }

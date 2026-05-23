@@ -26,6 +26,12 @@ public class RefreshTokenRepository : IRefreshTokenRepository
         await _context.RefreshTokens.AddAsync(refreshToken, cancellationToken);
     }
 
+    public async Task UpdateAsync(RefreshToken refreshToken, CancellationToken cancellationToken = default)
+    {
+        _context.RefreshTokens.Update(refreshToken);
+        await Task.CompletedTask;
+    }
+
     public async Task RevokeAllUserTokensAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var tokens = await _context.RefreshTokens
@@ -49,5 +55,17 @@ public class RefreshTokenRepository : IRefreshTokenRepository
             .ExecuteSqlInterpolatedAsync(
                 $"UPDATE \"RefreshTokens\" SET \"IsRevoked\" = true WHERE \"Id\" = {tokenId}",
                 cancellationToken);
+    }
+
+    public async Task RevokeFamilyAsync(Guid familyId, CancellationToken cancellationToken = default)
+    {
+        var tokens = await _context.RefreshTokens
+            .Where(rt => rt.FamilyId == familyId && !rt.IsRevoked)
+            .ToListAsync(cancellationToken);
+
+        foreach (var token in tokens)
+        {
+            token.Revoke();
+        }
     }
 }

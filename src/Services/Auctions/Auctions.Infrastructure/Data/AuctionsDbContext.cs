@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Auctions.Domain.Entities;
+using AuHub.Shared.Converters;
 
 namespace Auctions.Infrastructure.Data;
 
@@ -11,6 +12,7 @@ public class AuctionsDbContext : DbContext
     public DbSet<Lot> Lots => Set<Lot>();
     public DbSet<Bid> Bids => Set<Bid>();
     public DbSet<LotImage> LotImages => Set<LotImage>();
+    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -19,6 +21,7 @@ public class AuctionsDbContext : DbContext
         ConfigureLot(modelBuilder);
         ConfigureBid(modelBuilder);
         ConfigureLotImage(modelBuilder);
+        ConfigureOutboxMessage(modelBuilder);
     }
 
     private void ConfigureLot(ModelBuilder modelBuilder)
@@ -38,16 +41,32 @@ public class AuctionsDbContext : DbContext
                 .HasMaxLength(2000);
 
             entity.Property(l => l.StartingPrice)
-                .HasColumnType("decimal(18,2)")
+                .HasConversion<MoneyConverter>()
                 .IsRequired();
 
             entity.Property(l => l.CurrentPrice)
-                .HasColumnType("decimal(18,2)")
+                .HasConversion<MoneyConverter>()
                 .IsRequired();
 
             entity.Property(l => l.Status)
                 .HasConversion<string>()
                 .IsRequired();
+
+            entity.Property(l => l.Duration)
+                .HasConversion<long>()
+                .IsRequired();
+
+            entity.Property(l => l.AdminComment)
+                .HasMaxLength(500);
+
+            entity.Property(l => l.TrackingNumber)
+                .HasMaxLength(100);
+
+            entity.Property(l => l.DeliveryAddress)
+                .HasMaxLength(500);
+
+            entity.Property(l => l.DisputeReason)
+                .HasMaxLength(1000);
 
             entity.HasMany(l => l.Bids)
                 .WithOne(b => b.Lot)
@@ -61,6 +80,14 @@ public class AuctionsDbContext : DbContext
 
             entity.HasIndex(l => l.Status);
             entity.HasIndex(l => l.EndTime);
+
+            entity.Property(l => l.RowVersion)
+                .IsRowVersion();
+
+            entity.Property(l => l.IsDeleted)
+                .IsRequired();
+
+            entity.HasQueryFilter(l => !l.IsDeleted);
         });
     }
 
@@ -73,7 +100,7 @@ public class AuctionsDbContext : DbContext
             entity.HasKey(b => b.Id);
 
             entity.Property(b => b.Amount)
-                .HasColumnType("decimal(18,2)")
+                .HasConversion<MoneyConverter>()
                 .IsRequired();
 
             entity.Property(b => b.PlacedAt)
@@ -81,6 +108,9 @@ public class AuctionsDbContext : DbContext
 
             entity.HasIndex(b => b.LotId);
             entity.HasIndex(b => b.PlacedAt);
+            entity.HasIndex(b => b.IdempotencyKey)
+                .IsUnique()
+                .HasFilter("\"IdempotencyKey\" IS NOT NULL");
         });
     }
 
@@ -108,6 +138,30 @@ public class AuctionsDbContext : DbContext
                 .IsRequired();
 
             entity.HasIndex(i => i.LotId);
+        });
+    }
+
+    private void ConfigureOutboxMessage(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<OutboxMessage>(entity =>
+        {
+            entity.ToTable("OutboxMessages");
+
+            entity.HasKey(o => o.Id);
+
+            entity.Property(o => o.Type)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(o => o.Payload)
+                .IsRequired()
+                .HasColumnType("text");
+
+            entity.Property(o => o.Error)
+                .HasMaxLength(2000);
+
+            entity.HasIndex(o => o.ProcessedAt);
+            entity.HasIndex(o => o.CreatedAt);
         });
     }
 }

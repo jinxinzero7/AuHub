@@ -1,4 +1,5 @@
 using Auctions.Application.Commands.CreateLot;
+using AuHub.Shared.ValueObjects;
 using FastEndpoints;
 using System.Security.Claims;
 
@@ -16,18 +17,18 @@ public class CreateLotEndpoint : Endpoint<CreateLotRequest, CreateLotResponse>
     public override void Configure()
     {
         Post("/api/lots");
-        Roles("Admin");
+        Roles("User");
         Summary(s =>
         {
-            s.Summary = "Create a new auction lot (Admin only)";
-            s.Description = "Creates a new lot for auction with starting price and time range. Requires Admin role.";
+            s.Summary = "Create a new auction lot";
+            s.Description = "Creates a new lot for auction with starting price and duration. Requires authentication.";
         });
     }
 
     public override async Task HandleAsync(CreateLotRequest req, CancellationToken ct)
     {
         var errors = new List<string>();
-        
+
         if (string.IsNullOrEmpty(req.Title) || req.Title.Length < 3)
             errors.Add("Title must be at least 3 characters");
         if (req.Title.Length > 200)
@@ -36,12 +37,12 @@ public class CreateLotEndpoint : Endpoint<CreateLotRequest, CreateLotResponse>
             errors.Add("Description is required");
         if (req.Description.Length > 2000)
             errors.Add("Description must not exceed 2000 characters");
-        if (req.StartingPrice <= 0)
+        if (req.StartingPrice.Amount <= 0)
             errors.Add("Starting price must be greater than 0");
-        if (req.StartTime <= DateTime.UtcNow)
-            errors.Add("Start time must be in the future");
-        if (req.EndTime <= req.StartTime)
-            errors.Add("End time must be after start time");
+        if (req.DurationHours <= 0)
+            errors.Add("Duration must be greater than 0");
+        if (req.DurationHours > 720)
+            errors.Add("Duration must not exceed 720 hours (30 days)");
 
         if (errors.Any())
         {
@@ -55,14 +56,13 @@ public class CreateLotEndpoint : Endpoint<CreateLotRequest, CreateLotResponse>
             ThrowError("Invalid user ID in token", 401);
             return;
         }
-        
+
         var command = new CreateLotCommand
         {
             Title = req.Title,
             Description = req.Description,
             StartingPrice = req.StartingPrice,
-            StartTime = req.StartTime.ToUniversalTime(),
-            EndTime = req.EndTime.ToUniversalTime()
+            DurationHours = req.DurationHours
         };
 
         var result = await _handler.HandleAsync(command, sellerId, ct);
@@ -77,7 +77,7 @@ public class CreateLotEndpoint : Endpoint<CreateLotRequest, CreateLotResponse>
             Success = true,
             LotId = result.Value
         };
-        
+
         HttpContext.Response.StatusCode = 201;
     }
 }
@@ -86,9 +86,8 @@ public record CreateLotRequest
 {
     public string Title { get; init; } = string.Empty;
     public string Description { get; init; } = string.Empty;
-    public decimal StartingPrice { get; init; }
-    public DateTime StartTime { get; init; }
-    public DateTime EndTime { get; init; }
+    public Money StartingPrice { get; init; } = Money.Zero;
+    public int DurationHours { get; init; }
 }
 
 public record CreateLotResponse

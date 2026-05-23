@@ -16,12 +16,10 @@ public class CreateLotCommandValidator : AbstractValidator<CreateLotCommand>
             .MaximumLength(2000).WithMessage("Description must not exceed 2000 characters");
 
         RuleFor(x => x.StartingPrice)
-            .GreaterThan(0).WithMessage("Starting price must be greater than 0");
+            .Must(m => m.Amount > 0).WithMessage("Starting price must be greater than 0");
 
-        RuleFor(x => x.StartTime)
-            .GreaterThan(DateTime.UtcNow).WithMessage("Start time must be in the future");
-
-        RuleFor(x => x.EndTime)
-            .GreaterThan(x => x.StartTime).WithMessage("End time must be after start time");
+        RuleFor(x => x.DurationHours)
+            .GreaterThan(0).WithMessage("Duration must be greater than 0")
+            .LessThanOrEqualTo(720).WithMessage("Duration must not exceed 720 hours (30 days)");
     }
 }

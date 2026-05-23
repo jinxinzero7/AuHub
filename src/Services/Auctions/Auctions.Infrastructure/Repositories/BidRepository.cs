@@ -27,6 +27,21 @@ public class BidRepository : IBidRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<List<Bid>> GetByBidderIdAsync(Guid bidderId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Bids
+            .Include(b => b.Lot)
+            .Where(b => b.BidderId == bidderId)
+            .OrderByDescending(b => b.PlacedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<Bid?> GetByIdempotencyKeyAsync(Guid idempotencyKey, CancellationToken cancellationToken = default)
+    {
+        return await _context.Bids
+            .FirstOrDefaultAsync(b => b.IdempotencyKey == idempotencyKey, cancellationToken);
+    }
+
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         await _context.SaveChangesAsync(cancellationToken);

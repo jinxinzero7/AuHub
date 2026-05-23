@@ -1,4 +1,5 @@
 using Auctions.Application.Commands.PlaceBid;
+using AuHub.Shared.ValueObjects;
 using FastEndpoints;
 using System.Security.Claims;
 
@@ -16,7 +17,7 @@ public class PlaceBidEndpoint : Endpoint<PlaceBidRequest, PlaceBidResponse>
     public override void Configure()
     {
         Post("/api/lots/{id}/bids");
-        Roles("Admin", "User");
+        Roles("User");
         Summary(s =>
         {
             s.Summary = "Place a bid on a lot";
@@ -26,12 +27,12 @@ public class PlaceBidEndpoint : Endpoint<PlaceBidRequest, PlaceBidResponse>
 
     public override async Task HandleAsync(PlaceBidRequest req, CancellationToken ct)
     {
-        if (req.Amount <= 0)
+        if (req.Amount.Amount <= 0)
         {
             ThrowError("Bid amount must be greater than 0", 400);
             return;
         }
-        if (req.Amount > 999999999)
+        if (req.Amount.Amount > 999999999)
         {
             ThrowError("Bid amount exceeds maximum allowed value", 400);
             return;
@@ -55,7 +56,8 @@ public class PlaceBidEndpoint : Endpoint<PlaceBidRequest, PlaceBidResponse>
             LotId = lotId,
             BidderId = bidderId,
             BidderName = bidderName,
-            Amount = req.Amount
+            Amount = req.Amount,
+            IdempotencyKey = req.IdempotencyKey
         };
 
         var result = await _handler.HandleAsync(command, ct);
@@ -71,5 +73,6 @@ public class PlaceBidEndpoint : Endpoint<PlaceBidRequest, PlaceBidResponse>
 
 public record PlaceBidRequest
 {
-    public decimal Amount { get; init; }
+    public Money Amount { get; init; } = Money.Zero;
+    public Guid? IdempotencyKey { get; init; }
 }

@@ -1,0 +1,1366 @@
+<?xml version="1.0" encoding="utf-8"?>
+<coverage line-rate="0.585" branch-rate="0.647" version="1.9" timestamp="1779543768" lines-covered="203" lines-valid="347" branches-covered="44" branches-valid="68">
+  <sources>
+    <source>C:\Users\niko\Desktop\workSpace\projects\auhub\AuHub\src\</source>
+  </sources>
+  <packages>
+    <package name="Auctions.Application" line-rate="0.1931" branch-rate="1" complexity="12">
+      <classes>
+        <class name="Auctions.Application.DependencyInjection" filename="Services\Auctions\Auctions.Application\DependencyInjection.cs" line-rate="0" branch-rate="1" complexity="1">
+          <methods>
+            <method name="AddApplication" signature="(Microsoft.Extensions.DependencyInjection.IServiceCollection)" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="8" hits="0" branch="False" />
+                <line number="10" hits="0" branch="False" />
+                <line number="11" hits="0" branch="False" />
+                <line number="12" hits="0" branch="False" />
+                <line number="13" hits="0" branch="False" />
+                <line number="14" hits="0" branch="False" />
+                <line number="17" hits="0" branch="False" />
+                <line number="18" hits="0" branch="False" />
+                <line number="19" hits="0" branch="False" />
+                <line number="20" hits="0" branch="False" />
+                <line number="22" hits="0" branch="False" />
+                <line number="23" hits="0" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="8" hits="0" branch="False" />
+            <line number="10" hits="0" branch="False" />
+            <line number="11" hits="0" branch="False" />
+            <line number="12" hits="0" branch="False" />
+            <line number="13" hits="0" branch="False" />
+            <line number="14" hits="0" branch="False" />
+            <line number="17" hits="0" branch="False" />
+            <line number="18" hits="0" branch="False" />
+            <line number="19" hits="0" branch="False" />
+            <line number="20" hits="0" branch="False" />
+            <line number="22" hits="0" branch="False" />
+            <line number="23" hits="0" branch="False" />
+          </lines>
+        </class>
+        <class name="Auctions.Application.Queries.GetMyBids.GetMyBidsQueryHandler" filename="Services\Auctions\Auctions.Application\Queries\GetMyBids\GetMyBidsQueryHandler.cs" line-rate="0" branch-rate="1" complexity="1">
+          <methods>
+            <method name=".ctor" signature="(Auctions.Domain.Interfaces.IBidRepository)" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="11" hits="0" branch="False" />
+                <line number="12" hits="0" branch="False" />
+                <line number="13" hits="0" branch="False" />
+                <line number="14" hits="0" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="11" hits="0" branch="False" />
+            <line number="12" hits="0" branch="False" />
+            <line number="13" hits="0" branch="False" />
+            <line number="14" hits="0" branch="False" />
+          </lines>
+        </class>
+        <class name="Auctions.Application.Queries.GetLots.GetLotsQueryHandler" filename="Services\Auctions\Auctions.Application\Queries\GetLots\GetLotsQueryHandler.cs" line-rate="0" branch-rate="1" complexity="1">
+          <methods>
+            <method name=".ctor" signature="(Auctions.Domain.Interfaces.ILotRepository)" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="10" hits="0" branch="False" />
+                <line number="11" hits="0" branch="False" />
+                <line number="12" hits="0" branch="False" />
+                <line number="13" hits="0" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="10" hits="0" branch="False" />
+            <line number="11" hits="0" branch="False" />
+            <line number="12" hits="0" branch="False" />
+            <line number="13" hits="0" branch="False" />
+          </lines>
+        </class>
+        <class name="Auctions.Application.Queries.GetLotById.GetLotByIdQueryHandler" filename="Services\Auctions\Auctions.Application\Queries\GetLotById\GetLotByIdQueryHandler.cs" line-rate="0" branch-rate="1" complexity="1">
+          <methods>
+            <method name=".ctor" signature="(Auctions.Domain.Interfaces.ILotRepository)" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="10" hits="0" branch="False" />
+                <line number="11" hits="0" branch="False" />
+                <line number="12" hits="0" branch="False" />
+                <line number="13" hits="0" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="10" hits="0" branch="False" />
+            <line number="11" hits="0" branch="False" />
+            <line number="12" hits="0" branch="False" />
+            <line number="13" hits="0" branch="False" />
+          </lines>
+        </class>
+        <class name="Auctions.Application.Queries.GetBidsByLot.GetBidsByLotQueryHandler" filename="Services\Auctions\Auctions.Application\Queries\GetBidsByLot\GetBidsByLotQueryHandler.cs" line-rate="0" branch-rate="1" complexity="1">
+          <methods>
+            <method name=".ctor" signature="(Auctions.Domain.Interfaces.IBidRepository)" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="11" hits="0" branch="False" />
+                <line number="12" hits="0" branch="False" />
+                <line number="13" hits="0" branch="False" />
+                <line number="14" hits="0" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="11" hits="0" branch="False" />
+            <line number="12" hits="0" branch="False" />
+            <line number="13" hits="0" branch="False" />
+            <line number="14" hits="0" branch="False" />
+          </lines>
+        </class>
+        <class name="Auctions.Application.Commands.PublishLot.PublishLotCommandHandler" filename="Services\Auctions\Auctions.Application\Commands\PublishLot\PublishLotCommandHandler.cs" line-rate="0" branch-rate="1" complexity="1">
+          <methods>
+            <method name=".ctor" signature="(Auctions.Domain.Interfaces.ILotRepository)" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="10" hits="0" branch="False" />
+                <line number="11" hits="0" branch="False" />
+                <line number="12" hits="0" branch="False" />
+                <line number="13" hits="0" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="10" hits="0" branch="False" />
+            <line number="11" hits="0" branch="False" />
+            <line number="12" hits="0" branch="False" />
+            <line number="13" hits="0" branch="False" />
+          </lines>
+        </class>
+        <class name="Auctions.Application.Commands.PlaceBid.PlaceBidCommandHandler" filename="Services\Auctions\Auctions.Application\Commands\PlaceBid\PlaceBidCommandHandler.cs" line-rate="1" branch-rate="1" complexity="1">
+          <methods>
+            <method name=".ctor" signature="(Auctions.Domain.Interfaces.ILotRepository,Auctions.Domain.Interfaces.IBidRepository,Auctions.Application.Services.IEventPublisher,Auctions.Domain.Interfaces.IOutbox,Auctions.Domain.Interfaces.IDomainEventDispatcher,Auctions.Application.Services.IPaymentClient,MassTransit.IPublishEndpoint)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="24" hits="15" branch="False" />
+                <line number="25" hits="15" branch="False" />
+                <line number="26" hits="15" branch="False" />
+                <line number="27" hits="15" branch="False" />
+                <line number="28" hits="15" branch="False" />
+                <line number="29" hits="15" branch="False" />
+                <line number="30" hits="15" branch="False" />
+                <line number="31" hits="15" branch="False" />
+                <line number="32" hits="15" branch="False" />
+                <line number="33" hits="15" branch="False" />
+                <line number="34" hits="15" branch="False" />
+                <line number="35" hits="15" branch="False" />
+                <line number="36" hits="15" branch="False" />
+                <line number="37" hits="15" branch="False" />
+                <line number="38" hits="15" branch="False" />
+                <line number="39" hits="15" branch="False" />
+                <line number="40" hits="15" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="24" hits="15" branch="False" />
+            <line number="25" hits="15" branch="False" />
+            <line number="26" hits="15" branch="False" />
+            <line number="27" hits="15" branch="False" />
+            <line number="28" hits="15" branch="False" />
+            <line number="29" hits="15" branch="False" />
+            <line number="30" hits="15" branch="False" />
+            <line number="31" hits="15" branch="False" />
+            <line number="32" hits="15" branch="False" />
+            <line number="33" hits="15" branch="False" />
+            <line number="34" hits="15" branch="False" />
+            <line number="35" hits="15" branch="False" />
+            <line number="36" hits="15" branch="False" />
+            <line number="37" hits="15" branch="False" />
+            <line number="38" hits="15" branch="False" />
+            <line number="39" hits="15" branch="False" />
+            <line number="40" hits="15" branch="False" />
+          </lines>
+        </class>
+        <class name="Auctions.Application.Commands.PlaceBid.PlaceBidCommandValidator" filename="Services\Auctions\Auctions.Application\Commands\PlaceBid\PlaceBidCommandValidator.cs" line-rate="0" branch-rate="1" complexity="1">
+          <methods>
+            <method name=".ctor" signature="()" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="7" hits="0" branch="False" />
+                <line number="8" hits="0" branch="False" />
+                <line number="9" hits="0" branch="False" />
+                <line number="10" hits="0" branch="False" />
+                <line number="11" hits="0" branch="False" />
+                <line number="13" hits="0" branch="False" />
+                <line number="14" hits="0" branch="False" />
+                <line number="15" hits="0" branch="False" />
+                <line number="17" hits="0" branch="False" />
+                <line number="18" hits="0" branch="False" />
+                <line number="19" hits="0" branch="False" />
+                <line number="20" hits="0" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="7" hits="0" branch="False" />
+            <line number="8" hits="0" branch="False" />
+            <line number="9" hits="0" branch="False" />
+            <line number="10" hits="0" branch="False" />
+            <line number="11" hits="0" branch="False" />
+            <line number="13" hits="0" branch="False" />
+            <line number="14" hits="0" branch="False" />
+            <line number="15" hits="0" branch="False" />
+            <line number="17" hits="0" branch="False" />
+            <line number="18" hits="0" branch="False" />
+            <line number="19" hits="0" branch="False" />
+            <line number="20" hits="0" branch="False" />
+          </lines>
+        </class>
+        <class name="Auctions.Application.Commands.CreateLot.CreateLotCommandHandler" filename="Services\Auctions\Auctions.Application\Commands\CreateLot\CreateLotCommandHandler.cs" line-rate="0" branch-rate="1" complexity="1">
+          <methods>
+            <method name=".ctor" signature="(Auctions.Domain.Interfaces.ILotRepository)" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="11" hits="0" branch="False" />
+                <line number="12" hits="0" branch="False" />
+                <line number="13" hits="0" branch="False" />
+                <line number="14" hits="0" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="11" hits="0" branch="False" />
+            <line number="12" hits="0" branch="False" />
+            <line number="13" hits="0" branch="False" />
+            <line number="14" hits="0" branch="False" />
+          </lines>
+        </class>
+        <class name="Auctions.Application.Commands.CreateLot.CreateLotCommandValidator" filename="Services\Auctions\Auctions.Application\Commands\CreateLot\CreateLotCommandValidator.cs" line-rate="0" branch-rate="1" complexity="1">
+          <methods>
+            <method name=".ctor" signature="()" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="7" hits="0" branch="False" />
+                <line number="8" hits="0" branch="False" />
+                <line number="9" hits="0" branch="False" />
+                <line number="10" hits="0" branch="False" />
+                <line number="11" hits="0" branch="False" />
+                <line number="12" hits="0" branch="False" />
+                <line number="14" hits="0" branch="False" />
+                <line number="15" hits="0" branch="False" />
+                <line number="16" hits="0" branch="False" />
+                <line number="18" hits="0" branch="False" />
+                <line number="19" hits="0" branch="False" />
+                <line number="21" hits="0" branch="False" />
+                <line number="22" hits="0" branch="False" />
+                <line number="23" hits="0" branch="False" />
+                <line number="24" hits="0" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="7" hits="0" branch="False" />
+            <line number="8" hits="0" branch="False" />
+            <line number="9" hits="0" branch="False" />
+            <line number="10" hits="0" branch="False" />
+            <line number="11" hits="0" branch="False" />
+            <line number="12" hits="0" branch="False" />
+            <line number="14" hits="0" branch="False" />
+            <line number="15" hits="0" branch="False" />
+            <line number="16" hits="0" branch="False" />
+            <line number="18" hits="0" branch="False" />
+            <line number="19" hits="0" branch="False" />
+            <line number="21" hits="0" branch="False" />
+            <line number="22" hits="0" branch="False" />
+            <line number="23" hits="0" branch="False" />
+            <line number="24" hits="0" branch="False" />
+          </lines>
+        </class>
+        <class name="Auctions.Application.Commands.CompleteLot.CompleteLotCommandHandler" filename="Services\Auctions\Auctions.Application\Commands\CompleteLot\CompleteLotCommandHandler.cs" line-rate="0" branch-rate="1" complexity="1">
+          <methods>
+            <method name=".ctor" signature="(Auctions.Domain.Interfaces.ILotRepository)" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="11" hits="0" branch="False" />
+                <line number="12" hits="0" branch="False" />
+                <line number="13" hits="0" branch="False" />
+                <line number="14" hits="0" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="11" hits="0" branch="False" />
+            <line number="12" hits="0" branch="False" />
+            <line number="13" hits="0" branch="False" />
+            <line number="14" hits="0" branch="False" />
+          </lines>
+        </class>
+        <class name="Auctions.Application.Commands.CancelLot.CancelLotCommandHandler" filename="Services\Auctions\Auctions.Application\Commands\CancelLot\CancelLotCommandHandler.cs" line-rate="0" branch-rate="1" complexity="1">
+          <methods>
+            <method name=".ctor" signature="(Auctions.Domain.Interfaces.ILotRepository)" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="10" hits="0" branch="False" />
+                <line number="11" hits="0" branch="False" />
+                <line number="12" hits="0" branch="False" />
+                <line number="13" hits="0" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="10" hits="0" branch="False" />
+            <line number="11" hits="0" branch="False" />
+            <line number="12" hits="0" branch="False" />
+            <line number="13" hits="0" branch="False" />
+          </lines>
+        </class>
+      </classes>
+    </package>
+    <package name="Auctions.Domain" line-rate="0.7815000000000001" branch-rate="0.6934999999999999" complexity="78">
+      <classes>
+        <class name="Auctions.Domain.Entities.Bid" filename="Services\Auctions\Auctions.Domain\Entities\Bid.cs" line-rate="1" branch-rate="1" complexity="2">
+          <methods>
+            <method name="Create" signature="(System.Guid,System.Guid,AuHub.Shared.ValueObjects.Money,System.Nullable`1&lt;System.Guid&gt;)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="22" hits="13" branch="False" />
+                <line number="23" hits="13" branch="False" />
+                <line number="24" hits="13" branch="False" />
+                <line number="25" hits="13" branch="False" />
+                <line number="26" hits="13" branch="False" />
+                <line number="27" hits="13" branch="False" />
+                <line number="28" hits="13" branch="False" />
+                <line number="29" hits="13" branch="False" />
+                <line number="30" hits="13" branch="False" />
+                <line number="31" hits="13" branch="False" />
+                <line number="32" hits="13" branch="False" />
+              </lines>
+            </method>
+            <method name=".ctor" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="18" hits="39" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="22" hits="13" branch="False" />
+            <line number="23" hits="13" branch="False" />
+            <line number="24" hits="13" branch="False" />
+            <line number="25" hits="13" branch="False" />
+            <line number="26" hits="13" branch="False" />
+            <line number="27" hits="13" branch="False" />
+            <line number="28" hits="13" branch="False" />
+            <line number="29" hits="13" branch="False" />
+            <line number="30" hits="13" branch="False" />
+            <line number="31" hits="13" branch="False" />
+            <line number="32" hits="13" branch="False" />
+            <line number="18" hits="39" branch="False" />
+          </lines>
+        </class>
+        <class name="Auctions.Domain.Entities.Lot" filename="Services\Auctions\Auctions.Domain\Entities\Lot.cs" line-rate="0.8343" branch-rate="0.6934999999999999" complexity="70">
+          <methods>
+            <method name="get_DomainEvents" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="43" hits="13" branch="False" />
+              </lines>
+            </method>
+            <method name="ClearDomainEvents" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="44" hits="10" branch="False" />
+              </lines>
+            </method>
+            <method name="get_Bids" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="48" hits="14" branch="False" />
+              </lines>
+            </method>
+            <method name="get_Images" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="51" hits="3" branch="False" />
+              </lines>
+            </method>
+            <method name="get_CoverImageUrl" signature="()" line-rate="0" branch-rate="0" complexity="2">
+              <lines>
+                <line number="53" hits="0" branch="True" condition-coverage="0% (0/2)">
+                  <conditions>
+                    <condition number="12" type="jump" coverage="0%" />
+                  </conditions>
+                </line>
+              </lines>
+            </method>
+            <method name="get_ImagesCount" signature="()" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="54" hits="0" branch="False" />
+              </lines>
+            </method>
+            <method name="Create" signature="(System.String,System.String,AuHub.Shared.ValueObjects.Money,System.TimeSpan,System.Guid)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="66" hits="54" branch="False" />
+                <line number="67" hits="54" branch="False" />
+                <line number="68" hits="54" branch="False" />
+                <line number="69" hits="54" branch="False" />
+                <line number="70" hits="54" branch="False" />
+                <line number="71" hits="54" branch="False" />
+                <line number="72" hits="54" branch="False" />
+                <line number="73" hits="54" branch="False" />
+                <line number="74" hits="54" branch="False" />
+                <line number="75" hits="54" branch="False" />
+                <line number="76" hits="54" branch="False" />
+                <line number="77" hits="54" branch="False" />
+                <line number="78" hits="54" branch="False" />
+                <line number="79" hits="54" branch="False" />
+              </lines>
+            </method>
+            <method name="Approve" signature="()" line-rate="1" branch-rate="1" complexity="2">
+              <lines>
+                <line number="84" hits="39" branch="False" />
+                <line number="85" hits="39" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="12" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="86" hits="1" branch="False" />
+                <line number="88" hits="38" branch="False" />
+                <line number="89" hits="38" branch="False" />
+                <line number="90" hits="38" branch="False" />
+              </lines>
+            </method>
+            <method name="Reject" signature="(System.String)" line-rate="1" branch-rate="1" complexity="2">
+              <lines>
+                <line number="93" hits="2" branch="False" />
+                <line number="94" hits="2" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="12" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="95" hits="1" branch="False" />
+                <line number="97" hits="1" branch="False" />
+                <line number="98" hits="1" branch="False" />
+                <line number="99" hits="1" branch="False" />
+                <line number="100" hits="1" branch="False" />
+              </lines>
+            </method>
+            <method name="Publish" signature="()" line-rate="1" branch-rate="1" complexity="2">
+              <lines>
+                <line number="103" hits="36" branch="False" />
+                <line number="104" hits="36" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="15" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="105" hits="1" branch="False" />
+                <line number="107" hits="35" branch="False" />
+                <line number="108" hits="35" branch="False" />
+                <line number="109" hits="35" branch="False" />
+                <line number="110" hits="35" branch="False" />
+                <line number="111" hits="35" branch="False" />
+              </lines>
+            </method>
+            <method name="PlaceBid" signature="(AuHub.Shared.ValueObjects.Money,System.Guid,System.String)" line-rate="1" branch-rate="0.9" complexity="10">
+              <lines>
+                <line number="114" hits="22" branch="False" />
+                <line number="115" hits="22" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="15" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="116" hits="1" branch="False" />
+                <line number="118" hits="21" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="42" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="119" hits="1" branch="False" />
+                <line number="121" hits="20" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="69" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="122" hits="1" branch="False" />
+                <line number="124" hits="19" branch="True" condition-coverage="75% (3/4)">
+                  <conditions>
+                    <condition number="97" type="jump" coverage="50%" />
+                    <condition number="129" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="125" hits="1" branch="False" />
+                <line number="127" hits="18" branch="False" />
+                <line number="128" hits="18" branch="False" />
+                <line number="130" hits="18" branch="False" />
+                <line number="131" hits="18" branch="False" />
+                <line number="132" hits="18" branch="False" />
+                <line number="133" hits="18" branch="False" />
+                <line number="134" hits="18" branch="False" />
+                <line number="135" hits="18" branch="False" />
+                <line number="136" hits="18" branch="False" />
+                <line number="137" hits="18" branch="False" />
+                <line number="138" hits="18" branch="False" />
+                <line number="139" hits="18" branch="False" />
+              </lines>
+            </method>
+            <method name="ExtendEndTime" signature="(System.TimeSpan)" line-rate="1" branch-rate="1" complexity="2">
+              <lines>
+                <line number="142" hits="5" branch="False" />
+                <line number="143" hits="5" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="20" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="144" hits="1" branch="False" />
+                <line number="146" hits="4" branch="False" />
+                <line number="147" hits="4" branch="False" />
+                <line number="148" hits="5" branch="False" />
+              </lines>
+            </method>
+            <method name="Complete" signature="(System.String)" line-rate="1" branch-rate="1" complexity="2">
+              <lines>
+                <line number="151" hits="8" branch="False" />
+                <line number="152" hits="8" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="15" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="153" hits="1" branch="False" />
+                <line number="155" hits="7" branch="False" />
+                <line number="156" hits="7" branch="False" />
+                <line number="157" hits="7" branch="False" />
+                <line number="159" hits="7" branch="False" />
+                <line number="160" hits="7" branch="False" />
+                <line number="161" hits="7" branch="False" />
+                <line number="162" hits="7" branch="False" />
+                <line number="163" hits="7" branch="False" />
+                <line number="164" hits="7" branch="False" />
+                <line number="165" hits="7" branch="False" />
+                <line number="166" hits="7" branch="False" />
+                <line number="167" hits="7" branch="False" />
+                <line number="168" hits="7" branch="False" />
+              </lines>
+            </method>
+            <method name="Cancel" signature="()" line-rate="0.9" branch-rate="0.9166" complexity="12">
+              <lines>
+                <line number="171" hits="5" branch="False" />
+                <line number="172" hits="5" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="12" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="173" hits="1" branch="False" />
+                <line number="175" hits="4" branch="True" condition-coverage="100% (6/6)">
+                  <conditions>
+                    <condition number="32" type="jump" coverage="100%" />
+                    <condition number="42" type="jump" coverage="100%" />
+                    <condition number="59" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="176" hits="1" branch="False" />
+                <line number="178" hits="3" branch="True" condition-coverage="75% (3/4)">
+                  <conditions>
+                    <condition number="79" type="jump" coverage="100%" />
+                    <condition number="100" type="jump" coverage="50%" />
+                  </conditions>
+                </line>
+                <line number="179" hits="0" branch="False" />
+                <line number="181" hits="3" branch="False" />
+                <line number="182" hits="3" branch="False" />
+                <line number="183" hits="3" branch="False" />
+              </lines>
+            </method>
+            <method name="Freeze" signature="()" line-rate="1" branch-rate="1" complexity="2">
+              <lines>
+                <line number="186" hits="3" branch="False" />
+                <line number="187" hits="3" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="15" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="188" hits="1" branch="False" />
+                <line number="190" hits="2" branch="False" />
+                <line number="191" hits="2" branch="False" />
+                <line number="192" hits="2" branch="False" />
+              </lines>
+            </method>
+            <method name="Unfreeze" signature="()" line-rate="0.8332999999999999" branch-rate="0.5" complexity="2">
+              <lines>
+                <line number="195" hits="1" branch="False" />
+                <line number="196" hits="1" branch="True" condition-coverage="50% (1/2)">
+                  <conditions>
+                    <condition number="15" type="jump" coverage="50%" />
+                  </conditions>
+                </line>
+                <line number="197" hits="0" branch="False" />
+                <line number="199" hits="1" branch="False" />
+                <line number="200" hits="1" branch="False" />
+                <line number="201" hits="1" branch="False" />
+              </lines>
+            </method>
+            <method name="SetDeliveryAddress" signature="(System.String)" line-rate="0" branch-rate="0" complexity="4">
+              <lines>
+                <line number="204" hits="0" branch="False" />
+                <line number="205" hits="0" branch="True" condition-coverage="0% (0/4)">
+                  <conditions>
+                    <condition number="8" type="jump" coverage="0%" />
+                    <condition number="27" type="jump" coverage="0%" />
+                  </conditions>
+                </line>
+                <line number="206" hits="0" branch="False" />
+                <line number="208" hits="0" branch="False" />
+                <line number="209" hits="0" branch="False" />
+                <line number="210" hits="0" branch="False" />
+              </lines>
+            </method>
+            <method name="Ship" signature="(System.String)" line-rate="0" branch-rate="0" complexity="4">
+              <lines>
+                <line number="213" hits="0" branch="False" />
+                <line number="214" hits="0" branch="True" condition-coverage="0% (0/2)">
+                  <conditions>
+                    <condition number="15" type="jump" coverage="0%" />
+                  </conditions>
+                </line>
+                <line number="215" hits="0" branch="False" />
+                <line number="217" hits="0" branch="True" condition-coverage="0% (0/2)">
+                  <conditions>
+                    <condition number="36" type="jump" coverage="0%" />
+                  </conditions>
+                </line>
+                <line number="218" hits="0" branch="False" />
+                <line number="220" hits="0" branch="False" />
+                <line number="221" hits="0" branch="False" />
+                <line number="222" hits="0" branch="False" />
+                <line number="223" hits="0" branch="False" />
+              </lines>
+            </method>
+            <method name="ConfirmDelivery" signature="()" line-rate="0" branch-rate="0" complexity="2">
+              <lines>
+                <line number="226" hits="0" branch="False" />
+                <line number="227" hits="0" branch="True" condition-coverage="0% (0/2)">
+                  <conditions>
+                    <condition number="16" type="jump" coverage="0%" />
+                  </conditions>
+                </line>
+                <line number="228" hits="0" branch="False" />
+                <line number="230" hits="0" branch="False" />
+                <line number="231" hits="0" branch="False" />
+                <line number="232" hits="0" branch="False" />
+              </lines>
+            </method>
+            <method name="OpenDispute" signature="(System.String)" line-rate="0.8571" branch-rate="0.5" complexity="6">
+              <lines>
+                <line number="235" hits="3" branch="False" />
+                <line number="236" hits="3" branch="True" condition-coverage="50% (3/6)">
+                  <conditions>
+                    <condition number="8" type="jump" coverage="50%" />
+                    <condition number="17" type="jump" coverage="50%" />
+                    <condition number="36" type="jump" coverage="50%" />
+                  </conditions>
+                </line>
+                <line number="237" hits="0" branch="False" />
+                <line number="239" hits="3" branch="False" />
+                <line number="240" hits="3" branch="False" />
+                <line number="241" hits="3" branch="False" />
+                <line number="242" hits="3" branch="False" />
+              </lines>
+            </method>
+            <method name="ResolveDispute" signature="(System.Boolean)" line-rate="0.8332999999999999" branch-rate="0.75" complexity="4">
+              <lines>
+                <line number="245" hits="2" branch="False" />
+                <line number="246" hits="2" branch="True" condition-coverage="50% (1/2)">
+                  <conditions>
+                    <condition number="16" type="jump" coverage="50%" />
+                  </conditions>
+                </line>
+                <line number="247" hits="0" branch="False" />
+                <line number="249" hits="2" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="31" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="250" hits="2" branch="False" />
+                <line number="251" hits="2" branch="False" />
+              </lines>
+            </method>
+            <method name="AddImage" signature="(Auctions.Domain.Entities.LotImage)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="254" hits="2" branch="False" />
+                <line number="255" hits="2" branch="False" />
+                <line number="256" hits="2" branch="False" />
+                <line number="257" hits="2" branch="False" />
+              </lines>
+            </method>
+            <method name="RemoveImage" signature="(System.Guid)" line-rate="1" branch-rate="1" complexity="2">
+              <lines>
+                <line number="260" hits="2" branch="False" />
+                <line number="261" hits="2" branch="False" />
+                <line number="262" hits="3" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="44" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="264" hits="1" branch="False" />
+                <line number="265" hits="1" branch="False" />
+                <line number="266" hits="1" branch="False" />
+                <line number="267" hits="2" branch="False" />
+              </lines>
+            </method>
+            <method name="SoftDelete" signature="(System.Nullable`1&lt;System.Guid&gt;)" line-rate="1" branch-rate="1" complexity="2">
+              <lines>
+                <line number="270" hits="4" branch="False" />
+                <line number="271" hits="4" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="9" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="272" hits="1" branch="False" />
+                <line number="274" hits="3" branch="False" />
+                <line number="275" hits="3" branch="False" />
+                <line number="276" hits="3" branch="False" />
+                <line number="277" hits="3" branch="False" />
+                <line number="278" hits="3" branch="False" />
+              </lines>
+            </method>
+            <method name=".ctor" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="42" hits="54" branch="False" />
+                <line number="47" hits="54" branch="False" />
+                <line number="50" hits="54" branch="False" />
+                <line number="57" hits="162" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="43" hits="13" branch="False" />
+            <line number="44" hits="10" branch="False" />
+            <line number="48" hits="14" branch="False" />
+            <line number="51" hits="3" branch="False" />
+            <line number="53" hits="0" branch="True" condition-coverage="0% (0/2)">
+              <conditions>
+                <condition number="12" type="jump" coverage="0%" />
+              </conditions>
+            </line>
+            <line number="54" hits="0" branch="False" />
+            <line number="66" hits="54" branch="False" />
+            <line number="67" hits="54" branch="False" />
+            <line number="68" hits="54" branch="False" />
+            <line number="69" hits="54" branch="False" />
+            <line number="70" hits="54" branch="False" />
+            <line number="71" hits="54" branch="False" />
+            <line number="72" hits="54" branch="False" />
+            <line number="73" hits="54" branch="False" />
+            <line number="74" hits="54" branch="False" />
+            <line number="75" hits="54" branch="False" />
+            <line number="76" hits="54" branch="False" />
+            <line number="77" hits="54" branch="False" />
+            <line number="78" hits="54" branch="False" />
+            <line number="79" hits="54" branch="False" />
+            <line number="84" hits="39" branch="False" />
+            <line number="85" hits="39" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="12" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="86" hits="1" branch="False" />
+            <line number="88" hits="38" branch="False" />
+            <line number="89" hits="38" branch="False" />
+            <line number="90" hits="38" branch="False" />
+            <line number="93" hits="2" branch="False" />
+            <line number="94" hits="2" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="12" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="95" hits="1" branch="False" />
+            <line number="97" hits="1" branch="False" />
+            <line number="98" hits="1" branch="False" />
+            <line number="99" hits="1" branch="False" />
+            <line number="100" hits="1" branch="False" />
+            <line number="103" hits="36" branch="False" />
+            <line number="104" hits="36" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="15" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="105" hits="1" branch="False" />
+            <line number="107" hits="35" branch="False" />
+            <line number="108" hits="35" branch="False" />
+            <line number="109" hits="35" branch="False" />
+            <line number="110" hits="35" branch="False" />
+            <line number="111" hits="35" branch="False" />
+            <line number="114" hits="22" branch="False" />
+            <line number="115" hits="22" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="15" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="116" hits="1" branch="False" />
+            <line number="118" hits="21" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="42" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="119" hits="1" branch="False" />
+            <line number="121" hits="20" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="69" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="122" hits="1" branch="False" />
+            <line number="124" hits="19" branch="True" condition-coverage="75% (3/4)">
+              <conditions>
+                <condition number="97" type="jump" coverage="50%" />
+                <condition number="129" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="125" hits="1" branch="False" />
+            <line number="127" hits="18" branch="False" />
+            <line number="128" hits="18" branch="False" />
+            <line number="130" hits="18" branch="False" />
+            <line number="131" hits="18" branch="False" />
+            <line number="132" hits="18" branch="False" />
+            <line number="133" hits="18" branch="False" />
+            <line number="134" hits="18" branch="False" />
+            <line number="135" hits="18" branch="False" />
+            <line number="136" hits="18" branch="False" />
+            <line number="137" hits="18" branch="False" />
+            <line number="138" hits="18" branch="False" />
+            <line number="139" hits="18" branch="False" />
+            <line number="142" hits="5" branch="False" />
+            <line number="143" hits="5" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="20" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="144" hits="1" branch="False" />
+            <line number="146" hits="4" branch="False" />
+            <line number="147" hits="4" branch="False" />
+            <line number="148" hits="5" branch="False" />
+            <line number="151" hits="8" branch="False" />
+            <line number="152" hits="8" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="15" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="153" hits="1" branch="False" />
+            <line number="155" hits="7" branch="False" />
+            <line number="156" hits="7" branch="False" />
+            <line number="157" hits="7" branch="False" />
+            <line number="159" hits="7" branch="False" />
+            <line number="160" hits="7" branch="False" />
+            <line number="161" hits="7" branch="False" />
+            <line number="162" hits="7" branch="False" />
+            <line number="163" hits="7" branch="False" />
+            <line number="164" hits="7" branch="False" />
+            <line number="165" hits="7" branch="False" />
+            <line number="166" hits="7" branch="False" />
+            <line number="167" hits="7" branch="False" />
+            <line number="168" hits="7" branch="False" />
+            <line number="171" hits="5" branch="False" />
+            <line number="172" hits="5" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="12" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="173" hits="1" branch="False" />
+            <line number="175" hits="4" branch="True" condition-coverage="100% (6/6)">
+              <conditions>
+                <condition number="32" type="jump" coverage="100%" />
+                <condition number="42" type="jump" coverage="100%" />
+                <condition number="59" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="176" hits="1" branch="False" />
+            <line number="178" hits="3" branch="True" condition-coverage="75% (3/4)">
+              <conditions>
+                <condition number="79" type="jump" coverage="100%" />
+                <condition number="100" type="jump" coverage="50%" />
+              </conditions>
+            </line>
+            <line number="179" hits="0" branch="False" />
+            <line number="181" hits="3" branch="False" />
+            <line number="182" hits="3" branch="False" />
+            <line number="183" hits="3" branch="False" />
+            <line number="186" hits="3" branch="False" />
+            <line number="187" hits="3" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="15" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="188" hits="1" branch="False" />
+            <line number="190" hits="2" branch="False" />
+            <line number="191" hits="2" branch="False" />
+            <line number="192" hits="2" branch="False" />
+            <line number="195" hits="1" branch="False" />
+            <line number="196" hits="1" branch="True" condition-coverage="50% (1/2)">
+              <conditions>
+                <condition number="15" type="jump" coverage="50%" />
+              </conditions>
+            </line>
+            <line number="197" hits="0" branch="False" />
+            <line number="199" hits="1" branch="False" />
+            <line number="200" hits="1" branch="False" />
+            <line number="201" hits="1" branch="False" />
+            <line number="204" hits="0" branch="False" />
+            <line number="205" hits="0" branch="True" condition-coverage="0% (0/4)">
+              <conditions>
+                <condition number="8" type="jump" coverage="0%" />
+                <condition number="27" type="jump" coverage="0%" />
+              </conditions>
+            </line>
+            <line number="206" hits="0" branch="False" />
+            <line number="208" hits="0" branch="False" />
+            <line number="209" hits="0" branch="False" />
+            <line number="210" hits="0" branch="False" />
+            <line number="213" hits="0" branch="False" />
+            <line number="214" hits="0" branch="True" condition-coverage="0% (0/2)">
+              <conditions>
+                <condition number="15" type="jump" coverage="0%" />
+              </conditions>
+            </line>
+            <line number="215" hits="0" branch="False" />
+            <line number="217" hits="0" branch="True" condition-coverage="0% (0/2)">
+              <conditions>
+                <condition number="36" type="jump" coverage="0%" />
+              </conditions>
+            </line>
+            <line number="218" hits="0" branch="False" />
+            <line number="220" hits="0" branch="False" />
+            <line number="221" hits="0" branch="False" />
+            <line number="222" hits="0" branch="False" />
+            <line number="223" hits="0" branch="False" />
+            <line number="226" hits="0" branch="False" />
+            <line number="227" hits="0" branch="True" condition-coverage="0% (0/2)">
+              <conditions>
+                <condition number="16" type="jump" coverage="0%" />
+              </conditions>
+            </line>
+            <line number="228" hits="0" branch="False" />
+            <line number="230" hits="0" branch="False" />
+            <line number="231" hits="0" branch="False" />
+            <line number="232" hits="0" branch="False" />
+            <line number="235" hits="3" branch="False" />
+            <line number="236" hits="3" branch="True" condition-coverage="50% (3/6)">
+              <conditions>
+                <condition number="8" type="jump" coverage="50%" />
+                <condition number="17" type="jump" coverage="50%" />
+                <condition number="36" type="jump" coverage="50%" />
+              </conditions>
+            </line>
+            <line number="237" hits="0" branch="False" />
+            <line number="239" hits="3" branch="False" />
+            <line number="240" hits="3" branch="False" />
+            <line number="241" hits="3" branch="False" />
+            <line number="242" hits="3" branch="False" />
+            <line number="245" hits="2" branch="False" />
+            <line number="246" hits="2" branch="True" condition-coverage="50% (1/2)">
+              <conditions>
+                <condition number="16" type="jump" coverage="50%" />
+              </conditions>
+            </line>
+            <line number="247" hits="0" branch="False" />
+            <line number="249" hits="2" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="31" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="250" hits="2" branch="False" />
+            <line number="251" hits="2" branch="False" />
+            <line number="254" hits="2" branch="False" />
+            <line number="255" hits="2" branch="False" />
+            <line number="256" hits="2" branch="False" />
+            <line number="257" hits="2" branch="False" />
+            <line number="260" hits="2" branch="False" />
+            <line number="261" hits="2" branch="False" />
+            <line number="262" hits="3" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="44" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="264" hits="1" branch="False" />
+            <line number="265" hits="1" branch="False" />
+            <line number="266" hits="1" branch="False" />
+            <line number="267" hits="2" branch="False" />
+            <line number="270" hits="4" branch="False" />
+            <line number="271" hits="4" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="9" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="272" hits="1" branch="False" />
+            <line number="274" hits="3" branch="False" />
+            <line number="275" hits="3" branch="False" />
+            <line number="276" hits="3" branch="False" />
+            <line number="277" hits="3" branch="False" />
+            <line number="278" hits="3" branch="False" />
+            <line number="42" hits="54" branch="False" />
+            <line number="47" hits="54" branch="False" />
+            <line number="50" hits="54" branch="False" />
+            <line number="57" hits="162" branch="False" />
+          </lines>
+        </class>
+        <class name="Auctions.Domain.Entities.LotImage" filename="Services\Auctions\Auctions.Domain\Entities\LotImage.cs" line-rate="1" branch-rate="1" complexity="2">
+          <methods>
+            <method name="Create" signature="(System.Guid,System.String,System.String,System.String,System.Int64)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="16" hits="2" branch="False" />
+                <line number="17" hits="2" branch="False" />
+                <line number="18" hits="2" branch="False" />
+                <line number="19" hits="2" branch="False" />
+                <line number="20" hits="2" branch="False" />
+                <line number="21" hits="2" branch="False" />
+                <line number="22" hits="2" branch="False" />
+                <line number="23" hits="2" branch="False" />
+                <line number="24" hits="2" branch="False" />
+                <line number="25" hits="2" branch="False" />
+                <line number="26" hits="2" branch="False" />
+                <line number="27" hits="2" branch="False" />
+              </lines>
+            </method>
+            <method name=".ctor" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="13" hits="6" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="16" hits="2" branch="False" />
+            <line number="17" hits="2" branch="False" />
+            <line number="18" hits="2" branch="False" />
+            <line number="19" hits="2" branch="False" />
+            <line number="20" hits="2" branch="False" />
+            <line number="21" hits="2" branch="False" />
+            <line number="22" hits="2" branch="False" />
+            <line number="23" hits="2" branch="False" />
+            <line number="24" hits="2" branch="False" />
+            <line number="25" hits="2" branch="False" />
+            <line number="26" hits="2" branch="False" />
+            <line number="27" hits="2" branch="False" />
+            <line number="13" hits="6" branch="False" />
+          </lines>
+        </class>
+        <class name="Auctions.Domain.Entities.OutboxMessage" filename="Services\Auctions\Auctions.Domain\Entities\OutboxMessage.cs" line-rate="0" branch-rate="1" complexity="4">
+          <methods>
+            <method name="Create" signature="(System.String,System.String)" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="16" hits="0" branch="False" />
+                <line number="17" hits="0" branch="False" />
+                <line number="18" hits="0" branch="False" />
+                <line number="19" hits="0" branch="False" />
+                <line number="20" hits="0" branch="False" />
+                <line number="21" hits="0" branch="False" />
+                <line number="22" hits="0" branch="False" />
+                <line number="23" hits="0" branch="False" />
+                <line number="24" hits="0" branch="False" />
+                <line number="25" hits="0" branch="False" />
+              </lines>
+            </method>
+            <method name="MarkProcessed" signature="()" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="28" hits="0" branch="False" />
+                <line number="29" hits="0" branch="False" />
+                <line number="30" hits="0" branch="False" />
+              </lines>
+            </method>
+            <method name="MarkFailed" signature="(System.String)" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="33" hits="0" branch="False" />
+                <line number="34" hits="0" branch="False" />
+                <line number="35" hits="0" branch="False" />
+                <line number="36" hits="0" branch="False" />
+              </lines>
+            </method>
+            <method name=".ctor" signature="()" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="13" hits="0" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="16" hits="0" branch="False" />
+            <line number="17" hits="0" branch="False" />
+            <line number="18" hits="0" branch="False" />
+            <line number="19" hits="0" branch="False" />
+            <line number="20" hits="0" branch="False" />
+            <line number="21" hits="0" branch="False" />
+            <line number="22" hits="0" branch="False" />
+            <line number="23" hits="0" branch="False" />
+            <line number="24" hits="0" branch="False" />
+            <line number="25" hits="0" branch="False" />
+            <line number="28" hits="0" branch="False" />
+            <line number="29" hits="0" branch="False" />
+            <line number="30" hits="0" branch="False" />
+            <line number="33" hits="0" branch="False" />
+            <line number="34" hits="0" branch="False" />
+            <line number="35" hits="0" branch="False" />
+            <line number="36" hits="0" branch="False" />
+            <line number="13" hits="0" branch="False" />
+          </lines>
+        </class>
+      </classes>
+    </package>
+    <package name="AuHub.Shared" line-rate="0.47159999999999996" branch-rate="0.1666" complexity="29">
+      <classes>
+        <class name="AuHub.Shared.ValueObjects.Money" filename="Shared\AuHub.Shared\ValueObjects\Money.cs" line-rate="0.5454" branch-rate="0.25" complexity="16">
+          <methods>
+            <method name="FromDecimal" signature="(System.Decimal,System.String)" line-rate="0.8" branch-rate="0.5" complexity="2">
+              <lines>
+                <line number="19" hits="84" branch="False" />
+                <line number="20" hits="84" branch="True" condition-coverage="50% (1/2)">
+                  <conditions>
+                    <condition number="14" type="jump" coverage="50%" />
+                  </conditions>
+                </line>
+                <line number="21" hits="0" branch="False" />
+                <line number="22" hits="84" branch="False" />
+                <line number="23" hits="84" branch="False" />
+              </lines>
+            </method>
+            <method name="get_IsZero" signature="()" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="27" hits="0" branch="False" />
+              </lines>
+            </method>
+            <method name="CompareTo" signature="(AuHub.Shared.ValueObjects.Money)" line-rate="0" branch-rate="0" complexity="2">
+              <lines>
+                <line number="29" hits="0" branch="True" condition-coverage="0% (0/2)">
+                  <conditions>
+                    <condition number="10" type="jump" coverage="0%" />
+                  </conditions>
+                </line>
+              </lines>
+            </method>
+            <method name="op_Addition" signature="(AuHub.Shared.ValueObjects.Money,AuHub.Shared.ValueObjects.Money)" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="31" hits="0" branch="False" />
+              </lines>
+            </method>
+            <method name="op_Subtraction" signature="(AuHub.Shared.ValueObjects.Money,AuHub.Shared.ValueObjects.Money)" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="32" hits="0" branch="False" />
+              </lines>
+            </method>
+            <method name="op_Multiply" signature="(AuHub.Shared.ValueObjects.Money,System.Decimal)" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="33" hits="0" branch="False" />
+              </lines>
+            </method>
+            <method name="op_Multiply" signature="(System.Decimal,AuHub.Shared.ValueObjects.Money)" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="34" hits="0" branch="False" />
+              </lines>
+            </method>
+            <method name="op_GreaterThan" signature="(AuHub.Shared.ValueObjects.Money,AuHub.Shared.ValueObjects.Money)" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="35" hits="0" branch="False" />
+              </lines>
+            </method>
+            <method name="op_LessThan" signature="(AuHub.Shared.ValueObjects.Money,AuHub.Shared.ValueObjects.Money)" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="36" hits="0" branch="False" />
+              </lines>
+            </method>
+            <method name="op_GreaterThanOrEqual" signature="(AuHub.Shared.ValueObjects.Money,AuHub.Shared.ValueObjects.Money)" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="37" hits="0" branch="False" />
+              </lines>
+            </method>
+            <method name="op_LessThanOrEqual" signature="(AuHub.Shared.ValueObjects.Money,AuHub.Shared.ValueObjects.Money)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="38" hits="20" branch="False" />
+              </lines>
+            </method>
+            <method name="ToString" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="40" hits="1" branch="False" />
+              </lines>
+            </method>
+            <method name=".ctor" signature="(System.Decimal,System.String)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="12" hits="85" branch="False" />
+                <line number="13" hits="85" branch="False" />
+                <line number="14" hits="85" branch="False" />
+                <line number="15" hits="85" branch="False" />
+                <line number="16" hits="85" branch="False" />
+              </lines>
+            </method>
+            <method name=".cctor" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="25" hits="1" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="19" hits="84" branch="False" />
+            <line number="20" hits="84" branch="True" condition-coverage="50% (1/2)">
+              <conditions>
+                <condition number="14" type="jump" coverage="50%" />
+              </conditions>
+            </line>
+            <line number="21" hits="0" branch="False" />
+            <line number="22" hits="84" branch="False" />
+            <line number="23" hits="84" branch="False" />
+            <line number="27" hits="0" branch="False" />
+            <line number="29" hits="0" branch="True" condition-coverage="0% (0/2)">
+              <conditions>
+                <condition number="10" type="jump" coverage="0%" />
+              </conditions>
+            </line>
+            <line number="31" hits="0" branch="False" />
+            <line number="32" hits="0" branch="False" />
+            <line number="33" hits="0" branch="False" />
+            <line number="34" hits="0" branch="False" />
+            <line number="35" hits="0" branch="False" />
+            <line number="36" hits="0" branch="False" />
+            <line number="37" hits="0" branch="False" />
+            <line number="38" hits="20" branch="False" />
+            <line number="40" hits="1" branch="False" />
+            <line number="12" hits="85" branch="False" />
+            <line number="13" hits="85" branch="False" />
+            <line number="14" hits="85" branch="False" />
+            <line number="15" hits="85" branch="False" />
+            <line number="16" hits="85" branch="False" />
+            <line number="25" hits="1" branch="False" />
+          </lines>
+        </class>
+        <class name="AuHub.Shared.Results.Result" filename="Shared\AuHub.Shared\Results\Result.cs" line-rate="0.8181" branch-rate="1" complexity="6">
+          <methods>
+            <method name="get_IsFailure" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="6" hits="6" branch="False" />
+              </lines>
+            </method>
+            <method name="Success" signature="()" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="17" hits="0" branch="False" />
+              </lines>
+            </method>
+            <method name="Failure" signature="(System.String,System.Int32)" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="18" hits="0" branch="False" />
+              </lines>
+            </method>
+            <method name="Success" signature="(T)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="20" hits="9" branch="False" />
+              </lines>
+            </method>
+            <method name="Failure" signature="(System.String,System.Int32)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="21" hits="6" branch="False" />
+              </lines>
+            </method>
+            <method name=".ctor" signature="(System.Boolean,System.String,System.Int32)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="10" hits="15" branch="False" />
+                <line number="11" hits="15" branch="False" />
+                <line number="12" hits="15" branch="False" />
+                <line number="13" hits="15" branch="False" />
+                <line number="14" hits="15" branch="False" />
+                <line number="15" hits="15" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="6" hits="6" branch="False" />
+            <line number="17" hits="0" branch="False" />
+            <line number="18" hits="0" branch="False" />
+            <line number="20" hits="9" branch="False" />
+            <line number="21" hits="6" branch="False" />
+            <line number="10" hits="15" branch="False" />
+            <line number="11" hits="15" branch="False" />
+            <line number="12" hits="15" branch="False" />
+            <line number="13" hits="15" branch="False" />
+            <line number="14" hits="15" branch="False" />
+            <line number="15" hits="15" branch="False" />
+          </lines>
+        </class>
+        <class name="AuHub.Shared.Results.Result`1" filename="Shared\AuHub.Shared\Results\Result.cs" line-rate="1" branch-rate="1" complexity="1">
+          <methods>
+            <method name=".ctor" signature="(T,System.Boolean,System.String,System.Int32)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="29" hits="15" branch="False" />
+                <line number="30" hits="15" branch="False" />
+                <line number="31" hits="15" branch="False" />
+                <line number="32" hits="15" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="29" hits="15" branch="False" />
+            <line number="30" hits="15" branch="False" />
+            <line number="31" hits="15" branch="False" />
+            <line number="32" hits="15" branch="False" />
+          </lines>
+        </class>
+        <class name="AuHub.Shared.Middleware.CorrelationIdMiddleware" filename="Shared\AuHub.Shared\Middleware\CorrelationIdMiddleware.cs" line-rate="0" branch-rate="1" complexity="1">
+          <methods>
+            <method name=".ctor" signature="(Microsoft.AspNetCore.Http.RequestDelegate)" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="11" hits="0" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="11" hits="0" branch="False" />
+          </lines>
+        </class>
+        <class name="AuHub.Shared.Middleware.CorrelationIdMiddlewareExtensions" filename="Shared\AuHub.Shared\Middleware\CorrelationIdMiddleware.cs" line-rate="0" branch-rate="1" complexity="1">
+          <methods>
+            <method name="UseCorrelationId" signature="(Microsoft.AspNetCore.Builder.IApplicationBuilder)" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="34" hits="0" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="34" hits="0" branch="False" />
+          </lines>
+        </class>
+        <class name="AuHub.Shared.Converters.MoneyConverter" filename="Shared\AuHub.Shared\Converters\MoneyConverter.cs" line-rate="0" branch-rate="1" complexity="1">
+          <methods>
+            <method name=".ctor" signature="()" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="9" hits="0" branch="False" />
+                <line number="10" hits="0" branch="False" />
+                <line number="11" hits="0" branch="False" />
+                <line number="12" hits="0" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="9" hits="0" branch="False" />
+            <line number="10" hits="0" branch="False" />
+            <line number="11" hits="0" branch="False" />
+            <line number="12" hits="0" branch="False" />
+          </lines>
+        </class>
+        <class name="AuHub.Shared.Converters.MoneyJsonConverter" filename="Shared\AuHub.Shared\Converters\MoneyJsonConverter.cs" line-rate="0" branch-rate="0" complexity="3">
+          <methods>
+            <method name="Read" signature="(System.Text.Json.Utf8JsonReader&amp;,System.Type,System.Text.Json.JsonSerializerOptions)" line-rate="0" branch-rate="0" complexity="2">
+              <lines>
+                <line number="10" hits="0" branch="False" />
+                <line number="11" hits="0" branch="True" condition-coverage="0% (0/2)">
+                  <conditions>
+                    <condition number="12" type="jump" coverage="0%" />
+                  </conditions>
+                </line>
+                <line number="12" hits="0" branch="False" />
+                <line number="13" hits="0" branch="False" />
+                <line number="14" hits="0" branch="False" />
+                <line number="16" hits="0" branch="False" />
+                <line number="17" hits="0" branch="False" />
+              </lines>
+            </method>
+            <method name="Write" signature="(System.Text.Json.Utf8JsonWriter,AuHub.Shared.ValueObjects.Money,System.Text.Json.JsonSerializerOptions)" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="20" hits="0" branch="False" />
+                <line number="21" hits="0" branch="False" />
+                <line number="22" hits="0" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="10" hits="0" branch="False" />
+            <line number="11" hits="0" branch="True" condition-coverage="0% (0/2)">
+              <conditions>
+                <condition number="12" type="jump" coverage="0%" />
+              </conditions>
+            </line>
+            <line number="12" hits="0" branch="False" />
+            <line number="13" hits="0" branch="False" />
+            <line number="14" hits="0" branch="False" />
+            <line number="16" hits="0" branch="False" />
+            <line number="17" hits="0" branch="False" />
+            <line number="20" hits="0" branch="False" />
+            <line number="21" hits="0" branch="False" />
+            <line number="22" hits="0" branch="False" />
+          </lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>

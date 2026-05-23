@@ -1,3 +1,5 @@
+using AuHub.Shared.ValueObjects;
+
 namespace Auctions.Domain.Entities;
 
 public class Bid
@@ -5,8 +7,9 @@ public class Bid
     public Guid Id { get; private set; }
     public Guid LotId { get; private set; }
     public Guid BidderId { get; private set; }
-    public decimal Amount { get; private set; }
+    public Money Amount { get; private set; } = Money.Zero;
     public DateTime PlacedAt { get; private set; }
+    public Guid? IdempotencyKey { get; private set; }
 
     // Navigation
     public Lot Lot { get; private set; } = null!;
@@ -15,7 +18,7 @@ public class Bid
     private Bid() { }
 
     // Фабричный метод создания
-    public static Bid Create(Guid lotId, Guid bidderId, decimal amount)
+    public static Bid Create(Guid lotId, Guid bidderId, Money amount, Guid? idempotencyKey = null)
     {
         return new Bid
         {
@@ -23,7 +26,8 @@ public class Bid
             LotId = lotId,
             BidderId = bidderId,
             Amount = amount,
-            PlacedAt = DateTime.UtcNow
+            PlacedAt = DateTime.UtcNow,
+            IdempotencyKey = idempotencyKey
         };
     }
 }

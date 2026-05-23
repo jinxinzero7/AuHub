@@ -15,7 +15,7 @@ public class PlaceBidCommandValidator : AbstractValidator<PlaceBidCommand>
             .WithMessage("Bidder ID is required");
 
         RuleFor(x => x.Amount)
-            .GreaterThan(0)
+            .Must(m => m.Amount > 0)
             .WithMessage("Bid amount must be greater than 0");
     }
 }

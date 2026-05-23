@@ -9,6 +9,12 @@
 
   <ItemGroup>
     <PackageReference Include="Yarp.ReverseProxy" Version="2.2.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+    <PackageReference Include="Serilog.Enrichers.CorrelationId" Version="3.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Shared\AuHub.Shared\AuHub.Shared.csproj" />
   </ItemGroup>
 
 </Project>

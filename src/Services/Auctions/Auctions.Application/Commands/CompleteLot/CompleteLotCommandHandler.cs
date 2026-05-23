@@ -1,4 +1,5 @@
 using AuHub.Shared.Results;
+using AuHub.Shared.ValueObjects;
 using Auctions.Domain.Interfaces;
 
 namespace Auctions.Application.Commands.CompleteLot;
@@ -63,6 +64,6 @@ public record CompleteLotResponse
 {
     public bool Success { get; init; }
     public Guid LotId { get; init; }
-    public decimal FinalPrice { get; init; }
+    public Money FinalPrice { get; init; } = Money.Zero;
     public string Message { get; init; } = string.Empty;
 }

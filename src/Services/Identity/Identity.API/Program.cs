@@ -5,6 +5,7 @@ using Identity.Application.Commands.Auth.RefreshToken;
 using Identity.Infrastructure;
 using Identity.Infrastructure.Data;
 using Identity.API.Endpoints.Auth;
+using Identity.API.Middleware;
 using FastEndpoints;
 using FastEndpoints.Swagger;
 using FluentValidation;
@@ -12,8 +13,22 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using AuHub.Shared.Middleware;
+using Serilog;
+
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
+
+try
+{
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog((context, services, configuration) =>
+    configuration.ReadFrom.Configuration(context.Configuration)
+        .Enrich.WithCorrelationId()
+        .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{CorrelationId}] {Message:lj}{NewLine}{Exception}"));
 
 // Add services
 builder.Services.AddApplication();
@@ -22,6 +37,9 @@ builder.Services.AddInfrastructure(builder.Configuration);
 // FluentValidation
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterCommandValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<LoginCommandValidator>();
+
+// Health Checks
+builder.Services.AddHealthChecks();
 
 // FastEndpoints
 builder.Services.AddFastEndpoints();
@@ -45,8 +63,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-// FastEndpoints
-builder.Services.AddFastEndpoints();
 builder.Services.SwaggerDocument(o =>
 {
     o.DocumentSettings = s =>
@@ -67,6 +83,8 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure pipeline
+app.UseCorrelationId();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwaggerGen();
@@ -77,6 +95,21 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Ban check middleware (must be after auth)
+app.UseMiddleware<BanMiddleware>();
+
 app.UseFastEndpoints();
 
+app.MapHealthChecks("/health");
+
 app.Run();
+
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Identity API terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}

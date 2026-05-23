@@ -45,6 +45,15 @@ public class IdentityDbContext : DbContext
 
             entity.HasIndex(u => u.Email)
                 .IsUnique();
+
+            entity.Property(u => u.IsBanned)
+                .IsRequired()
+                .HasDefaultValue(false);
+
+            entity.Property(u => u.BannedAt);
+
+            entity.Property(u => u.BanReason)
+                .HasMaxLength(500);
         });
     }
 
@@ -66,6 +75,10 @@ public class IdentityDbContext : DbContext
             entity.Property(rt => rt.IsRevoked)
                 .IsRequired();
 
+            entity.Property(rt => rt.FamilyId);
+            entity.Property(rt => rt.ReplacedByTokenId);
+            entity.Property(rt => rt.RevokedAt);
+
             entity.HasOne(rt => rt.User)
                 .WithMany(u => u.RefreshTokens)
                 .HasForeignKey(rt => rt.UserId)
@@ -74,6 +87,7 @@ public class IdentityDbContext : DbContext
             entity.HasIndex(rt => rt.Token)
                 .IsUnique();
             entity.HasIndex(rt => rt.UserId);
+            entity.HasIndex(rt => rt.FamilyId);
         });
     }
 }

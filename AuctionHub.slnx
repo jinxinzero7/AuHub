@@ -1,10 +1,30 @@
 <Solution>
-  <Folder Name="/src/" />
-  <Folder Name="/src/Services/" />
-  <Folder Name="/src/Services/Auctions/">
-    <Project Path="src/Services/Auctions/Auctions.API/Auctions.API.csproj" />
-    <Project Path="src/Services/Auctions/Auctions.Application/Auctions.Application.csproj" />
-    <Project Path="src/Services/Auctions/Auctions.Domain/Auctions.Domain.csproj" />
-    <Project Path="src/Services/Auctions/Auctions.Infrastructure/Auctions.Infrastructure.csproj" />
-  </Folder>
+  <Project Path="src/Shared/AuHub.Shared/AuHub.Shared.csproj" />
+  <Project Path="src/Gateway/AuHub.Gateway/AuHub.Gateway.csproj" />
+  <Project Path="src/Services/Identity/Identity.API/Identity.API.csproj" />
+  <Project Path="src/Services/Identity/Identity.Application/Identity.Application.csproj" />
+  <Project Path="src/Services/Identity/Identity.Domain/Identity.Domain.csproj" />
+  <Project Path="src/Services/Identity/Identity.Infrastructure/Identity.Infrastructure.csproj" />
+  <Project Path="src/Services/Auctions/Auctions.API/Auctions.API.csproj" />
+  <Project Path="src/Services/Auctions/Auctions.Application/Auctions.Application.csproj" />
+  <Project Path="src/Services/Auctions/Auctions.Domain/Auctions.Domain.csproj" />
+  <Project Path="src/Services/Auctions/Auctions.Infrastructure/Auctions.Infrastructure.csproj" />
+  <Project Path="src/Services/Notifications/Notifications.API/Notifications.API.csproj" />
+  <Project Path="src/Services/Notifications/Notifications.Application/Notifications.Application.csproj" />
+  <Project Path="src/Services/Notifications/Notifications.Domain/Notifications.Domain.csproj" />
+  <Project Path="src/Services/Notifications/Notifications.Infrastructure/Notifications.Infrastructure.csproj" />
+  <Project Path="src/Services/Payment/Payment.API/Payment.API.csproj" />
+  <Project Path="src/Services/Payment/Payment.Application/Payment.Application.csproj" />
+  <Project Path="src/Services/Payment/Payment.Domain/Payment.Domain.csproj" />
+  <Project Path="src/Services/Payment/Payment.Infrastructure/Payment.Infrastructure.csproj" />
+  <Project Path="tests/Shared.UnitTests/Shared.UnitTests.csproj" />
+  <Project Path="tests/Auctions.UnitTests/Auctions.UnitTests.csproj" />
+  <Project Path="tests/Auctions.IntegrationTests/Auctions.IntegrationTests.csproj" />
+  <Project Path="tests/Identity.UnitTests/Identity.UnitTests.csproj" />
+  <Project Path="tests/Identity.IntegrationTests/Identity.IntegrationTests.csproj" />
+  <Project Path="tests/Notifications.UnitTests/Notifications.UnitTests.csproj" />
+  <Project Path="tests/Notifications.IntegrationTests/Notifications.IntegrationTests.csproj" />
+  <Project Path="tests/Payment.UnitTests/Payment.UnitTests.csproj" />
+  <Project Path="tests/Payment.IntegrationTests/Payment.IntegrationTests.csproj" />
+  <Project Path="tests/E2E.Tests/E2E.Tests.csproj" />
 </Solution>

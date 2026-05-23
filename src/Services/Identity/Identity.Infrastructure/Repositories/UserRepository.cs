@@ -26,6 +26,14 @@ public class UserRepository : IUserRepository
             .FirstOrDefaultAsync(u => u.Email == email.ToLowerInvariant(), cancellationToken);
     }
 
+    public async Task<List<User>> GetBannedUsersAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.Users
+            .Where(u => u.IsBanned)
+            .OrderByDescending(u => u.BannedAt)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task AddAsync(User user, CancellationToken cancellationToken = default)
     {
         await _context.Users.AddAsync(user, cancellationToken);

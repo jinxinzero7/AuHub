@@ -32,13 +32,18 @@ public class GetLotByIdQueryHandler
                 Description = lot.Description,
                 StartingPrice = lot.StartingPrice,
                 CurrentPrice = lot.CurrentPrice,
+                DurationHours = (int)lot.Duration.TotalHours,
                 StartTime = lot.StartTime,
                 EndTime = lot.EndTime,
                 SellerId = lot.SellerId,
+                WinnerId = lot.WinnerId,
                 Status = lot.Status.ToString(),
                 CreatedAt = lot.CreatedAt,
                 UpdatedAt = lot.UpdatedAt,
                 BidsCount = lot.Bids.Count,
+                TrackingNumber = lot.TrackingNumber,
+                DeliveryAddress = lot.DeliveryAddress,
+                AdminComment = lot.AdminComment,
                 Bids = lot.Bids.Select(b => new BidDto
                 {
                     Id = b.Id,

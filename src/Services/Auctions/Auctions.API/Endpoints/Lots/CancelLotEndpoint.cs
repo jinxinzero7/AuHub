@@ -16,6 +16,7 @@ public class CancelLotEndpoint : EndpointWithoutRequest<CancelLotResponse>
     public override void Configure()
     {
         Post("/api/lots/{id}/cancel");
+        Roles("User");
         Summary(s =>
         {
             s.Summary = "Cancel a lot (Owner only)";

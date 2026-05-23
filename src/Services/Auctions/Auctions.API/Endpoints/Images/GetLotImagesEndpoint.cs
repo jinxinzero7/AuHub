@@ -24,7 +24,7 @@ public class GetLotImagesEndpoint : EndpointWithoutRequest
         Summary(s =>
         {
             s.Summary = "Get images for a lot";
-            s.Description = "Retrieve all images for an auction lot with presigned URLs.";
+            s.Description = "Retrieve all images for an auction lot with pre-signed URLs.";
         });
     }
 
@@ -34,15 +34,15 @@ public class GetLotImagesEndpoint : EndpointWithoutRequest
 
         var images = await _imageRepository.GetByLotIdAsync(lotId, ct);
 
-        var host = "http://localhost:5000";
         var result = new List<object>();
         foreach (var image in images)
         {
+            var url = await _storageService.GetPresignedUrlAsync(image.ObjectName, 1440, ct);
             result.Add(new
             {
                 image.Id,
                 image.FileName,
-                Url = $"{host}/api/lots/{lotId}/images/{image.FileName}",
+                Url = url,
                 image.ContentType,
                 image.Size,
                 image.UploadedAt

@@ -16,6 +16,7 @@ public class CompleteLotEndpoint : EndpointWithoutRequest<CompleteLotResponse>
     public override void Configure()
     {
         Post("/api/lots/{id}/complete");
+        Roles("User");
         Summary(s =>
         {
             s.Summary = "Complete a lot manually (Owner only)";

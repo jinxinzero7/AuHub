@@ -1,6 +1,7 @@
 using Auctions.Domain.Interfaces;
 using Auctions.Infrastructure.BackgroundServices;
 using Auctions.Infrastructure.Data;
+using Auctions.Infrastructure.Events;
 using Auctions.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -23,8 +24,15 @@ public static class DependencyInjection
         services.AddScoped<IBidRepository, BidRepository>();
         services.AddScoped<ILotImageRepository, LotImageRepository>();
 
+        // Register Outbox
+        services.AddScoped<IOutbox, Outbox>();
+
+        // Register Domain Event Dispatcher
+        services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
+
         // Register Background Services
         services.AddHostedService<AuctionCompletionService>();
+        services.AddHostedService<OutboxProcessor>();
 
         return services;
     }

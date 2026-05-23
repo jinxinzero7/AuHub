@@ -20,12 +20,13 @@ public class CreateLotCommandHandler
     {
         try
         {
+            var duration = TimeSpan.FromHours(command.DurationHours);
+
             var lot = Lot.Create(
                 command.Title,
                 command.Description,
                 command.StartingPrice,
-                command.StartTime,
-                command.EndTime,
+                duration,
                 sellerId);
 
             await _lotRepository.AddAsync(lot, cancellationToken);

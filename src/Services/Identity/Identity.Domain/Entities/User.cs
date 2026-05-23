@@ -9,6 +9,9 @@ public class User
     public UserRole Role { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
+    public bool IsBanned { get; private set; }
+    public DateTime? BannedAt { get; private set; }
+    public string? BanReason { get; private set; }
 
     // Navigation
     private readonly List<RefreshToken> _refreshTokens = new();
@@ -27,13 +30,30 @@ public class User
             PasswordHash = passwordHash,
             Name = name,
             Role = role,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            IsBanned = false
         };
     }
 
     public void UpdatePassword(string newPasswordHash)
     {
         PasswordHash = newPasswordHash;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Ban(string reason)
+    {
+        IsBanned = true;
+        BannedAt = DateTime.UtcNow;
+        BanReason = reason;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Unban()
+    {
+        IsBanned = false;
+        BannedAt = null;
+        BanReason = null;
         UpdatedAt = DateTime.UtcNow;
     }
 }

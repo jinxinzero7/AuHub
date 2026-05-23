@@ -7,14 +7,31 @@ namespace Auctions.Infrastructure.Storage;
 public class MinioImageStorageService : IImageStorageService
 {
     private readonly IMinioClient _minioClient;
+    private readonly IMinioClient _presignClient;
     private readonly string _bucketName;
-    private readonly string _externalEndpoint;
 
-    public MinioImageStorageService(IMinioClient minioClient, string bucketName, string externalEndpoint)
+    public MinioImageStorageService(
+        IMinioClient minioClient,
+        string bucketName,
+        string externalEndpoint,
+        string accessKey,
+        string secretKey)
     {
         _minioClient = minioClient;
         _bucketName = bucketName;
-        _externalEndpoint = externalEndpoint;
+
+        if (!string.IsNullOrEmpty(externalEndpoint))
+        {
+            var uri = new Uri(externalEndpoint);
+            _presignClient = new MinioClient()
+                .WithEndpoint(uri.Host, uri.Port)
+                .WithCredentials(accessKey, secretKey)
+                .Build();
+        }
+        else
+        {
+            _presignClient = minioClient;
+        }
     }
 
     public async Task InitializeBucketAsync(CancellationToken ct = default)
@@ -49,15 +66,7 @@ public class MinioImageStorageService : IImageStorageService
             .WithObject(objectName)
             .WithExpiry(expiresMinutes * 60);
 
-        var url = await _minioClient.PresignedGetObjectAsync(args);
-
-        if (!string.IsNullOrEmpty(_externalEndpoint))
-        {
-            var uri = new Uri(url);
-            url = url.Replace(uri.GetLeftPart(UriPartial.Authority), _externalEndpoint);
-        }
-
-        return url;
+        return await _presignClient.PresignedGetObjectAsync(args);
     }
 
     public async Task<(Stream Stream, string ContentType, long Size)> GetStreamAsync(string objectName, CancellationToken ct = default)
@@ -73,7 +82,7 @@ public class MinioImageStorageService : IImageStorageService
                 .WithBucket(_bucketName)
                 .WithObject(objectName)
                 .WithCallbackStream(stream => stream.CopyTo(memoryStream)), ct);
-        
+
         memoryStream.Position = 0;
         return (memoryStream, stat.ContentType, stat.Size);
     }

@@ -39,6 +39,46 @@ services:
       timeout: 5s
       retries: 5
 
+  # Notifications Database
+  notifications-db:
+    image: postgres:16-alpine
+    container_name: auhub-notifications-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: notificationsdb
+    ports:
+      - "5434:5432"
+    volumes:
+      - notifications_data:/var/lib/postgresql/data
+    networks:
+      - auhub-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Payment Database
+  payment-db:
+    image: postgres:16-alpine
+    container_name: auhub-payment-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: paymentdb
+    ports:
+      - "5435:5432"
+    volumes:
+      - payment_data:/var/lib/postgresql/data
+    networks:
+      - auhub-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   # Identity Service
   identity-api:
     build:
@@ -75,16 +115,70 @@ services:
       - Jwt__Secret=${JWT_SECRET}
       - Jwt__Issuer=AuHub
       - Jwt__Audience=AuHub-Users
+      - ExternalUrl__BaseUrl=http://localhost:5000
+      - Notifications__BaseUrl=http://notifications-api:8080
+      - Payment__BaseUrl=http://payment-api:8080
       - MinIO__Endpoint=minio:9000
       - MinIO__ExternalEndpoint=http://localhost:9000
       - MinIO__AccessKey=${MINIO_ROOT_USER:-auhub-minio-admin}
       - MinIO__SecretKey=${MINIO_ROOT_PASSWORD:-AuHub_MinIO_2026_Secure!}
       - MinIO__BucketName=auhub-lots
       - MinIO__WithSSL=false
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__User=${RABBITMQ_USER:-auhub}
+      - RabbitMQ__Password=${RABBITMQ_PASSWORD:-AuHub_Rabbit_2026!}
     depends_on:
       auctions-db:
         condition: service_healthy
       minio:
+        condition: service_healthy
+    networks:
+      - auhub-network
+
+  # Notifications Service
+  notifications-api:
+    build:
+      context: .
+      dockerfile: Notifications.Dockerfile
+    container_name: auhub-notifications-api
+    ports:
+      - "5110:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=notifications-db;Database=notificationsdb;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+      - Jwt__Secret=${JWT_SECRET}
+      - Jwt__Issuer=AuHub
+      - Jwt__Audience=AuHub-Users
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__User=${RABBITMQ_USER:-auhub}
+      - RabbitMQ__Password=${RABBITMQ_PASSWORD:-AuHub_Rabbit_2026!}
+    depends_on:
+      notifications-db:
+        condition: service_healthy
+    networks:
+      - auhub-network
+
+  # Payment Service
+  payment-api:
+    build:
+      context: .
+      dockerfile: Payment.Dockerfile
+    container_name: auhub-payment-api
+    ports:
+      - "5111:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=payment-db;Database=paymentdb;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+      - Jwt__Secret=${JWT_SECRET}
+      - Jwt__Issuer=AuHub
+      - Jwt__Audience=AuHub-Users
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__User=${RABBITMQ_USER:-auhub}
+      - RabbitMQ__Password=${RABBITMQ_PASSWORD:-AuHub_Rabbit_2026!}
+    depends_on:
+      payment-db:
         condition: service_healthy
     networks:
       - auhub-network
@@ -103,8 +197,29 @@ services:
     depends_on:
       - identity-api
       - auctions-api
+      - payment-api
     networks:
       - auhub-network
+
+  # RabbitMQ - Message Broker
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: auhub-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-auhub}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-AuHub_Rabbit_2026!}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - auhub-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # MinIO - Object Storage for images
   minio:
@@ -150,6 +265,9 @@ services:
 volumes:
   identity_data:
   auctions_data:
+  notifications_data:
+  payment_data:
+  rabbitmq_data:
   minio_data:
 
 networks:

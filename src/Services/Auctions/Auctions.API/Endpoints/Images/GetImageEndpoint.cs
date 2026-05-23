@@ -24,7 +24,7 @@ public class GetImageEndpoint : EndpointWithoutRequest
         Summary(s =>
         {
             s.Summary = "Get lot image";
-            s.Description = "Stream a lot image from MinIO storage.";
+            s.Description = "Redirect to a pre-signed MinIO URL.";
         });
     }
 
@@ -32,7 +32,7 @@ public class GetImageEndpoint : EndpointWithoutRequest
     {
         var lotId = Route<Guid>("id");
         var fileName = Route<string?>("fileName");
-        
+
         if (string.IsNullOrEmpty(fileName))
         {
             HttpContext.Response.StatusCode = 400;
@@ -46,12 +46,7 @@ public class GetImageEndpoint : EndpointWithoutRequest
             return;
         }
 
-        var (stream, contentType, size) = await _storageService.GetStreamAsync(image.ObjectName, ct);
-        
-        HttpContext.Response.ContentType = contentType;
-        HttpContext.Response.ContentLength = size;
-        HttpContext.Response.Headers.CacheControl = "public, max-age=86400";
-        
-        await stream.CopyToAsync(HttpContext.Response.Body, ct);
+        var presignedUrl = await _storageService.GetPresignedUrlAsync(image.ObjectName, 1440, ct);
+        HttpContext.Response.Redirect(presignedUrl, permanent: false);
     }
 }

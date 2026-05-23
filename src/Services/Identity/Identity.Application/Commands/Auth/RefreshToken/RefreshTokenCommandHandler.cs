@@ -26,23 +26,42 @@ public class RefreshTokenCommandHandler
         {
             var refreshToken = await _refreshTokenRepository.GetByTokenAsync(command.RefreshToken, cancellationToken);
 
-            if (refreshToken == null || !refreshToken.IsValid())
+            if (refreshToken == null)
             {
                 return Result.Failure<RefreshTokenResponse>("Invalid or expired refresh token", 401);
             }
 
-            // Revoke старый токен (удаление из БД для ротации)
-            await _refreshTokenRepository.RevokeTokenAsync(refreshToken.Id, cancellationToken);
+            // Если токен уже отозван — это признак кражи (replay attack)
+            if (refreshToken.IsRevoked)
+            {
+                // Invalidate всю цепочку токенов с тем же FamilyId
+                if (refreshToken.FamilyId.HasValue)
+                {
+                    await _refreshTokenRepository.RevokeFamilyAsync(refreshToken.FamilyId.Value, cancellationToken);
+                }
+                return Result.Failure<RefreshTokenResponse>("Refresh token reuse detected. All tokens revoked.", 401);
+            }
+
+            if (!refreshToken.IsValid())
+            {
+                return Result.Failure<RefreshTokenResponse>("Refresh token expired", 401);
+            }
+
+            // Revoke старый токен с указанием на замену
+            var newTokenId = Guid.NewGuid();
+            refreshToken.ReplaceBy(newTokenId);
+            await _refreshTokenRepository.UpdateAsync(refreshToken, cancellationToken);
 
             // Генерация новых токенов
             var accessToken = _authService.GenerateJwtToken(refreshToken.User);
             var newRefreshTokenValue = _authService.GenerateRefreshToken();
 
-            // Создание нового refresh token
+            // Создание нового refresh token с тем же FamilyId
             var newRefreshToken = Identity.Domain.Entities.RefreshToken.Create(
                 refreshToken.UserId,
                 newRefreshTokenValue,
-                DateTime.UtcNow.AddDays(30)
+                DateTime.UtcNow.AddDays(30),
+                refreshToken.FamilyId
             );
 
             await _refreshTokenRepository.AddAsync(newRefreshToken, cancellationToken);

@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Shared\AuHub.Shared\AuHub.Shared.csproj" />
     <ProjectReference Include="..\Auctions.Application\Auctions.Application.csproj" />
     <ProjectReference Include="..\Auctions.Infrastructure\Auctions.Infrastructure.csproj" />
   </ItemGroup>
@@ -13,7 +14,10 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="MassTransit.RabbitMQ" Version="8.4.0" />
     <PackageReference Include="Minio" Version="6.0.4" />
+    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+    <PackageReference Include="Serilog.Enrichers.CorrelationId" Version="3.0.1" />
   </ItemGroup>
 
   <PropertyGroup>

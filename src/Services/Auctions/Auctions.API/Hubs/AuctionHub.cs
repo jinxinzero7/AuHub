@@ -36,4 +36,14 @@ public class AuctionHub : Hub
     {
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"lot-{lotId}");
     }
+
+    public async Task JoinUserGroup(Guid userId)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, $"user-{userId}");
+    }
+
+    public async Task LeaveUserGroup(Guid userId)
+    {
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"user-{userId}");
+    }
 }

@@ -16,10 +16,11 @@ public class PublishLotEndpoint : EndpointWithoutRequest<PublishLotResponse>
     public override void Configure()
     {
         Post("/api/lots/{id}/publish");
+        Roles("User");
         Summary(s =>
         {
             s.Summary = "Publish a lot (Owner only)";
-            s.Description = "Change lot status from Draft to Active. Only the owner can publish.";
+            s.Description = "Change lot status from Approved to Active. Only the owner can publish.";
         });
     }
 

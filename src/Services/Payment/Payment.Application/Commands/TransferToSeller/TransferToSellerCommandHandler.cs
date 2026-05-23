@@ -1,0 +1,51 @@
+using AuHub.Shared.Results;
+using Payment.Domain.Entities;
+using Payment.Domain.Enums;
+using Payment.Application.Repositories;
+
+namespace Payment.Application.Commands.TransferToSeller;
+
+public class TransferToSellerCommandHandler
+{
+    private readonly IWalletRepository _walletRepository;
+    private readonly ITransactionRepository _transactionRepository;
+
+    public TransferToSellerCommandHandler(
+        IWalletRepository walletRepository,
+        ITransactionRepository transactionRepository)
+    {
+        _walletRepository = walletRepository;
+        _transactionRepository = transactionRepository;
+    }
+
+    public async Task<Result<bool>> HandleAsync(TransferToSellerCommand command, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var wallet = await _walletRepository.GetByUserIdAsync(command.SellerId, cancellationToken);
+            if (wallet == null)
+            {
+                wallet = Wallet.Create(command.SellerId);
+                await _walletRepository.AddAsync(wallet, cancellationToken);
+            }
+
+            wallet.Deposit(command.Amount);
+
+            var transaction = Transaction.Create(
+                command.SellerId,
+                TransactionType.Transfer,
+                command.Amount,
+                $"Перевод за проданный лот {command.ReferenceId}",
+                command.ReferenceId);
+
+            await _transactionRepository.AddAsync(transaction, cancellationToken);
+            await _walletRepository.SaveChangesAsync(cancellationToken);
+
+            return Result.Success(true);
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure<bool>($"Failed to transfer to seller: {ex.Message}", 500);
+        }
+    }
+}

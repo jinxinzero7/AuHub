@@ -1,5 +1,6 @@
 using Auctions.Application.Queries.GetLots;
 using Auctions.Application.Services;
+using AuHub.Shared.ValueObjects;
 using FastEndpoints;
 
 namespace Auctions.API.Endpoints.Lots;
@@ -7,10 +8,12 @@ namespace Auctions.API.Endpoints.Lots;
 public class GetLotsEndpoint : EndpointWithoutRequest<GetLotsResponse>
 {
     private readonly GetLotsQueryHandler _handler;
+    private readonly IImageStorageService _storageService;
 
-    public GetLotsEndpoint(GetLotsQueryHandler handler)
+    public GetLotsEndpoint(GetLotsQueryHandler handler, IImageStorageService storageService)
     {
         _handler = handler;
+        _storageService = storageService;
     }
 
     public override void Configure()
@@ -29,6 +32,10 @@ public class GetLotsEndpoint : EndpointWithoutRequest<GetLotsResponse>
         var onlyActive = Query<bool>("onlyActive", isRequired: false);
         var page = Query<int>("page", isRequired: false);
         var pageSize = Query<int>("pageSize", isRequired: false);
+        var sellerId = Query<string>("sellerId", isRequired: false);
+        var winnerId = Query<string>("winnerId", isRequired: false);
+        var includeDrafts = Query<bool>("includeDrafts", isRequired: false);
+        var search = Query<string>("search", isRequired: false);
 
         if (page < 1)
             page = 1;
@@ -39,7 +46,11 @@ public class GetLotsEndpoint : EndpointWithoutRequest<GetLotsResponse>
         {
             OnlyActive = onlyActive,
             Page = page,
-            PageSize = pageSize
+            PageSize = pageSize,
+            SellerId = sellerId,
+            WinnerId = winnerId,
+            IncludeDrafts = includeDrafts,
+            Search = search
         };
 
         var result = await _handler.HandleAsync(query, ct);
@@ -56,8 +67,7 @@ public class GetLotsEndpoint : EndpointWithoutRequest<GetLotsResponse>
             if (!string.IsNullOrEmpty(l.CoverImageUrl))
             {
                 var fileName = l.CoverImageUrl.Split('/').Last();
-                var baseUrl = "http://localhost:5000";
-                coverImageUrl = $"{baseUrl}/api/lots/{l.Id}/images/{fileName}";
+                coverImageUrl = await _storageService.GetPresignedUrlAsync($"lots/{l.Id}/{fileName}", 1440, ct);
             }
 
             lotDtos.Add(new LotDto
@@ -67,11 +77,17 @@ public class GetLotsEndpoint : EndpointWithoutRequest<GetLotsResponse>
                 Description = l.Description,
                 StartingPrice = l.StartingPrice,
                 CurrentPrice = l.CurrentPrice,
+                DurationHours = l.DurationHours,
                 StartTime = l.StartTime,
                 EndTime = l.EndTime,
                 Status = l.Status,
+                SellerId = l.SellerId,
+                WinnerId = l.WinnerId,
                 BidsCount = l.BidsCount,
-                CoverImageUrl = coverImageUrl
+                CoverImageUrl = coverImageUrl,
+                TrackingNumber = l.TrackingNumber,
+                DeliveryAddress = l.DeliveryAddress,
+                AdminComment = l.AdminComment
             });
         }
 
@@ -103,11 +119,17 @@ public record LotDto
     public Guid Id { get; init; }
     public string Title { get; init; } = string.Empty;
     public string Description { get; init; } = string.Empty;
-    public decimal StartingPrice { get; init; }
-    public decimal CurrentPrice { get; init; }
-    public DateTime StartTime { get; init; }
-    public DateTime EndTime { get; init; }
+    public Money StartingPrice { get; init; } = Money.Zero;
+    public Money CurrentPrice { get; init; } = Money.Zero;
+    public int DurationHours { get; init; }
+    public DateTime? StartTime { get; init; }
+    public DateTime? EndTime { get; init; }
     public string Status { get; init; } = string.Empty;
+    public Guid SellerId { get; init; }
+    public Guid? WinnerId { get; init; }
     public int BidsCount { get; init; }
     public string? CoverImageUrl { get; init; }
+    public string? TrackingNumber { get; init; }
+    public string? DeliveryAddress { get; init; }
+    public string? AdminComment { get; init; }
 }

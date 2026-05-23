@@ -18,11 +18,33 @@ public class GetLotsQueryHandler
     {
         try
         {
-            var lots = query.OnlyActive
-                ? await _lotRepository.GetActiveLotsAsync(cancellationToken)
-                : await _lotRepository.GetAllAsync(cancellationToken);
+            List<Auctions.Domain.Entities.Lot> lots;
 
-            // Применяем пагинацию
+            if (!string.IsNullOrEmpty(query.SellerId))
+            {
+                var sellerId = Guid.Parse(query.SellerId);
+                lots = await _lotRepository.GetBySellerIdAsync(sellerId, query.IncludeDrafts, cancellationToken);
+            }
+            else if (!string.IsNullOrEmpty(query.WinnerId))
+            {
+                var winnerId = Guid.Parse(query.WinnerId);
+                lots = await _lotRepository.GetByWinnerIdAsync(winnerId, cancellationToken);
+            }
+            else if (query.OnlyActive)
+            {
+                lots = await _lotRepository.GetActiveLotsAsync(query.Search, cancellationToken);
+            }
+            else
+            {
+                lots = await _lotRepository.GetPublicLotsAsync(query.Search, cancellationToken);
+            }
+
+            if (!string.IsNullOrWhiteSpace(query.Search) && (!string.IsNullOrEmpty(query.SellerId) || !string.IsNullOrEmpty(query.WinnerId)))
+            {
+                var term = query.Search.ToLower();
+                lots = lots.Where(l => l.Title.ToLower().Contains(term) || l.Description.ToLower().Contains(term)).ToList();
+            }
+
             var totalCount = lots.Count;
             var paginatedLots = lots
                 .Skip((query.Page - 1) * query.PageSize)
@@ -34,11 +56,17 @@ public class GetLotsQueryHandler
                     Description = lot.Description,
                     StartingPrice = lot.StartingPrice,
                     CurrentPrice = lot.CurrentPrice,
+                    DurationHours = (int)lot.Duration.TotalHours,
                     StartTime = lot.StartTime,
                     EndTime = lot.EndTime,
                     Status = lot.Status.ToString(),
+                    SellerId = lot.SellerId,
+                    WinnerId = lot.WinnerId,
                     BidsCount = lot.Bids.Count,
-                    CoverImageUrl = lot.Images.FirstOrDefault()?.FileName
+                    CoverImageUrl = lot.Images.FirstOrDefault()?.FileName,
+                    TrackingNumber = lot.TrackingNumber,
+                    DeliveryAddress = lot.DeliveryAddress,
+                    AdminComment = lot.AdminComment
                 })
                 .ToList();
 

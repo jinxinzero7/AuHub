@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="utf-8"?>
+<coverage line-rate="0.7169" branch-rate="0.5" version="1.9" timestamp="1779543762" lines-covered="38" lines-valid="53" branches-covered="3" branches-valid="6">
+  <sources>
+    <source>C:\Users\niko\Desktop\workSpace\projects\auhub\AuHub\src\Shared\AuHub.Shared\</source>
+  </sources>
+  <packages>
+    <package name="AuHub.Shared" line-rate="0.7169" branch-rate="0.5" complexity="29">
+      <classes>
+        <class name="AuHub.Shared.ValueObjects.Money" filename="ValueObjects\Money.cs" line-rate="1" branch-rate="0.75" complexity="16">
+          <methods>
+            <method name="FromDecimal" signature="(System.Decimal,System.String)" line-rate="1" branch-rate="1" complexity="2">
+              <lines>
+                <line number="19" hits="48" branch="False" />
+                <line number="20" hits="48" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="14" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="21" hits="1" branch="False" />
+                <line number="22" hits="47" branch="False" />
+                <line number="23" hits="47" branch="False" />
+              </lines>
+            </method>
+            <method name="get_IsZero" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="27" hits="1" branch="False" />
+              </lines>
+            </method>
+            <method name="CompareTo" signature="(AuHub.Shared.ValueObjects.Money)" line-rate="1" branch-rate="0.5" complexity="2">
+              <lines>
+                <line number="29" hits="3" branch="True" condition-coverage="50% (1/2)">
+                  <conditions>
+                    <condition number="10" type="jump" coverage="50%" />
+                  </conditions>
+                </line>
+              </lines>
+            </method>
+            <method name="op_Addition" signature="(AuHub.Shared.ValueObjects.Money,AuHub.Shared.ValueObjects.Money)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="31" hits="1" branch="False" />
+              </lines>
+            </method>
+            <method name="op_Subtraction" signature="(AuHub.Shared.ValueObjects.Money,AuHub.Shared.ValueObjects.Money)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="32" hits="1" branch="False" />
+              </lines>
+            </method>
+            <method name="op_Multiply" signature="(AuHub.Shared.ValueObjects.Money,System.Decimal)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="33" hits="1" branch="False" />
+              </lines>
+            </method>
+            <method name="op_Multiply" signature="(System.Decimal,AuHub.Shared.ValueObjects.Money)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="34" hits="1" branch="False" />
+              </lines>
+            </method>
+            <method name="op_GreaterThan" signature="(AuHub.Shared.ValueObjects.Money,AuHub.Shared.ValueObjects.Money)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="35" hits="3" branch="False" />
+              </lines>
+            </method>
+            <method name="op_LessThan" signature="(AuHub.Shared.ValueObjects.Money,AuHub.Shared.ValueObjects.Money)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="36" hits="3" branch="False" />
+              </lines>
+            </method>
+            <method name="op_GreaterThanOrEqual" signature="(AuHub.Shared.ValueObjects.Money,AuHub.Shared.ValueObjects.Money)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="37" hits="3" branch="False" />
+              </lines>
+            </method>
+            <method name="op_LessThanOrEqual" signature="(AuHub.Shared.ValueObjects.Money,AuHub.Shared.ValueObjects.Money)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="38" hits="3" branch="False" />
+              </lines>
+            </method>
+            <method name="ToString" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="40" hits="1" branch="False" />
+              </lines>
+            </method>
+            <method name=".ctor" signature="(System.Decimal,System.String)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="12" hits="52" branch="False" />
+                <line number="13" hits="52" branch="False" />
+                <line number="14" hits="52" branch="False" />
+                <line number="15" hits="52" branch="False" />
+                <line number="16" hits="52" branch="False" />
+              </lines>
+            </method>
+            <method name=".cctor" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="25" hits="1" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="19" hits="48" branch="False" />
+            <line number="20" hits="48" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="14" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="21" hits="1" branch="False" />
+            <line number="22" hits="47" branch="False" />
+            <line number="23" hits="47" branch="False" />
+            <line number="27" hits="1" branch="False" />
+            <line number="29" hits="3" branch="True" condition-coverage="50% (1/2)">
+              <conditions>
+                <condition number="10" type="jump" coverage="50%" />
+              </conditions>
+            </line>
+            <line number="31" hits="1" branch="False" />
+            <line number="32" hits="1" branch="False" />
+            <line number="33" hits="1" branch="False" />
+            <line number="34" hits="1" branch="False" />
+            <line number="35" hits="3" branch="False" />
+            <line number="36" hits="3" branch="False" />
+            <line number="37" hits="3" branch="False" />
+            <line number="38" hits="3" branch="False" />
+            <line number="40" hits="1" branch="False" />
+            <line number="12" hits="52" branch="False" />
+            <line number="13" hits="52" branch="False" />
+            <line number="14" hits="52" branch="False" />
+            <line number="15" hits="52" branch="False" />
+            <line number="16" hits="52" branch="False" />
+            <line number="25" hits="1" branch="False" />
+          </lines>
+        </class>
+        <class name="AuHub.Shared.Results.Result" filename="Results\Result.cs" line-rate="1" branch-rate="1" complexity="6">
+          <methods>
+            <method name="get_IsFailure" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="6" hits="4" branch="False" />
+              </lines>
+            </method>
+            <method name="Success" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="17" hits="2" branch="False" />
+              </lines>
+            </method>
+            <method name="Failure" signature="(System.String,System.Int32)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="18" hits="3" branch="False" />
+              </lines>
+            </method>
+            <method name="Success" signature="(T)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="20" hits="1" branch="False" />
+              </lines>
+            </method>
+            <method name="Failure" signature="(System.String,System.Int32)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="21" hits="1" branch="False" />
+              </lines>
+            </method>
+            <method name=".ctor" signature="(System.Boolean,System.String,System.Int32)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="10" hits="7" branch="False" />
+                <line number="11" hits="7" branch="False" />
+                <line number="12" hits="7" branch="False" />
+                <line number="13" hits="7" branch="False" />
+                <line number="14" hits="7" branch="False" />
+                <line number="15" hits="7" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="6" hits="4" branch="False" />
+            <line number="17" hits="2" branch="False" />
+            <line number="18" hits="3" branch="False" />
+            <line number="20" hits="1" branch="False" />
+            <line number="21" hits="1" branch="False" />
+            <line number="10" hits="7" branch="False" />
+            <line number="11" hits="7" branch="False" />
+            <line number="12" hits="7" branch="False" />
+            <line number="13" hits="7" branch="False" />
+            <line number="14" hits="7" branch="False" />
+            <line number="15" hits="7" branch="False" />
+          </lines>
+        </class>
+        <class name="AuHub.Shared.Results.Result`1" filename="Results\Result.cs" line-rate="1" branch-rate="1" complexity="1">
+          <methods>
+            <method name=".ctor" signature="(T,System.Boolean,System.String,System.Int32)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="29" hits="2" branch="False" />
+                <line number="30" hits="2" branch="False" />
+                <line number="31" hits="2" branch="False" />
+                <line number="32" hits="2" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="29" hits="2" branch="False" />
+            <line number="30" hits="2" branch="False" />
+            <line number="31" hits="2" branch="False" />
+            <line number="32" hits="2" branch="False" />
+          </lines>
+        </class>
+        <class name="AuHub.Shared.Middleware.CorrelationIdMiddleware" filename="Middleware\CorrelationIdMiddleware.cs" line-rate="1" branch-rate="1" complexity="1">
+          <methods>
+            <method name=".ctor" signature="(Microsoft.AspNetCore.Http.RequestDelegate)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="11" hits="12" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="11" hits="12" branch="False" />
+          </lines>
+        </class>
+        <class name="AuHub.Shared.Middleware.CorrelationIdMiddlewareExtensions" filename="Middleware\CorrelationIdMiddleware.cs" line-rate="0" branch-rate="1" complexity="1">
+          <methods>
+            <method name="UseCorrelationId" signature="(Microsoft.AspNetCore.Builder.IApplicationBuilder)" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="34" hits="0" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="34" hits="0" branch="False" />
+          </lines>
+        </class>
+        <class name="AuHub.Shared.Converters.MoneyConverter" filename="Converters\MoneyConverter.cs" line-rate="0" branch-rate="1" complexity="1">
+          <methods>
+            <method name=".ctor" signature="()" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="9" hits="0" branch="False" />
+                <line number="10" hits="0" branch="False" />
+                <line number="11" hits="0" branch="False" />
+                <line number="12" hits="0" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="9" hits="0" branch="False" />
+            <line number="10" hits="0" branch="False" />
+            <line number="11" hits="0" branch="False" />
+            <line number="12" hits="0" branch="False" />
+          </lines>
+        </class>
+        <class name="AuHub.Shared.Converters.MoneyJsonConverter" filename="Converters\MoneyJsonConverter.cs" line-rate="0" branch-rate="0" complexity="3">
+          <methods>
+            <method name="Read" signature="(System.Text.Json.Utf8JsonReader&amp;,System.Type,System.Text.Json.JsonSerializerOptions)" line-rate="0" branch-rate="0" complexity="2">
+              <lines>
+                <line number="10" hits="0" branch="False" />
+                <line number="11" hits="0" branch="True" condition-coverage="0% (0/2)">
+                  <conditions>
+                    <condition number="12" type="jump" coverage="0%" />
+                  </conditions>
+                </line>
+                <line number="12" hits="0" branch="False" />
+                <line number="13" hits="0" branch="False" />
+                <line number="14" hits="0" branch="False" />
+                <line number="16" hits="0" branch="False" />
+                <line number="17" hits="0" branch="False" />
+              </lines>
+            </method>
+            <method name="Write" signature="(System.Text.Json.Utf8JsonWriter,AuHub.Shared.ValueObjects.Money,System.Text.Json.JsonSerializerOptions)" line-rate="0" branch-rate="1" complexity="1">
+              <lines>
+                <line number="20" hits="0" branch="False" />
+                <line number="21" hits="0" branch="False" />
+                <line number="22" hits="0" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="10" hits="0" branch="False" />
+            <line number="11" hits="0" branch="True" condition-coverage="0% (0/2)">
+              <conditions>
+                <condition number="12" type="jump" coverage="0%" />
+              </conditions>
+            </line>
+            <line number="12" hits="0" branch="False" />
+            <line number="13" hits="0" branch="False" />
+            <line number="14" hits="0" branch="False" />
+            <line number="16" hits="0" branch="False" />
+            <line number="17" hits="0" branch="False" />
+            <line number="20" hits="0" branch="False" />
+            <line number="21" hits="0" branch="False" />
+            <line number="22" hits="0" branch="False" />
+          </lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>

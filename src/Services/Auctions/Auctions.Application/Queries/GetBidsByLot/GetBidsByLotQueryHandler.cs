@@ -1,4 +1,5 @@
 using AuHub.Shared.Results;
+using AuHub.Shared.ValueObjects;
 using Auctions.Domain.Interfaces;
 
 namespace Auctions.Application.Queries.GetBidsByLot;
@@ -41,6 +42,6 @@ public record BidResponse
 {
     public Guid Id { get; init; }
     public Guid BidderId { get; init; }
-    public decimal Amount { get; init; }
+    public Money Amount { get; init; } = Money.Zero;
     public DateTime PlacedAt { get; init; }
 }

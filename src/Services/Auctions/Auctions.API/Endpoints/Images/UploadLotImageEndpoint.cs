@@ -2,6 +2,7 @@ using FastEndpoints;
 using Auctions.Domain.Interfaces;
 using Auctions.Application.Services;
 using Auctions.Domain.Entities;
+using System.Security.Claims;
 
 namespace Auctions.API.Endpoints.Images;
 
@@ -24,12 +25,12 @@ public class UploadLotImageEndpoint : EndpointWithoutRequest
     public override void Configure()
     {
         Post("/api/lots/{id}/images");
-        Roles("Admin");
+        Roles("User");
         AllowFileUploads();
         Summary(s =>
         {
             s.Summary = "Upload image for a lot";
-            s.Description = "Upload one or more images for an auction lot. Admin only.";
+            s.Description = "Upload one or more images for an auction lot. Owner only.";
         });
     }
 
@@ -37,10 +38,23 @@ public class UploadLotImageEndpoint : EndpointWithoutRequest
     {
         var lotId = Route<Guid>("id");
 
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            ThrowError("Invalid user ID in token", 401);
+            return;
+        }
+
         var lot = await _lotRepository.GetByIdAsync(lotId, ct);
         if (lot == null)
         {
             ThrowError("Lot not found", 404);
+            return;
+        }
+
+        if (lot.SellerId != userId)
+        {
+            ThrowError("Only the lot owner can upload images", 403);
             return;
         }
 
