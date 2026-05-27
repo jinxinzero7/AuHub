@@ -40,11 +40,9 @@ public class LoginCommandHandler
                 return Result.Failure<LoginResponse>("Invalid email or password", 401);
             }
 
-            // Генерация токенов
             var accessToken = _authService.GenerateJwtToken(user);
             var refreshTokenValue = _authService.GenerateRefreshToken();
 
-            // Создание refresh token
             var refreshToken = Identity.Domain.Entities.RefreshToken.Create(
                 user.Id,
                 refreshTokenValue,

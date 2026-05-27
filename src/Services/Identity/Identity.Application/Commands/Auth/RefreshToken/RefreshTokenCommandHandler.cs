@@ -47,16 +47,13 @@ public class RefreshTokenCommandHandler
                 return Result.Failure<RefreshTokenResponse>("Refresh token expired", 401);
             }
 
-            // Revoke старый токен с указанием на замену
             var newTokenId = Guid.NewGuid();
             refreshToken.ReplaceBy(newTokenId);
             await _refreshTokenRepository.UpdateAsync(refreshToken, cancellationToken);
 
-            // Генерация новых токенов
             var accessToken = _authService.GenerateJwtToken(refreshToken.User);
             var newRefreshTokenValue = _authService.GenerateRefreshToken();
 
-            // Создание нового refresh token с тем же FamilyId
             var newRefreshToken = Identity.Domain.Entities.RefreshToken.Create(
                 refreshToken.UserId,
                 newRefreshTokenValue,

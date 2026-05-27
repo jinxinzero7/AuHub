@@ -13,14 +13,11 @@ public class User
     public DateTime? BannedAt { get; private set; }
     public string? BanReason { get; private set; }
 
-    // Navigation
     private readonly List<RefreshToken> _refreshTokens = new();
     public IReadOnlyCollection<RefreshToken> RefreshTokens => _refreshTokens.AsReadOnly();
 
-    // Приватный конструктор для EF Core
     private User() { }
 
-    // Фабричный метод создания
     public static User Create(string email, string passwordHash, string name, UserRole role)
     {
         return new User

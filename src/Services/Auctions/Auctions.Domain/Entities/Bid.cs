@@ -11,13 +11,10 @@ public class Bid
     public DateTime PlacedAt { get; private set; }
     public Guid? IdempotencyKey { get; private set; }
 
-    // Navigation
     public Lot Lot { get; private set; } = null!;
 
-    // Приватный конструктор для EF Core
     private Bid() { }
 
-    // Фабричный метод создания
     public static Bid Create(Guid lotId, Guid bidderId, Money amount, Guid? idempotencyKey = null)
     {
         return new Bid

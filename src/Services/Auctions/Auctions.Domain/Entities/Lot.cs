@@ -11,7 +11,6 @@ public class Lot
     public Money StartingPrice { get; private set; } = Money.Zero;
     public Money CurrentPrice { get; private set; } = Money.Zero;
 
-    // Duration-based timing
     public TimeSpan Duration { get; private set; }
     public DateTime? StartTime { get; private set; }
     public DateTime? EndTime { get; private set; }
@@ -22,28 +21,22 @@ public class Lot
     public DateTime? UpdatedAt { get; private set; }
     public Guid? WinnerId { get; private set; }
 
-    // Moderation
     public string? AdminComment { get; private set; }
 
-    // Delivery
     public string? TrackingNumber { get; private set; }
     public string? DeliveryAddress { get; private set; }
     public string? DisputeReason { get; private set; }
 
-    // Optimistic concurrency
     public byte[] RowVersion { get; private set; } = Array.Empty<byte>();
 
-    // Soft delete
     public bool IsDeleted { get; private set; }
     public DateTime? DeletedAt { get; private set; }
     public Guid? DeletedBy { get; private set; }
 
-    // Domain events
     private readonly List<IDomainEvent> _domainEvents = new();
     public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
     public void ClearDomainEvents() => _domainEvents.Clear();
 
-    // Navigation
     private readonly List<Bid> _bids = new();
     public IReadOnlyCollection<Bid> Bids => _bids.AsReadOnly();
 
@@ -53,10 +46,8 @@ public class Lot
     public string? CoverImageUrl => _images.FirstOrDefault()?.ObjectName;
     public int ImagesCount => _images.Count;
 
-    // Приватный конструктор для EF Core
     private Lot() { }
 
-    // Фабричный метод создания
     public static Lot Create(
         string title,
         string description,
@@ -77,8 +68,6 @@ public class Lot
             CreatedAt = DateTime.UtcNow
         };
     }
-
-    // Domain методы
 
     public void Approve()
     {

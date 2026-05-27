@@ -9,18 +9,14 @@ public class RefreshToken
     public DateTime CreatedAt { get; private set; }
     public bool IsRevoked { get; private set; }
 
-    // Rotation fields
     public Guid? FamilyId { get; private set; }
     public Guid? ReplacedByTokenId { get; private set; }
     public DateTime? RevokedAt { get; private set; }
 
-    // Navigation
     public User User { get; private set; } = null!;
 
-    // Приватный конструктор для EF Core
     private RefreshToken() { }
 
-    // Фабричный метод создания
     public static RefreshToken Create(Guid userId, string token, DateTime expiresAt, Guid? familyId = null)
     {
         return new RefreshToken

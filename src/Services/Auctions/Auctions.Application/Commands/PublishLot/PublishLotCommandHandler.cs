@@ -26,16 +26,13 @@ public class PublishLotCommandHandler
                 return Result.Failure<PublishLotResponse>("Lot not found", 404);
             }
 
-            // Проверка владельца
             if (lot.SellerId != userId)
             {
                 return Result.Failure<PublishLotResponse>("You are not the owner of this lot", 403);
             }
 
-            // Вызываем domain метод Publish
             lot.Publish();
 
-            // UpdateAsync не нужен - EF Core автоматически отслеживает изменения
             await _lotRepository.SaveChangesAsync(cancellationToken);
 
             var response = new PublishLotResponse

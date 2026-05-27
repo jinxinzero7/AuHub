@@ -27,16 +27,13 @@ public class CompleteLotCommandHandler
                 return Result.Failure<CompleteLotResponse>("Lot not found", 404);
             }
 
-            // Проверка владельца
             if (lot.SellerId != userId)
             {
                 return Result.Failure<CompleteLotResponse>("You are not the owner of this lot", 403);
             }
 
-            // Вызываем domain метод Complete
             lot.Complete();
 
-            // UpdateAsync не нужен - EF Core автоматически отслеживает изменения
             await _lotRepository.SaveChangesAsync(cancellationToken);
 
             var response = new CompleteLotResponse

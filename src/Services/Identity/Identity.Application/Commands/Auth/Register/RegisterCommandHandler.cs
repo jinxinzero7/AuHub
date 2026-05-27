@@ -28,27 +28,22 @@ public class RegisterCommandHandler
     {
         try
         {
-            // Проверка существования пользователя
             var existingUser = await _userRepository.GetByEmailAsync(command.Email, cancellationToken);
             if (existingUser != null)
             {
                 return Result.Failure<RegisterResponse>("User with this email already exists", 400);
             }
 
-            // Хеширование пароля
             var passwordHash = _authService.HashPassword(command.Password);
 
-            // Создание пользователя
             var user = User.Create(command.Email, passwordHash, command.Name, command.Role);
 
             await _userRepository.AddAsync(user, cancellationToken);
             await _userRepository.SaveChangesAsync(cancellationToken);
 
-            // Генерация токенов
             var accessToken = _authService.GenerateJwtToken(user);
             var refreshTokenValue = _authService.GenerateRefreshToken();
 
-            // Создание refresh token
             var refreshToken = Identity.Domain.Entities.RefreshToken.Create(
                 user.Id,
                 refreshTokenValue,

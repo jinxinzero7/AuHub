@@ -26,16 +26,13 @@ public class CancelLotCommandHandler
                 return Result.Failure<CancelLotResponse>("Lot not found", 404);
             }
 
-            // Проверка владельца
             if (lot.SellerId != userId)
             {
                 return Result.Failure<CancelLotResponse>("You are not the owner of this lot", 403);
             }
 
-            // Вызываем domain метод Cancel
             lot.Cancel();
 
-            // UpdateAsync не нужен - EF Core автоматически отслеживает изменения
             await _lotRepository.SaveChangesAsync(cancellationToken);
 
             var response = new CancelLotResponse
