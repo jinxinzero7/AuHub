@@ -14,7 +14,14 @@ public class GetUnreadCountQueryHandler
 
     public async Task<Result<int>> HandleAsync(GetUnreadCountQuery query, CancellationToken ct = default)
     {
-        var count = await _repository.CountByUserIdAsync(query.UserId, onlyUnread: true, ct);
-        return Result.Success(count);
+        try
+        {
+            var count = await _repository.CountByUserIdAsync(query.UserId, onlyUnread: true, ct);
+            return Result.Success(count);
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure<int>($"Failed to get unread count: {ex.Message}", 500);
+        }
     }
 }

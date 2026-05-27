@@ -14,28 +14,35 @@ public class GetUserNotificationsQueryHandler
 
     public async Task<Result<GetUserNotificationsResponse>> HandleAsync(GetUserNotificationsQuery query, CancellationToken ct = default)
     {
-        var notifications = await _repository.GetByUserIdAsync(query.UserId, query.Page, query.PageSize, query.OnlyUnread, ct);
-        var totalCount = await _repository.CountByUserIdAsync(query.UserId, query.OnlyUnread, ct);
-        var totalPages = (int)Math.Ceiling(totalCount / (double)query.PageSize);
-
-        var dtos = notifications.Select(n => new NotificationDto
+        try
         {
-            Id = n.Id,
-            Type = (int)n.Type,
-            Title = n.Title,
-            Message = n.Message,
-            IsRead = n.IsRead,
-            CreatedAt = n.CreatedAt
-        }).ToList();
+            var notifications = await _repository.GetByUserIdAsync(query.UserId, query.Page, query.PageSize, query.OnlyUnread, ct);
+            var totalCount = await _repository.CountByUserIdAsync(query.UserId, query.OnlyUnread, ct);
+            var totalPages = (int)Math.Ceiling(totalCount / (double)query.PageSize);
 
-        return Result.Success(new GetUserNotificationsResponse
+            var dtos = notifications.Select(n => new NotificationDto
+            {
+                Id = n.Id,
+                Type = (int)n.Type,
+                Title = n.Title,
+                Message = n.Message,
+                IsRead = n.IsRead,
+                CreatedAt = n.CreatedAt
+            }).ToList();
+
+            return Result.Success(new GetUserNotificationsResponse
+            {
+                Notifications = dtos,
+                Page = query.Page,
+                PageSize = query.PageSize,
+                TotalCount = totalCount,
+                TotalPages = totalPages
+            });
+        }
+        catch (Exception ex)
         {
-            Notifications = dtos,
-            Page = query.Page,
-            PageSize = query.PageSize,
-            TotalCount = totalCount,
-            TotalPages = totalPages
-        });
+            return Result.Failure<GetUserNotificationsResponse>($"Failed to get notifications: {ex.Message}", 500);
+        }
     }
 }
 

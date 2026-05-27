@@ -15,11 +15,18 @@ public class SendNotificationCommandHandler
 
     public async Task<Result<Guid>> HandleAsync(SendNotificationCommand command, CancellationToken ct = default)
     {
-        var notification = Notification.Create(command.UserId, command.Type, command.Title, command.Message);
+        try
+        {
+            var notification = Notification.Create(command.UserId, command.Type, command.Title, command.Message);
 
-        await _repository.AddAsync(notification, ct);
-        await _repository.SaveChangesAsync(ct);
+            await _repository.AddAsync(notification, ct);
+            await _repository.SaveChangesAsync(ct);
 
-        return Result.Success(notification.Id);
+            return Result.Success(notification.Id);
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure<Guid>($"Failed to send notification: {ex.Message}", 500);
+        }
     }
 }
