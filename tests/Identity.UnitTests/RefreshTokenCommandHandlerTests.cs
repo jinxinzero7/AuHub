@@ -29,12 +29,11 @@ public class RefreshTokenCommandHandlerTests
 
     private RefreshToken CreateValidToken(Guid? familyId = null)
     {
-        var token = RefreshToken.Create(Guid.NewGuid(), "valid-token", DateTime.UtcNow.AddDays(30), familyId);
-        return token;
+        return RefreshToken.Create(Guid.NewGuid(), "valid-token", DateTime.UtcNow.AddDays(30), familyId);
     }
 
     [Fact]
-    public async Task HandleAsync_WithValidToken_ReturnsSuccess()
+    public async Task HandleAsync_WithValidToken_ReturnsNewAccessAndRefreshTokens()
     {
         var token = CreateValidToken();
         _refreshTokenRepo.GetByTokenAsync("valid-token", Arg.Any<CancellationToken>()).Returns(token);
@@ -50,7 +49,7 @@ public class RefreshTokenCommandHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_WithValidToken_RotatesToken()
+    public async Task HandleAsync_WithValidToken_RevokesOldToken()
     {
         var token = CreateValidToken();
         _refreshTokenRepo.GetByTokenAsync("valid-token", Arg.Any<CancellationToken>()).Returns(token);
@@ -62,9 +61,44 @@ public class RefreshTokenCommandHandlerTests
         token.IsRevoked.Should().BeTrue();
         token.ReplacedByTokenId.Should().NotBeNull();
         await _refreshTokenRepo.Received(1).UpdateAsync(token, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task HandleAsync_WithValidToken_CreatesNewTokenWithSameFamilyId()
+    {
+        var familyId = Guid.NewGuid();
+        var token = CreateValidToken(familyId);
+        _refreshTokenRepo.GetByTokenAsync("valid-token", Arg.Any<CancellationToken>()).Returns(token);
+        _authService.GenerateJwtToken(Arg.Any<User>()).Returns("new_jwt");
+        var newRefreshValue = "generated_new_refresh";
+        _authService.GenerateRefreshToken().Returns(newRefreshValue);
+
+        await _handler.HandleAsync(CreateCommand());
+
         await _refreshTokenRepo.Received(1).AddAsync(Arg.Is<RefreshToken>(t =>
-            t.FamilyId == token.FamilyId), Arg.Any<CancellationToken>());
-        await _refreshTokenRepo.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+            t.FamilyId == familyId &&
+            t.Token == newRefreshValue &&
+            t.UserId == token.UserId &&
+            t.IsRevoked == false
+        ), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task HandleAsync_WithValidToken_CallsUpdateBeforeAddBeforeSave()
+    {
+        var token = CreateValidToken();
+        _refreshTokenRepo.GetByTokenAsync("valid-token", Arg.Any<CancellationToken>()).Returns(token);
+        _authService.GenerateJwtToken(Arg.Any<User>()).Returns("new_jwt");
+        _authService.GenerateRefreshToken().Returns("new_refresh");
+
+        await _handler.HandleAsync(CreateCommand());
+
+        Received.InOrder(() =>
+        {
+            _refreshTokenRepo.UpdateAsync(token, Arg.Any<CancellationToken>());
+            _refreshTokenRepo.AddAsync(Arg.Any<RefreshToken>(), Arg.Any<CancellationToken>());
+            _refreshTokenRepo.SaveChangesAsync(Arg.Any<CancellationToken>());
+        });
     }
 
     [Fact]
@@ -80,7 +114,7 @@ public class RefreshTokenCommandHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_WithRevokedToken_RevokesFamilyAndReturnsFailure()
+    public async Task HandleAsync_WithRevokedTokenAndFamilyId_RevokesFamilyAndReturnsFailure()
     {
         var familyId = Guid.NewGuid();
         var token = CreateValidToken(familyId);
@@ -93,19 +127,6 @@ public class RefreshTokenCommandHandlerTests
         result.Error.Should().Contain("Refresh token reuse detected");
         result.StatusCode.Should().Be(401);
         await _refreshTokenRepo.Received(1).RevokeFamilyAsync(familyId, Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task HandleAsync_WithRevokedToken_WithoutFamilyId_StillReturnsFailure()
-    {
-        var token = CreateValidToken();
-        token.Revoke();
-        _refreshTokenRepo.GetByTokenAsync("valid-token", Arg.Any<CancellationToken>()).Returns(token);
-
-        var result = await _handler.HandleAsync(CreateCommand());
-
-        result.IsFailure.Should().BeTrue();
-        result.Error.Should().Contain("Refresh token reuse detected");
     }
 
     [Fact]

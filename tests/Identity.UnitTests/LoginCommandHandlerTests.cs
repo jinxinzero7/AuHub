@@ -35,15 +35,15 @@ public class LoginCommandHandlerTests
 
     private User CreateTestUser()
     {
-        return User.Create("test@test.com", "hashed_password", "Test User", UserRole.User);
+        return User.Create("test@test.com", "stored_hash", "Test User", UserRole.User);
     }
 
     [Fact]
-    public async Task HandleAsync_WithValidCredentials_ReturnsSuccess()
+    public async Task HandleAsync_WithValidCredentials_ReturnsAccessAndRefreshTokens()
     {
         var user = CreateTestUser();
         _userRepo.GetByEmailAsync("test@test.com", Arg.Any<CancellationToken>()).Returns(user);
-        _authService.VerifyPassword("password123", "hashed_password").Returns(true);
+        _authService.VerifyPassword("password123", "stored_hash").Returns(true);
         _authService.GenerateJwtToken(user).Returns("jwt_token");
         _authService.GenerateRefreshToken().Returns("refresh_token");
 
@@ -53,22 +53,71 @@ public class LoginCommandHandlerTests
         result.Value.Success.Should().BeTrue();
         result.Value.AccessToken.Should().Be("jwt_token");
         result.Value.RefreshToken.Should().Be("refresh_token");
-        result.Value.User.Email.Should().Be("test@test.com");
     }
 
     [Fact]
-    public async Task HandleAsync_WithValidCredentials_CreatesRefreshToken()
+    public async Task HandleAsync_WithValidCredentials_ReturnsUserData()
     {
         var user = CreateTestUser();
         _userRepo.GetByEmailAsync("test@test.com", Arg.Any<CancellationToken>()).Returns(user);
-        _authService.VerifyPassword("password123", "hashed_password").Returns(true);
+        _authService.VerifyPassword("password123", "stored_hash").Returns(true);
         _authService.GenerateJwtToken(user).Returns("jwt_token");
+        _authService.GenerateRefreshToken().Returns("refresh_token");
+
+        var result = await _handler.HandleAsync(CreateCommand());
+
+        result.Value.User.Id.Should().Be(user.Id);
+        result.Value.User.Email.Should().Be("test@test.com");
+        result.Value.User.Name.Should().Be("Test User");
+        result.Value.User.Role.Should().Be("User");
+    }
+
+    [Fact]
+    public async Task HandleAsync_WithValidCredentials_CreatesRefreshTokenWithGeneratedValue()
+    {
+        var user = CreateTestUser();
+        _userRepo.GetByEmailAsync("test@test.com", Arg.Any<CancellationToken>()).Returns(user);
+        _authService.VerifyPassword("password123", "stored_hash").Returns(true);
+        _authService.GenerateJwtToken(Arg.Any<User>()).Returns("jwt_token");
+        var refreshTokenValue = "generated_refresh_token_value";
+        _authService.GenerateRefreshToken().Returns(refreshTokenValue);
+
+        await _handler.HandleAsync(CreateCommand());
+
+        await _refreshTokenRepo.Received(1).AddAsync(Arg.Is<RefreshToken>(rt =>
+            rt.Token == refreshTokenValue &&
+            rt.UserId == user.Id
+        ), Arg.Any<CancellationToken>());
+        await _refreshTokenRepo.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task HandleAsync_WithValidCredentials_CallsVerifyPasswordWithRawPasswordAndStoredHash()
+    {
+        var command = CreateCommand();
+        var user = CreateTestUser();
+        _userRepo.GetByEmailAsync("test@test.com", Arg.Any<CancellationToken>()).Returns(user);
+        _authService.VerifyPassword(Arg.Any<string>(), Arg.Any<string>()).Returns(true);
+        _authService.GenerateJwtToken(Arg.Any<User>()).Returns("jwt_token");
+        _authService.GenerateRefreshToken().Returns("refresh_token");
+
+        await _handler.HandleAsync(command);
+
+        _authService.Received(1).VerifyPassword(command.Password, user.PasswordHash);
+    }
+
+    [Fact]
+    public async Task HandleAsync_WithValidCredentials_CallsGenerateJwtWithUserFromRepo()
+    {
+        var user = CreateTestUser();
+        _userRepo.GetByEmailAsync("test@test.com", Arg.Any<CancellationToken>()).Returns(user);
+        _authService.VerifyPassword("password123", "stored_hash").Returns(true);
+        _authService.GenerateJwtToken(Arg.Any<User>()).Returns("jwt_token");
         _authService.GenerateRefreshToken().Returns("refresh_token");
 
         await _handler.HandleAsync(CreateCommand());
 
-        await _refreshTokenRepo.Received(1).AddAsync(Arg.Any<RefreshToken>(), Arg.Any<CancellationToken>());
-        await _refreshTokenRepo.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        _authService.Received(1).GenerateJwtToken(Arg.Is<User>(u => u.Id == user.Id));
     }
 
     [Fact]
@@ -81,6 +130,7 @@ public class LoginCommandHandlerTests
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Be("Invalid email or password");
         result.StatusCode.Should().Be(401);
+        await _refreshTokenRepo.DidNotReceive().AddAsync(Arg.Any<RefreshToken>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -88,13 +138,14 @@ public class LoginCommandHandlerTests
     {
         var user = CreateTestUser();
         _userRepo.GetByEmailAsync("test@test.com", Arg.Any<CancellationToken>()).Returns(user);
-        _authService.VerifyPassword("password123", "hashed_password").Returns(false);
+        _authService.VerifyPassword("password123", "stored_hash").Returns(false);
 
         var result = await _handler.HandleAsync(CreateCommand());
 
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Be("Invalid email or password");
         result.StatusCode.Should().Be(401);
+        await _refreshTokenRepo.DidNotReceive().AddAsync(Arg.Any<RefreshToken>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

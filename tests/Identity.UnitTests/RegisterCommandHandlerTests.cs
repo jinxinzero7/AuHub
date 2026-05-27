@@ -52,7 +52,50 @@ public class RegisterCommandHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_WithValidData_CreatesUserAndToken()
+    public async Task HandleAsync_WithValidData_CreatesUserWithHashedPassword()
+    {
+        var command = CreateCommand();
+        _userRepo.GetByEmailAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns((User?)null);
+        var hashedPassword = "bcrypt_hash_abc123";
+        _authService.HashPassword(command.Password).Returns(hashedPassword);
+        _authService.GenerateJwtToken(Arg.Any<User>()).Returns("jwt_token");
+        _authService.GenerateRefreshToken().Returns("refresh_token");
+
+        await _handler.HandleAsync(command);
+
+        await _userRepo.Received(1).AddAsync(Arg.Is<User>(u =>
+            u.Email == command.Email &&
+            u.PasswordHash == hashedPassword &&
+            u.PasswordHash != command.Password &&
+            u.Name == command.Name &&
+            u.Role == command.Role
+        ), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task HandleAsync_WithValidData_CreatesRefreshTokenWithGeneratedValue()
+    {
+        var command = CreateCommand();
+        _userRepo.GetByEmailAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns((User?)null);
+        _authService.HashPassword(Arg.Any<string>()).Returns("hashed_password");
+        _authService.GenerateJwtToken(Arg.Any<User>()).Returns("jwt_token");
+        var refreshTokenValue = "generated_refresh_token_value";
+        _authService.GenerateRefreshToken().Returns(refreshTokenValue);
+
+        User? createdUser = null;
+        await _userRepo.AddAsync(Arg.Do<User>(u => createdUser = u), Arg.Any<CancellationToken>());
+
+        await _handler.HandleAsync(command);
+
+        createdUser.Should().NotBeNull();
+        await _refreshTokenRepo.Received(1).AddAsync(Arg.Is<RefreshToken>(rt =>
+            rt.UserId == createdUser!.Id &&
+            rt.Token == refreshTokenValue
+        ), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task HandleAsync_WithValidData_CallsSaveOnBothRepos()
     {
         _userRepo.GetByEmailAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns((User?)null);
         _authService.HashPassword(Arg.Any<string>()).Returns("hashed_password");
@@ -61,23 +104,54 @@ public class RegisterCommandHandlerTests
 
         await _handler.HandleAsync(CreateCommand());
 
-        await _userRepo.Received(1).AddAsync(Arg.Is<User>(u =>
-            u.Email == "test@test.com" &&
-            u.PasswordHash == "hashed_password" &&
-            u.Name == "Test User" &&
-            u.Role == UserRole.User), Arg.Any<CancellationToken>());
-        await _refreshTokenRepo.Received(1).AddAsync(Arg.Any<RefreshToken>(), Arg.Any<CancellationToken>());
         await _userRepo.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
         await _refreshTokenRepo.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
+    public async Task HandleAsync_WithValidData_CallsHashPasswordWithRawPassword()
+    {
+        var command = CreateCommand();
+        _userRepo.GetByEmailAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns((User?)null);
+        _authService.HashPassword(Arg.Any<string>()).Returns("hashed_password");
+        _authService.GenerateJwtToken(Arg.Any<User>()).Returns("jwt_token");
+        _authService.GenerateRefreshToken().Returns("refresh_token");
+
+        await _handler.HandleAsync(command);
+
+        _authService.Received(1).HashPassword(command.Password);
+    }
+
+    [Fact]
+    public async Task HandleAsync_WithValidData_CallsGenerateJwtWithCreatedUser()
+    {
+        _userRepo.GetByEmailAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns((User?)null);
+        _authService.HashPassword(Arg.Any<string>()).Returns("hashed_password");
+        _authService.GenerateJwtToken(Arg.Any<User>()).Returns("jwt_token");
+        _authService.GenerateRefreshToken().Returns("refresh_token");
+
+        User? createdUser = null;
+        await _userRepo.AddAsync(Arg.Do<User>(u => createdUser = u), Arg.Any<CancellationToken>());
+
+        await _handler.HandleAsync(CreateCommand());
+
+        createdUser.Should().NotBeNull();
+        _authService.Received(1).GenerateJwtToken(Arg.Is<User>(u => u.Id == createdUser!.Id));
+    }
+
+    [Fact]
     public async Task HandleAsync_WithDuplicateEmail_ReturnsFailure()
     {
-        var existingUser = User.Create("test@test.com", "hash", "Existing", UserRole.User);
-        _userRepo.GetByEmailAsync("test@test.com", Arg.Any<CancellationToken>()).Returns(existingUser);
+        var existingUser = User.Create("existing@test.com", "hash", "Existing", UserRole.User);
+        _userRepo.GetByEmailAsync("existing@test.com", Arg.Any<CancellationToken>()).Returns(existingUser);
 
-        var result = await _handler.HandleAsync(CreateCommand());
+        var result = await _handler.HandleAsync(new RegisterCommand
+        {
+            Email = "existing@test.com",
+            Password = "password123",
+            Name = "Test User",
+            Role = UserRole.User
+        });
 
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Be("User with this email already exists");
