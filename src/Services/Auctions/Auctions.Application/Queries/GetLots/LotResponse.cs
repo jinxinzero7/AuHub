@@ -20,4 +20,5 @@ public record LotResponse
     public string? TrackingNumber { get; init; }
     public string? DeliveryAddress { get; init; }
     public string? AdminComment { get; init; }
+    public DateTime CreatedAt { get; init; }
 }

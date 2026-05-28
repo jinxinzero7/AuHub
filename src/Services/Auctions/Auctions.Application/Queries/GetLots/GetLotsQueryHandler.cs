@@ -70,7 +70,8 @@ public class GetLotsQueryHandler
                     CoverImageUrl = lot.CoverImageUrl,
                     TrackingNumber = lot.TrackingNumber,
                     DeliveryAddress = lot.DeliveryAddress,
-                    AdminComment = lot.AdminComment
+                    AdminComment = lot.AdminComment,
+                    CreatedAt = lot.CreatedAt
                 })
                 .ToList();
 
