@@ -34,6 +34,10 @@ public class GetLotsQueryHandler
             {
                 lots = await _lotRepository.GetActiveLotsAsync(query.Search, cancellationToken);
             }
+            else if (query.IncludeDrafts)
+            {
+                lots = await _lotRepository.GetAllAsync(cancellationToken);
+            }
             else
             {
                 lots = await _lotRepository.GetPublicLotsAsync(query.Search, cancellationToken);
@@ -63,7 +67,7 @@ public class GetLotsQueryHandler
                     SellerId = lot.SellerId,
                     WinnerId = lot.WinnerId,
                     BidsCount = lot.Bids.Count,
-                    CoverImageUrl = lot.Images.FirstOrDefault()?.FileName,
+                    CoverImageUrl = lot.CoverImageUrl,
                     TrackingNumber = lot.TrackingNumber,
                     DeliveryAddress = lot.DeliveryAddress,
                     AdminComment = lot.AdminComment

@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text.Json;
 using Auctions.Application.Services;
 using Microsoft.Extensions.Logging;
 
@@ -8,6 +9,10 @@ public class PaymentClient : IPaymentClient
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<PaymentClient> _logger;
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
 
     public PaymentClient(HttpClient httpClient, ILogger<PaymentClient> logger)
     {
@@ -22,8 +27,10 @@ public class PaymentClient : IPaymentClient
             var response = await _httpClient.GetAsync($"/api/payment/balance?userId={userId}", ct);
             if (response.IsSuccessStatusCode)
             {
-                var result = await response.Content.ReadFromJsonAsync<BalanceResult>(cancellationToken: ct);
-                return result ?? new BalanceResult(false, 0, "Empty response");
+                var dto = await response.Content.ReadFromJsonAsync<BalanceResponseDto>(JsonOptions, ct);
+                if (dto != null)
+                    return new BalanceResult(true, dto.Balance);
+                return new BalanceResult(false, 0, "Empty response");
             }
             _logger.LogWarning("Failed to get balance for user {UserId}. Status: {StatusCode}", userId, response.StatusCode);
             return new BalanceResult(false, 0, $"HTTP {response.StatusCode}");
@@ -67,7 +74,7 @@ public class PaymentClient : IPaymentClient
             var response = await _httpClient.PostAsJsonAsync(endpoint, payload, ct);
             if (response.IsSuccessStatusCode)
             {
-                var result = await response.Content.ReadFromJsonAsync<PaymentResult>(cancellationToken: ct);
+                var result = await response.Content.ReadFromJsonAsync<PaymentResult>(JsonOptions, ct);
                 return result ?? new PaymentResult(false, "Empty response");
             }
             var errorContent = await response.Content.ReadAsStringAsync(ct);
@@ -81,4 +88,6 @@ public class PaymentClient : IPaymentClient
             return new PaymentResult(false, ex.Message);
         }
     }
+
+    private record BalanceResponseDto(Guid UserId, decimal Balance, decimal FrozenBalance);
 }
