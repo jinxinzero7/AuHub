@@ -26,7 +26,7 @@ public class ApproveLotEndpoint : EndpointWithoutRequest
         Summary(s =>
         {
             s.Summary = "Approve a lot (Admin only)";
-            s.Description = "Change lot status from Draft to Approved after moderation.";
+            s.Description = "Change lot status from Draft to Active after moderation.";
         });
     }
 

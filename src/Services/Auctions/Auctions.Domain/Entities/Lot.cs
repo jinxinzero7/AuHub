@@ -74,7 +74,9 @@ public class Lot
         if (Status != LotStatus.Draft)
             throw new InvalidOperationException("Only draft lots can be approved");
 
-        Status = LotStatus.Approved;
+        Status = LotStatus.Active;
+        StartTime = DateTime.UtcNow;
+        EndTime = StartTime.Value.Add(Duration);
         UpdatedAt = DateTime.UtcNow;
     }
 

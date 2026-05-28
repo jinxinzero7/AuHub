@@ -47,7 +47,6 @@ public class PlaceBidCommandHandlerTests
     {
         var lot = Lot.Create("Test Lot", "Desc", Money.FromDecimal(1000m), TimeSpan.FromDays(3), SellerId);
         lot.Approve();
-        lot.Publish();
         return lot;
     }
 

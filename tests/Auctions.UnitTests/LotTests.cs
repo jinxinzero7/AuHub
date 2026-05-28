@@ -19,7 +19,6 @@ public class LotTests
     {
         var lot = CreateValidLot();
         lot.Approve();
-        lot.Publish();
         return lot;
     }
 
@@ -48,11 +47,13 @@ public class LotTests
     // --- Status transitions ---
 
     [Fact]
-    public void Approve_TransitionsDraftToApproved()
+    public void Approve_TransitionsDraftToActive()
     {
         var lot = CreateValidLot();
         lot.Approve();
-        lot.Status.Should().Be(LotStatus.Approved);
+        lot.Status.Should().Be(LotStatus.Active);
+        lot.StartTime.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
+        lot.EndTime.Should().Be(lot.StartTime!.Value.Add(TimeSpan.FromDays(3)));
     }
 
     [Fact]
@@ -86,7 +87,7 @@ public class LotTests
     public void Publish_TransitionsApprovedToActive()
     {
         var lot = CreateValidLot();
-        lot.Approve();
+        lot.GetType().GetProperty("Status")!.SetValue(lot, LotStatus.Approved);
         lot.Publish();
 
         lot.Status.Should().Be(LotStatus.Active);
