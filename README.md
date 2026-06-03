@@ -1,159 +1,226 @@
-# AuHub — Modern Auction Platform
+# AuHub — Online Auction Platform
 
-Платформа для онлайн-аукционов на **микросервисной архитектуре** с real-time обновлениями, загрузкой изображений и SSR-фронтендом.
+AuHub is a diploma and portfolio project: a microservices-based online auction platform with real-time bidding, image storage, wallet/payment flow, notifications, Docker deployment and an automated test suite under active stabilization.
 
-## Технологический стек
+## Status
 
-| Компонент | Технология |
-|-----------|-----------|
-| Backend | .NET 10 (LTS), FastEndpoints, CQRS, Clean Architecture |
-| Gateway | YARP (reverse proxy, rate limiting, session affinity) |
-| Auth | JWT (access + refresh), BCrypt, role-based |
-| Real-time | SignalR (auto-reconnect, bid events) |
-| Storage | MinIO (S3-compatible, image proxy) |
-| Database | PostgreSQL 16, EF Core 10 |
-| Frontend | Next.js 16.2, TypeScript, TailwindCSS 4, SignalR client |
-| Infra | Docker Compose (7 сервисов), multi-stage builds |
+Current architecture:
+- 4 backend microservices: Identity, Auctions, Notifications, Payment;
+- YARP API Gateway;
+- Next.js 16.2 frontend;
+- PostgreSQL database per service;
+- RabbitMQ + MassTransit;
+- SignalR real-time events;
+- MinIO image storage;
+- Docker Compose deployment;
+- GitHub Actions CI.
 
-## Архитектура
+Verified on 2026-05-31:
+- backend build passes, with package-version warnings to clean up;
+- backend test run contains 199 xUnit cases, currently 198 passed / 1 failed;
+- integration and E2E projects are placeholders;
+- frontend production build passes with network access for Google Fonts;
+- frontend lint currently fails and needs cleanup;
+- current CI test filter should be fixed because `Category=Unit` matches no tests.
 
+Project docs:
+- project context: `../CONTEXT.md`
+- active backlog: `../TODO.md`
+- diploma explanatory note: `docs/пояснительная-записка-auhub.docx`
+- frontend repo/folder: `../auhub-frontend`
+
+## Tech Stack
+
+| Area | Technology |
+|---|---|
+| Backend | .NET 10, ASP.NET Core, FastEndpoints |
+| Architecture | Clean Architecture, CQRS, DDD |
+| Gateway | YARP |
+| Auth | JWT, refresh token rotation, BCrypt, role-based auth |
+| Database | PostgreSQL 16, EF Core |
+| Messaging | RabbitMQ, MassTransit |
+| Real-time | SignalR |
+| Storage | MinIO |
+| Frontend | Next.js 16.2, React 19, TypeScript, TailwindCSS 4 |
+| Tests | xUnit, NSubstitute, FluentAssertions, coverlet |
+| Infra | Docker Compose, GitHub Actions |
+
+## Architecture
+
+```text
+Frontend (Next.js :3000)
+        |
+        v
+YARP Gateway (:5000)
+        |
+        +--> Identity.API (:5109)       -> identity-db (:5433)
+        +--> Auctions.API (:5108)       -> auctions-db (:5432)
+        +--> Notifications.API (:5110)  -> notifications-db (:5434)
+        +--> Payment.API (:5111)        -> payment-db (:5435)
+
+Shared infrastructure:
+- RabbitMQ (:5672, management :15672)
+- MinIO (:9000, console :9001)
 ```
-                     ┌─────────────────┐
-                     │  API Gateway    │
-                     │   (YARP :5000)  │
-                     └────────┬────────┘
-                              │
-            ┌─────────────────┼─────────────────┐
-            │                 │                 │
-    ┌───────▼────────┐ ┌─────▼──────┐  ┌───────▼────────┐
-    │ Identity.API   │ │ Auctions.API│  │  MinIO         │
-    │  :5109         │ │  :5108     │  │  :9000/9001    │
-    │ - Register     │ │ - Lots     │  │ - Images       │
-    │ - Login        │ │ - Bids     │  │ - S3 API       │
-    │ - RefreshToken │ │ - SignalR  │  │                │
-    └───────┬────────┘ └──────┬──────┘  └────────────────┘
-            │                 │
-    ┌───────▼────────┐ ┌─────▼──────┐
-    │  identity-db   │ │auctions-db │
-    │  PostgreSQL    │ │ PostgreSQL │
-    │  :5433         │ │ :5432      │
-    └────────────────┘ └────────────┘
 
-    ┌─────────────────┐
-    │  Frontend       │
-    │  Next.js :3000  │
-    └─────────────────┘
+Each service follows the same broad structure:
+
+```text
+API             FastEndpoints, auth, request/response mapping
+Application     commands, queries, handlers, service interfaces
+Domain          entities, value objects, events, business rules
+Infrastructure  EF Core, repositories, external clients
 ```
 
-## Быстрый старт
+## Services
 
-```bash
-git clone https://github.com/jinxinzero7/AuHub.git
-cd AuHub
-cp .env.example .env
+### Identity
+
+- register/login/refresh;
+- JWT generation;
+- refresh token rotation;
+- replay detection;
+- role-based access;
+- user ban state.
+
+### Auctions
+
+- lot lifecycle;
+- bids;
+- moderation/admin actions;
+- SignalR events;
+- image metadata;
+- auction completion background service;
+- optimistic concurrency;
+- idempotent bid placement;
+- outbox/domain events.
+
+### Notifications
+
+- in-app notifications;
+- unread count;
+- mark as read;
+- RabbitMQ consumers for auction events.
+
+### Payment
+
+- wallet balance;
+- frozen balance;
+- top-up;
+- reserve/release funds;
+- charge winner;
+- transfer to seller;
+- refund;
+- transaction history.
+
+## Docker Compose
+
+The compose file defines these services:
+
+- `identity-db`
+- `auctions-db`
+- `notifications-db`
+- `payment-db`
+- `identity-api`
+- `auctions-api`
+- `notifications-api`
+- `payment-api`
+- `gateway`
+- `rabbitmq`
+- `minio`
+- `frontend`
+
+Start:
+
+```powershell
 docker compose up -d --build
 ```
 
-### Доступ
+Stop:
 
-| Сервис | URL |
-|--------|-----|
+```powershell
+docker compose down
+```
+
+View logs:
+
+```powershell
+docker compose logs -f gateway
+```
+
+## Local URLs
+
+| Service | URL |
+|---|---|
 | Frontend | http://localhost:3000 |
 | Gateway | http://localhost:5000 |
-| Auctions Swagger | http://localhost:5108/swagger |
 | Identity Swagger | http://localhost:5109/swagger |
+| Auctions Swagger | http://localhost:5108/swagger |
+| Notifications Swagger | http://localhost:5110/swagger |
+| Payment Swagger | http://localhost:5111/swagger |
+| RabbitMQ UI | http://localhost:15672 |
 | MinIO Console | http://localhost:9001 |
 
-## API Endpoints
+## Tests
 
-### Identity (`/api/auth/*`)
-- `POST /register` — регистрация (Admin/User)
-- `POST /login` — вход
-- `POST /refresh` — обновление токена
+Run all tests:
 
-### Auctions (`/api/lots/*`)
-- `POST /api/lots` — создать лот [Admin]
-- `GET /api/lots` — список с пагинацией [public]
-- `GET /api/lots/{id}` — детали лота [public]
-- `POST /api/lots/{id}/publish` — опубликовать [Owner]
-- `POST /api/lots/{id}/bids` — сделать ставку [Auth]
-- `GET /api/lots/{id}/bids` — история ставок [public]
-- `POST /api/lots/{id}/images` — загрузить фото [Admin]
-- `GET /api/lots/{id}/images` — список фото [public]
-- `GET /api/lots/{id}/images/{fileName}` — прокси картинки [public]
-- `DELETE /api/lots/{id}/images/{imageId}` — удалить фото [Admin]
-
-### SignalR
-- Hub: `/hubs/auction`
-- Events: `NewBidPlaced`, `LotCompleted`
-
-## Тестирование
-
-```bash
-powershell -ExecutionPolicy Bypass -File test_comprehensive_en.ps1
+```powershell
+dotnet test AuctionHub.slnx
 ```
 
-**35 тестов, 100% pass rate** — auth, lots, bids, completion, validation.
+Test projects:
+- `Shared.UnitTests`
+- `Auctions.UnitTests`
+- `Identity.UnitTests`
+- `Notifications.UnitTests`
+- `Payment.UnitTests`
+- `*.IntegrationTests`
+- `E2E.Tests`
 
-## Структура проекта
+Current state:
+- unit tests cover core domain/application behavior, but one culture-sensitive `Money.ToString()` test currently fails;
+- integration and E2E projects exist but still need real coverage;
+- CI workflow exists, but the current `Category=Unit` filter matches no tests until test traits or CI commands are fixed.
 
-```
-AuHub/
-├── src/
-│   ├── Shared/AuHub.Shared/          # Result Pattern
-│   ├── Services/
-│   │   ├── Identity/                 # Auth микросервис
-│   │   │   ├── Domain/
-│   │   │   ├── Application/
-│   │   │   ├── Infrastructure/
-│   │   │   └── API/
-│   │   └── Auctions/                 # Auctions микросервис
-│   │       ├── Domain/
-│   │       ├── Application/
-│   │       ├── Infrastructure/
-│   │       └── API/
-│   └── Gateway/AuHub.Gateway/        # YARP
-├── docker-compose.yml
-├── Identity.Dockerfile
-├── Auctions.Dockerfile
-├── Gateway.Dockerfile
-└── AuctionHub.slnx
-```
+## Main User Flow
 
-## Frontend
+1. User registers/logs in through Identity.
+2. User creates a lot through Auctions.
+3. Images are uploaded to MinIO.
+4. Admin/moderation flow currently approves a draft lot directly into active status.
+5. Another user places a bid.
+6. Auctions checks business rules and payment balance.
+7. Payment reserves bidder funds and releases previous bidder funds.
+8. Auctions saves bid with idempotency and optimistic concurrency protection.
+9. SignalR pushes real-time update to clients.
+10. RabbitMQ/MassTransit notifies other services asynchronously.
 
-Отдельный репозиторий: https://github.com/jinxinzero7/AuHub-Frontend
+## Important Patterns
 
-- Next.js 16.2 (App Router, SSR для SEO)
-- TypeScript, TailwindCSS 4
-- SignalR real-time, JWT auth с auto-refresh
-- Dark/light mode
-- Docker multi-stage build
+- Clean Architecture
+- CQRS
+- DDD entities and domain events
+- Result Pattern
+- Refresh token rotation
+- Optimistic concurrency
+- Idempotency keys
+- Outbox Pattern
+- Soft delete
+- Background services
+- API Gateway
+- Async messaging
 
-## Roadmap
+## Development Notes
 
-### Реализовано
-- Микросервисная архитектура (Identity + Auctions + Gateway)
-- JWT auth с ролями, BCrypt
-- CQRS + Clean Architecture + DDD
-- SignalR real-time (bid events, auto-complete)
-- MinIO image storage + backend proxy
-- Next.js SSR фронтенд
-- Docker Compose (7 сервисов)
-- 35 автоматизированных тестов
+- Keep `../CONTEXT.md` updated when architecture or service behavior changes.
+- Keep `../TODO.md` short and action-oriented.
+- Keep the diploma explanatory note in `docs/` synchronized with major architecture and business-flow changes.
+- Do not reintroduce outdated numbers like 7 services or 35 tests.
+- Treat `../CONTEXT.md` as the source of truth for current gaps and verified test/build state.
+- Prefer verifying with `dotnet build`, `dotnet test`, frontend build and Docker Compose config after meaningful changes.
 
-### В планах
-- EF Core Migrations (вместо auto-migrate)
-- Health Checks для YARP
-- Rate limiting для Identity Service
-- Notifications Service (email + in-app)
-- Kubernetes deployment
-- Prometheus + Grafana мониторинг
+## Author
 
-## Автор
-
-**jinxinzero7** — дипломный проект, 2026
-
-## Лицензия
-
-MIT
+Nikolay / `jinxinzero7`  
+Diploma project, 2026.
