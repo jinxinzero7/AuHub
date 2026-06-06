@@ -3,6 +3,7 @@ using AuHub.Shared.ValueObjects;
 using Auctions.Application.Commands.PlaceBid;
 using Auctions.Application.Services;
 using Auctions.Domain.Entities;
+using Auctions.Domain.Enums;
 using Auctions.Domain.Events;
 using Auctions.Domain.Interfaces;
 using FluentAssertions;
@@ -45,7 +46,7 @@ public class PlaceBidCommandHandlerTests
 
     private Lot CreateActiveLot()
     {
-        var lot = Lot.Create("Test Lot", "Desc", Money.FromDecimal(1000m), TimeSpan.FromDays(3), SellerId);
+        var lot = Lot.Create("Test Lot", "Desc", Money.FromDecimal(1000m), TimeSpan.FromDays(3), SellerId, [DeliveryProvider.Cdek]);
         lot.SubmitForModeration();
         lot.Approve();
         return lot;

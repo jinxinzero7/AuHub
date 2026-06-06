@@ -1,4 +1,5 @@
 using Auctions.Application.Commands.CreateLot;
+using Auctions.Domain.Enums;
 using AuHub.Shared.ValueObjects;
 using FastEndpoints;
 using System.Security.Claims;
@@ -44,6 +45,25 @@ public class CreateLotEndpoint : Endpoint<CreateLotRequest, CreateLotResponse>
         if (req.DurationHours > 720)
             errors.Add("Duration must not exceed 720 hours (30 days)");
 
+        var deliveryProviders = new List<DeliveryProvider>();
+        if (req.SupportedDeliveryProviders.Count == 0)
+        {
+            errors.Add("At least one delivery provider is required");
+        }
+        else
+        {
+            foreach (var provider in req.SupportedDeliveryProviders)
+            {
+                if (!Enum.TryParse<DeliveryProvider>(provider, ignoreCase: true, out var parsedProvider))
+                {
+                    errors.Add($"Unsupported delivery provider: {provider}");
+                    continue;
+                }
+
+                deliveryProviders.Add(parsedProvider);
+            }
+        }
+
         if (errors.Any())
         {
             ThrowError(string.Join("; ", errors), 400);
@@ -62,7 +82,8 @@ public class CreateLotEndpoint : Endpoint<CreateLotRequest, CreateLotResponse>
             Title = req.Title,
             Description = req.Description,
             StartingPrice = req.StartingPrice,
-            DurationHours = req.DurationHours
+            DurationHours = req.DurationHours,
+            SupportedDeliveryProviders = deliveryProviders
         };
 
         var result = await _handler.HandleAsync(command, sellerId, ct);
@@ -70,6 +91,7 @@ public class CreateLotEndpoint : Endpoint<CreateLotRequest, CreateLotResponse>
         if (result.IsFailure)
         {
             ThrowError(result.Error, result.StatusCode);
+            return;
         }
 
         Response = new CreateLotResponse
@@ -88,6 +110,7 @@ public record CreateLotRequest
     public string Description { get; init; } = string.Empty;
     public Money StartingPrice { get; init; } = Money.Zero;
     public int DurationHours { get; init; }
+    public List<string> SupportedDeliveryProviders { get; init; } = new();
 }
 
 public record CreateLotResponse

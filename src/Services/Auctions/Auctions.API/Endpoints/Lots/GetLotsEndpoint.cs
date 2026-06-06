@@ -87,6 +87,7 @@ public class GetLotsEndpoint : EndpointWithoutRequest<GetLotsResponse>
                 CoverImageUrl = coverImageUrl,
                 TrackingNumber = l.TrackingNumber,
                 DeliveryAddress = l.DeliveryAddress,
+                SupportedDeliveryProviders = l.SupportedDeliveryProviders,
                 AdminComment = l.AdminComment
             });
         }
@@ -131,5 +132,6 @@ public record LotDto
     public string? CoverImageUrl { get; init; }
     public string? TrackingNumber { get; init; }
     public string? DeliveryAddress { get; init; }
+    public List<string> SupportedDeliveryProviders { get; init; } = new();
     public string? AdminComment { get; init; }
 }

@@ -26,6 +26,7 @@ public static class LotMappings
             CoverImageUrl = lot.CoverImageUrl,
             TrackingNumber = lot.TrackingNumber,
             DeliveryAddress = lot.DeliveryAddress,
+            SupportedDeliveryProviders = lot.SupportedDeliveryProviders.Select(provider => provider.ToString()).ToList(),
             AdminComment = lot.AdminComment,
             CreatedAt = lot.CreatedAt
         };
@@ -51,6 +52,7 @@ public static class LotMappings
             BidsCount = lot.Bids.Count,
             TrackingNumber = lot.TrackingNumber,
             DeliveryAddress = lot.DeliveryAddress,
+            SupportedDeliveryProviders = lot.SupportedDeliveryProviders.Select(provider => provider.ToString()).ToList(),
             AdminComment = lot.AdminComment,
             Bids = lot.Bids.Select(b => b.ToDetailDto()).OrderByDescending(b => b.PlacedAt).ToList()
         };

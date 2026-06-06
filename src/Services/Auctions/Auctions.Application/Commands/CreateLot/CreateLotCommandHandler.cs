@@ -27,7 +27,8 @@ public class CreateLotCommandHandler
                 command.Description,
                 command.StartingPrice,
                 duration,
-                sellerId);
+                sellerId,
+                command.SupportedDeliveryProviders);
 
             await _lotRepository.AddAsync(lot, cancellationToken);
             await _lotRepository.SaveChangesAsync(cancellationToken);

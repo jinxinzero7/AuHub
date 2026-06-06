@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Auctions.Domain.Entities;
+using Auctions.Domain.Enums;
 using AuHub.Shared.Converters;
 
 namespace Auctions.Infrastructure.Data;
@@ -64,6 +66,21 @@ public class AuctionsDbContext : DbContext
 
             entity.Property(l => l.DeliveryAddress)
                 .HasMaxLength(500);
+
+            entity.Property(l => l.SupportedDeliveryProviders)
+                .HasConversion(
+                    providers => string.Join(",", providers.Select(provider => provider.ToString())),
+                    value => value.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(provider => Enum.Parse<DeliveryProvider>(provider))
+                        .ToList())
+                .Metadata.SetValueComparer(new ValueComparer<List<DeliveryProvider>>(
+                    (left, right) => left != null && right != null && left.SequenceEqual(right),
+                    providers => providers.Aggregate(0, (hash, provider) => HashCode.Combine(hash, provider.GetHashCode())),
+                    providers => providers.ToList()));
+
+            entity.Property(l => l.SupportedDeliveryProviders)
+                .HasMaxLength(200)
+                .IsRequired();
 
             entity.Property(l => l.DisputeReason)
                 .HasMaxLength(1000);

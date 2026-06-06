@@ -1,4 +1,5 @@
 using Auctions.Domain.Events;
+using Auctions.Domain.Enums;
 using AuHub.Shared.ValueObjects;
 
 namespace Auctions.Domain.Entities;
@@ -26,6 +27,7 @@ public class Lot
     public string? TrackingNumber { get; private set; }
     public string? DeliveryAddress { get; private set; }
     public string? DisputeReason { get; private set; }
+    public List<DeliveryProvider> SupportedDeliveryProviders { get; private set; } = new();
 
     public byte[] RowVersion { get; private set; } = Array.Empty<byte>();
 
@@ -53,8 +55,11 @@ public class Lot
         string description,
         Money startingPrice,
         TimeSpan duration,
-        Guid sellerId)
+        Guid sellerId,
+        IEnumerable<DeliveryProvider> supportedDeliveryProviders)
     {
+        var providers = NormalizeDeliveryProviders(supportedDeliveryProviders);
+
         return new Lot
         {
             Id = Guid.NewGuid(),
@@ -64,6 +69,7 @@ public class Lot
             CurrentPrice = startingPrice,
             Duration = duration,
             SellerId = sellerId,
+            SupportedDeliveryProviders = providers,
             Status = LotStatus.Draft,
             CreatedAt = DateTime.UtcNow
         };
@@ -300,6 +306,19 @@ public class Lot
         _images.Remove(image);
         UpdatedAt = DateTime.UtcNow;
         return true;
+    }
+
+    private static List<DeliveryProvider> NormalizeDeliveryProviders(IEnumerable<DeliveryProvider> supportedDeliveryProviders)
+    {
+        var providers = supportedDeliveryProviders
+            .Distinct()
+            .OrderBy(provider => provider)
+            .ToList();
+
+        if (providers.Count == 0)
+            throw new InvalidOperationException("At least one delivery provider is required");
+
+        return providers;
     }
 
     public void SoftDelete(Guid? deletedBy = null)

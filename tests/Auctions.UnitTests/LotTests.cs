@@ -1,4 +1,5 @@
 using Auctions.Domain.Entities;
+using Auctions.Domain.Enums;
 using Auctions.Domain.Events;
 using AuHub.Shared.ValueObjects;
 using FluentAssertions;
@@ -12,7 +13,13 @@ public class LotTests
 
     private static Lot CreateValidLot()
     {
-        return Lot.Create("Test Lot", "Description", Money.FromDecimal(1000m), TimeSpan.FromDays(3), SellerId);
+        return Lot.Create(
+            "Test Lot",
+            "Description",
+            Money.FromDecimal(1000m),
+            TimeSpan.FromDays(3),
+            SellerId,
+            [DeliveryProvider.Cdek, DeliveryProvider.RussianPost]);
     }
 
     private static Lot CreateActiveLot()
@@ -34,7 +41,15 @@ public class LotTests
         lot.CurrentPrice.Should().Be(Money.FromDecimal(1000m));
         lot.SellerId.Should().Be(SellerId);
         lot.Status.Should().Be(LotStatus.Draft);
+        lot.SupportedDeliveryProviders.Should().BeEquivalentTo([DeliveryProvider.Cdek, DeliveryProvider.RussianPost]);
         lot.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
+    }
+
+    [Fact]
+    public void Create_WithoutDeliveryProviders_Throws()
+    {
+        var act = () => Lot.Create("Test Lot", "Description", Money.FromDecimal(1000m), TimeSpan.FromDays(3), SellerId, []);
+        act.Should().Throw<InvalidOperationException>().WithMessage("At least one delivery provider is required");
     }
 
     [Fact]

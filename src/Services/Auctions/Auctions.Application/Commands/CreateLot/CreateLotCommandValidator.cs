@@ -21,5 +21,8 @@ public class CreateLotCommandValidator : AbstractValidator<CreateLotCommand>
         RuleFor(x => x.DurationHours)
             .GreaterThan(0).WithMessage("Duration must be greater than 0")
             .LessThanOrEqualTo(720).WithMessage("Duration must not exceed 720 hours (30 days)");
+
+        RuleFor(x => x.SupportedDeliveryProviders)
+            .NotEmpty().WithMessage("At least one delivery provider is required");
     }
 }

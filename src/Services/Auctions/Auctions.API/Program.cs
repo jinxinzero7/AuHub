@@ -3,6 +3,7 @@ using Auctions.Application.Commands.CreateLot;
 using Auctions.Application.Commands.PlaceBid;
 using Auctions.Application.Options;
 using Auctions.Application.Services;
+using Auctions.Domain.Enums;
 using Auctions.Infrastructure;
 using Auctions.Infrastructure.Data;
 using Auctions.Infrastructure.Services;
@@ -183,11 +184,11 @@ if (!app.Environment.IsEnvironment("Testing"))
         var sellerId = Guid.Parse("11111111-1111-1111-1111-111111111111");
         var bidderId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
-        var lot1 = Lot.Create("Золотая монета 10 рублей 1899 года", "Редкая золотая монета Российской Империи в отличном состоянии. Сохранность XF.", Money.FromDecimal(50000), TimeSpan.FromDays(3), sellerId);
-        var lot2 = Lot.Create("Картина «Закат над Волгой», масло, холст", "Оригинальная работа современного художника. Размер 60x80 см. Оформлена в багет.", Money.FromDecimal(25000), TimeSpan.FromDays(1), sellerId);
-        var lot3 = Lot.Create("Коллекция из 50 советских значков", "Политические и памятные значки 1960-1980-х годов. Все в хорошем состоянии.", Money.FromDecimal(3000), TimeSpan.FromDays(2), sellerId);
-        var lot4 = Lot.Create("Антикварный письменный прибор, бронза", "Чернильница с подсвечником, Франция, конец XIX века. Патина, гравировка.", Money.FromDecimal(15000), TimeSpan.FromDays(5), sellerId);
-        var lot5 = Lot.Create("Серебряный набор столовых приборов (12 предметов)", "Серебро 925 пробы, СССР, 1950-е годы. В оригинальном футляре.", Money.FromDecimal(35000), TimeSpan.FromDays(7), sellerId);
+        var lot1 = Lot.Create("Золотая монета 10 рублей 1899 года", "Редкая золотая монета Российской Империи в отличном состоянии. Сохранность XF.", Money.FromDecimal(50000), TimeSpan.FromDays(3), sellerId, [DeliveryProvider.Cdek, DeliveryProvider.RussianPost]);
+        var lot2 = Lot.Create("Картина «Закат над Волгой», масло, холст", "Оригинальная работа современного художника. Размер 60x80 см. Оформлена в багет.", Money.FromDecimal(25000), TimeSpan.FromDays(1), sellerId, [DeliveryProvider.Cdek, DeliveryProvider.YandexDelivery]);
+        var lot3 = Lot.Create("Коллекция из 50 советских значков", "Политические и памятные значки 1960-1980-х годов. Все в хорошем состоянии.", Money.FromDecimal(3000), TimeSpan.FromDays(2), sellerId, [DeliveryProvider.RussianPost]);
+        var lot4 = Lot.Create("Антикварный письменный прибор, бронза", "Чернильница с подсвечником, Франция, конец XIX века. Патина, гравировка.", Money.FromDecimal(15000), TimeSpan.FromDays(5), sellerId, [DeliveryProvider.Cdek]);
+        var lot5 = Lot.Create("Серебряный набор столовых приборов (12 предметов)", "Серебро 925 пробы, СССР, 1950-е годы. В оригинальном футляре.", Money.FromDecimal(35000), TimeSpan.FromDays(7), sellerId, [DeliveryProvider.Cdek, DeliveryProvider.YandexDelivery, DeliveryProvider.RussianPost]);
 
         lot1.SubmitForModeration();
         lot1.Approve();
