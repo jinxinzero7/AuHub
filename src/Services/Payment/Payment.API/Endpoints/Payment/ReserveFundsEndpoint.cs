@@ -1,4 +1,5 @@
 using AuHub.Shared.ValueObjects;
+using AuHub.Shared.Security;
 using FastEndpoints;
 using Payment.Application.Commands.ReserveFunds;
 
@@ -16,7 +17,7 @@ public class ReserveFundsEndpoint : Endpoint<ReserveFundsRequest, PaymentOperati
     public override void Configure()
     {
         Post("/api/payment/reserve");
-        AllowAnonymous(); // Internal service-to-service call
+        AllowAnonymous();
         Summary(s =>
         {
             s.Summary = "Reserve funds for bid";
@@ -26,6 +27,12 @@ public class ReserveFundsEndpoint : Endpoint<ReserveFundsRequest, PaymentOperati
 
     public override async Task HandleAsync(ReserveFundsRequest req, CancellationToken ct)
     {
+        if (!InternalApiKey.IsValid(HttpContext))
+        {
+            ThrowError("Unauthorized: invalid or missing internal API key", 401);
+            return;
+        }
+
         if (req.Amount.Amount <= 0)
         {
             ThrowError("Amount must be greater than 0", 400);

@@ -16,7 +16,7 @@ public class GetBalanceEndpoint : EndpointWithoutRequest<BalanceResponse>
     public override void Configure()
     {
         Get("/api/payment/balance");
-        AllowAnonymous();
+        Roles("Admin", "User");
         Summary(s =>
         {
             s.Summary = "Get wallet balance";
@@ -26,25 +26,11 @@ public class GetBalanceEndpoint : EndpointWithoutRequest<BalanceResponse>
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        var userIdStr = Query<string>("userId", isRequired: false);
-        Guid userId;
-
-        if (!string.IsNullOrEmpty(userIdStr))
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
         {
-            if (!Guid.TryParse(userIdStr, out userId))
-            {
-                ThrowError("Invalid user ID", 400);
-                return;
-            }
-        }
-        else
-        {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out userId))
-            {
-                ThrowError("Invalid user ID", 401);
-                return;
-            }
+            ThrowError("Invalid user ID", 401);
+            return;
         }
 
         var query = new GetBalanceQuery { UserId = userId };
@@ -53,6 +39,7 @@ public class GetBalanceEndpoint : EndpointWithoutRequest<BalanceResponse>
         if (result.IsFailure)
         {
             ThrowError(result.Error, result.StatusCode);
+            return;
         }
 
         Response = result.Value;

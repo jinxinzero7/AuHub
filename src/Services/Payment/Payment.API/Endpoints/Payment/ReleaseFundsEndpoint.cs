@@ -1,4 +1,5 @@
 using AuHub.Shared.ValueObjects;
+using AuHub.Shared.Security;
 using FastEndpoints;
 using Payment.Application.Commands.ReleaseFunds;
 
@@ -16,7 +17,7 @@ public class ReleaseFundsEndpoint : Endpoint<ReleaseFundsRequest, PaymentOperati
     public override void Configure()
     {
         Post("/api/payment/release");
-        AllowAnonymous(); // Internal service-to-service call
+        AllowAnonymous();
         Summary(s =>
         {
             s.Summary = "Release reserved funds";
@@ -26,6 +27,12 @@ public class ReleaseFundsEndpoint : Endpoint<ReleaseFundsRequest, PaymentOperati
 
     public override async Task HandleAsync(ReleaseFundsRequest req, CancellationToken ct)
     {
+        if (!InternalApiKey.IsValid(HttpContext))
+        {
+            ThrowError("Unauthorized: invalid or missing internal API key", 401);
+            return;
+        }
+
         if (req.Amount.Amount <= 0)
         {
             ThrowError("Amount must be greater than 0", 400);

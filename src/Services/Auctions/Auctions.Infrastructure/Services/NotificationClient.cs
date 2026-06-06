@@ -2,6 +2,8 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Auctions.Application.Services;
 using Auctions.Domain.Enums;
+using AuHub.Shared.Security;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Auctions.Infrastructure.Services;
@@ -10,11 +12,13 @@ public class NotificationClient : INotificationClient
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<NotificationClient> _logger;
+    private readonly IConfiguration _configuration;
 
-    public NotificationClient(HttpClient httpClient, ILogger<NotificationClient> logger)
+    public NotificationClient(HttpClient httpClient, ILogger<NotificationClient> logger, IConfiguration configuration)
     {
         _httpClient = httpClient;
         _logger = logger;
+        _configuration = configuration;
     }
 
     public async Task SendNotificationAsync(Guid userId, NotificationType type, string title, string message, CancellationToken ct = default)
@@ -33,10 +37,8 @@ public class NotificationClient : INotificationClient
             {
                 Content = JsonContent.Create(payload)
             };
-            
-            // Add internal API key for service-to-service authentication
-            var apiKey = Environment.GetEnvironmentVariable("INTERNAL_API_KEY") ?? "AuHub-Internal-Secret-2026";
-            request.Headers.Add("X-Internal-API-Key", apiKey);
+
+            request.Headers.Add(InternalApiKey.HeaderName, InternalApiKey.GetExpectedValue(_configuration));
 
             var response = await _httpClient.SendAsync(request, ct);
 

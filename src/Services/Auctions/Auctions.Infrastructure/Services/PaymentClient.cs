@@ -1,6 +1,8 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using Auctions.Application.Services;
+using AuHub.Shared.Security;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Auctions.Infrastructure.Services;
@@ -9,22 +11,25 @@ public class PaymentClient : IPaymentClient
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<PaymentClient> _logger;
+    private readonly IConfiguration _configuration;
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
     };
 
-    public PaymentClient(HttpClient httpClient, ILogger<PaymentClient> logger)
+    public PaymentClient(HttpClient httpClient, ILogger<PaymentClient> logger, IConfiguration configuration)
     {
         _httpClient = httpClient;
         _logger = logger;
+        _configuration = configuration;
     }
 
     public async Task<BalanceResult> GetBalanceAsync(Guid userId, CancellationToken ct = default)
     {
         try
         {
-            var response = await _httpClient.GetAsync($"/api/payment/balance?userId={userId}", ct);
+            var request = CreateInternalRequest(HttpMethod.Get, $"/api/payment/internal/balance?userId={userId}");
+            var response = await _httpClient.SendAsync(request, ct);
             if (response.IsSuccessStatusCode)
             {
                 var dto = await response.Content.ReadFromJsonAsync<BalanceResponseDto>(JsonOptions, ct);
@@ -71,7 +76,9 @@ public class PaymentClient : IPaymentClient
     {
         try
         {
-            var response = await _httpClient.PostAsJsonAsync(endpoint, payload, ct);
+            var request = CreateInternalRequest(HttpMethod.Post, endpoint);
+            request.Content = JsonContent.Create(payload);
+            var response = await _httpClient.SendAsync(request, ct);
             if (response.IsSuccessStatusCode)
             {
                 var result = await response.Content.ReadFromJsonAsync<PaymentResult>(JsonOptions, ct);
@@ -87,6 +94,13 @@ public class PaymentClient : IPaymentClient
             _logger.LogError(ex, "Error executing payment at {Endpoint}", endpoint);
             return new PaymentResult(false, ex.Message);
         }
+    }
+
+    private HttpRequestMessage CreateInternalRequest(HttpMethod method, string endpoint)
+    {
+        var request = new HttpRequestMessage(method, endpoint);
+        request.Headers.Add(InternalApiKey.HeaderName, InternalApiKey.GetExpectedValue(_configuration));
+        return request;
     }
 
     private record BalanceResponseDto(Guid UserId, decimal Balance, decimal FrozenBalance);

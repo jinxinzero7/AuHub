@@ -1,4 +1,5 @@
 using AuHub.Shared.ValueObjects;
+using AuHub.Shared.Security;
 using FastEndpoints;
 using Payment.Application.Commands.ChargeWinner;
 
@@ -16,7 +17,7 @@ public class ChargeWinnerEndpoint : Endpoint<ChargeWinnerRequest, PaymentOperati
     public override void Configure()
     {
         Post("/api/payment/charge-winner");
-        AllowAnonymous(); // Internal service-to-service call
+        AllowAnonymous();
         Summary(s =>
         {
             s.Summary = "Charge winner after auction completion";
@@ -26,6 +27,12 @@ public class ChargeWinnerEndpoint : Endpoint<ChargeWinnerRequest, PaymentOperati
 
     public override async Task HandleAsync(ChargeWinnerRequest req, CancellationToken ct)
     {
+        if (!InternalApiKey.IsValid(HttpContext))
+        {
+            ThrowError("Unauthorized: invalid or missing internal API key", 401);
+            return;
+        }
+
         if (req.Amount.Amount <= 0)
         {
             ThrowError("Amount must be greater than 0", 400);

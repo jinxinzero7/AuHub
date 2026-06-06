@@ -10,8 +10,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using AuHub.Shared.Middleware;
-using MassTransit;
-using Payment.API.Consumers;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -27,32 +25,6 @@ builder.Host.UseSerilog((context, services, configuration) =>
     configuration.ReadFrom.Configuration(context.Configuration)
         .Enrich.WithCorrelationId()
         .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{CorrelationId}] {Message:lj}{NewLine}{Exception}"));
-
-// MassTransit + RabbitMQ
-builder.Services.AddMassTransit(x =>
-{
-    x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("payment", false));
-
-    x.AddConsumer<AuctionCompletedConsumer>();
-
-    x.UsingRabbitMq((context, cfg) =>
-    {
-        var host = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq";
-        var user = builder.Configuration["RabbitMQ:User"] ?? "auhub";
-        var pass = builder.Configuration["RabbitMQ:Password"] ?? "AuHub_Rabbit_2026!";
-
-        cfg.Host(host, "/", h =>
-        {
-            h.Username(user);
-            h.Password(pass);
-        });
-
-        cfg.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5)));
-        cfg.PrefetchCount = 20;
-
-        cfg.ConfigureEndpoints(context);
-    });
-});
 
 // Infrastructure
 builder.Services.AddInfrastructure(builder.Configuration);

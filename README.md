@@ -22,6 +22,9 @@ Verified on 2026-06-06:
 - Auctions demo seed no longer calls the invalid `Approve()` then `Publish()` chain;
 - manual auction completion is admin-only through `/api/admin/lots/{id}/force-complete`;
 - public registration always creates regular users; admin self-registration is disabled;
+- Payment internal operations and Notifications direct-send endpoint require `X-Internal-Api-Key`;
+- public payment balance is JWT-scoped and no longer supports arbitrary public `userId` lookup;
+- Payment no longer registers the duplicate `AuctionCompletedEvent` consumer;
 - integration and E2E projects are placeholders;
 - frontend production build passes without Google Fonts network dependency;
 - frontend lint passes cleanly;
@@ -104,6 +107,7 @@ Infrastructure  EF Core, repositories, external clients
 - in-app notifications;
 - unread count;
 - mark as read;
+- protected direct service-to-service send endpoint;
 - RabbitMQ consumers for auction events.
 
 ### Payment
@@ -111,10 +115,10 @@ Infrastructure  EF Core, repositories, external clients
 - wallet balance;
 - frozen balance;
 - top-up;
-- reserve/release funds;
-- charge winner;
-- transfer to seller;
-- refund;
+- internal reserve/release funds;
+- internal charge winner;
+- internal transfer to seller;
+- internal refund;
 - transaction history.
 
 ## Docker Compose
@@ -199,6 +203,8 @@ Current state:
 8. Auctions saves bid with idempotency and optimistic concurrency protection.
 9. SignalR pushes real-time update to clients.
 10. RabbitMQ/MassTransit notifies other services asynchronously.
+
+Internal Payment operations and direct notification send are protected by `X-Internal-Api-Key`. This is a diploma baseline for service-to-service protection; stronger network isolation/service auth is still future hardening.
 
 ## Important Patterns
 

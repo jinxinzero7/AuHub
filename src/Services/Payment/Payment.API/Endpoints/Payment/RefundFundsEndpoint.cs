@@ -1,4 +1,5 @@
 using AuHub.Shared.ValueObjects;
+using AuHub.Shared.Security;
 using FastEndpoints;
 using Payment.Application.Commands.RefundFunds;
 
@@ -16,7 +17,7 @@ public class RefundFundsEndpoint : Endpoint<RefundFundsRequest, PaymentOperation
     public override void Configure()
     {
         Post("/api/payment/refund");
-        AllowAnonymous(); // Internal service-to-service call
+        AllowAnonymous();
         Summary(s =>
         {
             s.Summary = "Refund funds to user";
@@ -26,6 +27,12 @@ public class RefundFundsEndpoint : Endpoint<RefundFundsRequest, PaymentOperation
 
     public override async Task HandleAsync(RefundFundsRequest req, CancellationToken ct)
     {
+        if (!InternalApiKey.IsValid(HttpContext))
+        {
+            ThrowError("Unauthorized: invalid or missing internal API key", 401);
+            return;
+        }
+
         if (req.Amount.Amount <= 0)
         {
             ThrowError("Amount must be greater than 0", 400);

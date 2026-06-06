@@ -1,3 +1,4 @@
+using AuHub.Shared.Security;
 using FastEndpoints;
 using Notifications.Application.Commands.SendNotification;
 using Notifications.Domain.Enums;
@@ -26,13 +27,9 @@ public class SendNotificationEndpoint : Endpoint<SendNotificationRequest, Guid>
 
     public override async Task HandleAsync(SendNotificationRequest req, CancellationToken ct)
     {
-        // API Key validation for internal service-to-service calls
-        var apiKey = HttpContext.Request.Headers["X-Internal-API-Key"].FirstOrDefault();
-        var expectedApiKey = Environment.GetEnvironmentVariable("INTERNAL_API_KEY") ?? "AuHub-Internal-Secret-2026";
-        
-        if (string.IsNullOrEmpty(apiKey) || apiKey != expectedApiKey)
+        if (!InternalApiKey.IsValid(HttpContext))
         {
-            ThrowError("Unauthorized: Invalid or missing API Key", 401);
+            ThrowError("Unauthorized: invalid or missing internal API key", 401);
             return;
         }
 
@@ -49,6 +46,7 @@ public class SendNotificationEndpoint : Endpoint<SendNotificationRequest, Guid>
         if (result.IsFailure)
         {
             ThrowError(result.Error, result.StatusCode);
+            return;
         }
 
         HttpContext.Response.StatusCode = 201;
