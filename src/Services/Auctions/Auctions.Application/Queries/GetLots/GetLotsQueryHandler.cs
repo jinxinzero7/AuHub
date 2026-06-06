@@ -1,4 +1,5 @@
 using AuHub.Shared.Results;
+using Auctions.Application.Mappings;
 using Auctions.Domain.Interfaces;
 
 namespace Auctions.Application.Queries.GetLots;
@@ -53,26 +54,7 @@ public class GetLotsQueryHandler
             var paginatedLots = lots
                 .Skip((query.Page - 1) * query.PageSize)
                 .Take(query.PageSize)
-                .Select(lot => new LotResponse
-                {
-                    Id = lot.Id,
-                    Title = lot.Title,
-                    Description = lot.Description,
-                    StartingPrice = lot.StartingPrice,
-                    CurrentPrice = lot.CurrentPrice,
-                    DurationHours = (int)lot.Duration.TotalHours,
-                    StartTime = lot.StartTime,
-                    EndTime = lot.EndTime,
-                    Status = lot.Status.ToString(),
-                    SellerId = lot.SellerId,
-                    WinnerId = lot.WinnerId,
-                    BidsCount = lot.Bids.Count,
-                    CoverImageUrl = lot.CoverImageUrl,
-                    TrackingNumber = lot.TrackingNumber,
-                    DeliveryAddress = lot.DeliveryAddress,
-                    AdminComment = lot.AdminComment,
-                    CreatedAt = lot.CreatedAt
-                })
+                .Select(lot => lot.ToResponse())
                 .ToList();
 
             var response = new PaginatedLotsResponse

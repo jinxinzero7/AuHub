@@ -17,8 +17,11 @@ Current architecture:
 
 Verified on 2026-06-06:
 - backend build passes with 0 warnings and 0 errors;
-- backend test run contains 199 xUnit cases, currently 199 passed / 0 failed;
+- backend test run contains 200 xUnit cases, currently 200 passed / 0 failed;
 - all backend API services use FastEndpoints 8.1.0;
+- Auctions demo seed no longer calls the invalid `Approve()` then `Publish()` chain;
+- manual auction completion is admin-only through `/api/admin/lots/{id}/force-complete`;
+- public registration always creates regular users; admin self-registration is disabled;
 - integration and E2E projects are placeholders;
 - frontend production build passes without Google Fonts network dependency;
 - frontend lint passes cleanly;

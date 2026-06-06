@@ -68,8 +68,24 @@ public class RegisterCommandHandlerTests
             u.PasswordHash == hashedPassword &&
             u.PasswordHash != command.Password &&
             u.Name == command.Name &&
-            u.Role == command.Role
+            u.Role == UserRole.User
         ), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task HandleAsync_WithAdminRoleRequest_CreatesRegularUser()
+    {
+        var command = CreateCommand() with { Role = UserRole.Admin };
+        _userRepo.GetByEmailAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns((User?)null);
+        _authService.HashPassword(command.Password).Returns("hashed_password");
+        _authService.GenerateJwtToken(Arg.Any<User>()).Returns("jwt_token");
+        _authService.GenerateRefreshToken().Returns("refresh_token");
+
+        await _handler.HandleAsync(command);
+
+        await _userRepo.Received(1).AddAsync(
+            Arg.Is<User>(u => u.Role == UserRole.User),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]

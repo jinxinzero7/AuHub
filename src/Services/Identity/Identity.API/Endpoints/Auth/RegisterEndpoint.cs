@@ -41,9 +41,6 @@ public class RegisterEndpoint : Endpoint<RegisterRequest, RegisterResponse>
             errors.Add("Password must contain at least one special character");
         if (string.IsNullOrEmpty(req.Name) || req.Name.Length < 2)
             errors.Add("Name must be at least 2 characters");
-        if (req.Role != Identity.Domain.Entities.UserRole.User && req.Role != Identity.Domain.Entities.UserRole.Admin)
-            errors.Add("Invalid role. Must be 0 (User) or 1 (Admin)");
-
         if (errors.Any())
         {
             ThrowError(string.Join("; ", errors), 400);
@@ -55,7 +52,7 @@ public class RegisterEndpoint : Endpoint<RegisterRequest, RegisterResponse>
             Email = req.Email,
             Password = req.Password,
             Name = req.Name,
-            Role = req.Role
+            Role = Identity.Domain.Entities.UserRole.User
         };
 
         var result = await _handler.HandleAsync(command, ct);

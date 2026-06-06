@@ -1,5 +1,6 @@
 using AuHub.Shared.Results;
 using AuHub.Shared.ValueObjects;
+using Auctions.Application.Mappings;
 using Auctions.Domain.Interfaces;
 
 namespace Auctions.Application.Queries.GetBidsByLot;
@@ -21,13 +22,7 @@ public class GetBidsByLotQueryHandler
         {
             var bids = await _bidRepository.GetByLotIdAsync(query.LotId, cancellationToken);
 
-            var response = bids.Select(b => new BidResponse
-            {
-                Id = b.Id,
-                BidderId = b.BidderId,
-                Amount = b.Amount,
-                PlacedAt = b.PlacedAt
-            }).ToList();
+            var response = bids.Select(b => b.ToResponse()).ToList();
 
             return Result.Success(response);
         }

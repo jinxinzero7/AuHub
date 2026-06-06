@@ -1,4 +1,5 @@
 using AuHub.Shared.Results;
+using Auctions.Application.Mappings;
 using Auctions.Domain.Interfaces;
 
 namespace Auctions.Application.Queries.GetLotById;
@@ -25,33 +26,7 @@ public class GetLotByIdQueryHandler
                 return Result.Failure<LotDetailResponse>("Lot not found", 404);
             }
 
-            var response = new LotDetailResponse
-            {
-                Id = lot.Id,
-                Title = lot.Title,
-                Description = lot.Description,
-                StartingPrice = lot.StartingPrice,
-                CurrentPrice = lot.CurrentPrice,
-                DurationHours = (int)lot.Duration.TotalHours,
-                StartTime = lot.StartTime,
-                EndTime = lot.EndTime,
-                SellerId = lot.SellerId,
-                WinnerId = lot.WinnerId,
-                Status = lot.Status.ToString(),
-                CreatedAt = lot.CreatedAt,
-                UpdatedAt = lot.UpdatedAt,
-                BidsCount = lot.Bids.Count,
-                TrackingNumber = lot.TrackingNumber,
-                DeliveryAddress = lot.DeliveryAddress,
-                AdminComment = lot.AdminComment,
-                Bids = lot.Bids.Select(b => new BidDto
-                {
-                    Id = b.Id,
-                    BidderId = b.BidderId,
-                    Amount = b.Amount,
-                    PlacedAt = b.PlacedAt
-                }).OrderByDescending(b => b.PlacedAt).ToList()
-            };
+            var response = lot.ToDetailResponse();
 
             return Result.Success(response);
         }

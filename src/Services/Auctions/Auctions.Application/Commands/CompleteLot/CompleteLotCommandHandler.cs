@@ -15,7 +15,6 @@ public class CompleteLotCommandHandler
 
     public async Task<Result<CompleteLotResponse>> HandleAsync(
         CompleteLotCommand command,
-        Guid userId,
         CancellationToken cancellationToken = default)
     {
         try
@@ -27,11 +26,6 @@ public class CompleteLotCommandHandler
                 return Result.Failure<CompleteLotResponse>("Lot not found", 404);
             }
 
-            if (lot.SellerId != userId)
-            {
-                return Result.Failure<CompleteLotResponse>("You are not the owner of this lot", 403);
-            }
-
             lot.Complete();
 
             await _lotRepository.SaveChangesAsync(cancellationToken);
@@ -41,7 +35,7 @@ public class CompleteLotCommandHandler
                 Success = true,
                 LotId = lot.Id,
                 FinalPrice = lot.CurrentPrice,
-                Message = "Lot completed successfully"
+                Message = "Lot force-completed successfully"
             };
 
             return Result.Success(response);

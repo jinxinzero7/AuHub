@@ -1,5 +1,6 @@
 using Identity.Application.Commands.Auth;
 using Identity.Application.Services;
+using Identity.Application.Mappings;
 using AuHub.Shared.Results;
 using Identity.Domain.Entities;
 using Identity.Domain.Interfaces;
@@ -57,13 +58,7 @@ public class LoginCommandHandler
                 Success = true,
                 AccessToken = accessToken,
                 RefreshToken = refreshTokenValue,
-                User = new UserDto
-                {
-                    Id = user.Id,
-                    Email = user.Email,
-                    Name = user.Name,
-                    Role = user.Role.ToString()
-                }
+                User = user.ToDto()
             };
 
             return Result.Success(response);

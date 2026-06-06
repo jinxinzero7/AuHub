@@ -176,10 +176,10 @@ using (var scope = app.Services.CreateScope())
         var lot4 = Lot.Create("Антикварный письменный прибор, бронза", "Чернильница с подсвечником, Франция, конец XIX века. Патина, гравировка.", Money.FromDecimal(15000), TimeSpan.FromDays(5), sellerId);
         var lot5 = Lot.Create("Серебряный набор столовых приборов (12 предметов)", "Серебро 925 пробы, СССР, 1950-е годы. В оригинальном футляре.", Money.FromDecimal(35000), TimeSpan.FromDays(7), sellerId);
 
-        lot1.Approve(); lot1.Publish();
-        lot2.Approve(); lot2.Publish();
-        lot3.Approve(); lot3.Publish();
-        lot4.Approve(); lot4.Publish();
+        lot1.Approve();
+        lot2.Approve();
+        lot3.Approve();
+        lot4.Approve();
         // lot5 stays Draft
 
         dbContext.Lots.AddRange(lot1, lot2, lot3, lot4, lot5);
