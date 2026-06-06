@@ -30,9 +30,11 @@ public static class DependencyInjection
         // Register Domain Event Dispatcher
         services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
 
-        // Register Background Services
-        services.AddHostedService<AuctionCompletionService>();
-        services.AddHostedService<OutboxProcessor>();
+        if (!configuration.GetValue<bool>("DisableHostedServices"))
+        {
+            services.AddHostedService<AuctionCompletionService>();
+            services.AddHostedService<OutboxProcessor>();
+        }
 
         return services;
     }

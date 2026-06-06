@@ -44,32 +44,34 @@ builder.Services.AddHealthChecks();
 // FastEndpoints
 builder.Services.AddFastEndpoints();
 
-// MassTransit + RabbitMQ
-builder.Services.AddMassTransit(x =>
+if (!builder.Environment.IsEnvironment("Testing"))
 {
-    x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("notifications", false));
-
-    x.AddConsumer<BidPlacedConsumer>();
-    x.AddConsumer<AuctionCompletedConsumer>();
-
-    x.UsingRabbitMq((context, cfg) =>
+    builder.Services.AddMassTransit(x =>
     {
-        var host = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq";
-        var user = builder.Configuration["RabbitMQ:User"] ?? "auhub";
-        var pass = builder.Configuration["RabbitMQ:Password"] ?? "AuHub_Rabbit_2026!";
+        x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("notifications", false));
 
-        cfg.Host(host, "/", h =>
+        x.AddConsumer<BidPlacedConsumer>();
+        x.AddConsumer<AuctionCompletedConsumer>();
+
+        x.UsingRabbitMq((context, cfg) =>
         {
-            h.Username(user);
-            h.Password(pass);
+            var host = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq";
+            var user = builder.Configuration["RabbitMQ:User"] ?? "auhub";
+            var pass = builder.Configuration["RabbitMQ:Password"] ?? "AuHub_Rabbit_2026!";
+
+            cfg.Host(host, "/", h =>
+            {
+                h.Username(user);
+                h.Password(pass);
+            });
+
+            cfg.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5)));
+            cfg.PrefetchCount = 20;
+
+            cfg.ConfigureEndpoints(context);
         });
-
-        cfg.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5)));
-        cfg.PrefetchCount = 20;
-
-        cfg.ConfigureEndpoints(context);
     });
-});
+}
 
 // JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -115,9 +117,9 @@ builder.Services.SwaggerDocument(o =>
 
 var app = builder.Build();
 
-// Apply migrations automatically
-using (var scope = app.Services.CreateScope())
+if (!app.Environment.IsEnvironment("Testing"))
 {
+    using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<NotificationsDbContext>();
     dbContext.Database.Migrate();
 }
@@ -147,8 +149,11 @@ app.Run();
 catch (Exception ex)
 {
     Log.Fatal(ex, "Notifications API terminated unexpectedly");
+    throw;
 }
 finally
 {
     Log.CloseAndFlush();
 }
+
+public partial class Program;

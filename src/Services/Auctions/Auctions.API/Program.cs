@@ -91,6 +91,17 @@ builder.Services.AddHealthChecks();
 builder.Services.AddFastEndpoints();
 
 // JWT Authentication
+var jwtSecret = builder.Configuration["Jwt:Secret"]
+    ?? Environment.GetEnvironmentVariable("JWT_SECRET");
+
+if (string.IsNullOrWhiteSpace(jwtSecret))
+{
+    if (!builder.Environment.IsEnvironment("Testing"))
+        throw new InvalidOperationException("JWT Secret not configured");
+
+    jwtSecret = "AuHub_Test_Jwt_Secret_That_Is_Long_Enough_2026";
+}
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -103,35 +114,37 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"]!))
+                Encoding.UTF8.GetBytes(jwtSecret))
         };
     });
 
 builder.Services.AddAuthorization();
 
-// MassTransit + RabbitMQ
-builder.Services.AddMassTransit(x =>
+if (!builder.Environment.IsEnvironment("Testing"))
 {
-    x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("auctions", false));
-
-    x.UsingRabbitMq((context, cfg) =>
+    builder.Services.AddMassTransit(x =>
     {
-        var host = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq";
-        var user = builder.Configuration["RabbitMQ:User"] ?? "auhub";
-        var pass = builder.Configuration["RabbitMQ:Password"] ?? "AuHub_Rabbit_2026!";
+        x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("auctions", false));
 
-        cfg.Host(host, "/", h =>
+        x.UsingRabbitMq((context, cfg) =>
         {
-            h.Username(user);
-            h.Password(pass);
+            var host = builder.Configuration["RabbitMQ:Host"] ?? "rabbitmq";
+            var user = builder.Configuration["RabbitMQ:User"] ?? "auhub";
+            var pass = builder.Configuration["RabbitMQ:Password"] ?? "AuHub_Rabbit_2026!";
+
+            cfg.Host(host, "/", h =>
+            {
+                h.Username(user);
+                h.Password(pass);
+            });
+
+            cfg.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5)));
+            cfg.PrefetchCount = 20;
+
+            cfg.ConfigureEndpoints(context);
         });
-
-        cfg.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5)));
-        cfg.PrefetchCount = 20;
-
-        cfg.ConfigureEndpoints(context);
     });
-});
+}
 
 // CORS for Frontend + SignalR
 builder.Services.AddCors(options =>
@@ -158,9 +171,9 @@ builder.Services.SwaggerDocument(o =>
 
 var app = builder.Build();
 
-// Apply migrations automatically
-using (var scope = app.Services.CreateScope())
+if (!app.Environment.IsEnvironment("Testing"))
 {
+    using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<AuctionsDbContext>();
     dbContext.Database.Migrate();
 
@@ -243,8 +256,11 @@ app.Run();
 catch (Exception ex)
 {
     Log.Fatal(ex, "Auctions API terminated unexpectedly");
+    throw;
 }
 finally
 {
     Log.CloseAndFlush();
 }
+
+public partial class Program;

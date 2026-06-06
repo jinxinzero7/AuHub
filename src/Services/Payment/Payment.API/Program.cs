@@ -45,8 +45,15 @@ builder.Services.AddFastEndpoints();
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "AuHub";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "AuHub-Users";
 var jwtSecret = builder.Configuration["Jwt:Secret"]
-    ?? Environment.GetEnvironmentVariable("JWT_SECRET")
-    ?? throw new InvalidOperationException("JWT Secret not configured");
+    ?? Environment.GetEnvironmentVariable("JWT_SECRET");
+
+if (string.IsNullOrWhiteSpace(jwtSecret))
+{
+    if (!builder.Environment.IsEnvironment("Testing"))
+        throw new InvalidOperationException("JWT Secret not configured");
+
+    jwtSecret = "AuHub_Test_Jwt_Secret_That_Is_Long_Enough_2026";
+}
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -90,9 +97,9 @@ builder.Services.SwaggerDocument(o =>
 
 var app = builder.Build();
 
-// Migrate database
-using (var scope = app.Services.CreateScope())
+if (!app.Environment.IsEnvironment("Testing"))
 {
+    using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
     dbContext.Database.Migrate();
 }
@@ -117,8 +124,11 @@ app.Run();
 catch (Exception ex)
 {
     Log.Fatal(ex, "Payment API terminated unexpectedly");
+    throw;
 }
 finally
 {
     Log.CloseAndFlush();
 }
+
+public partial class Program;

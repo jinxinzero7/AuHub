@@ -17,7 +17,7 @@ Current architecture:
 
 Verified on 2026-06-06:
 - backend build passes with 0 warnings and 0 errors;
-- backend test run contains 205 xUnit cases, currently 205 passed / 0 failed;
+- backend test run contains 212 xUnit cases, currently 212 passed / 0 failed;
 - all backend API services use FastEndpoints 8.1.0;
 - Auctions demo seed no longer calls the invalid `Approve()` then `Publish()` chain;
 - manual auction completion is admin-only through `/api/admin/lots/{id}/force-complete`;
@@ -26,7 +26,7 @@ Verified on 2026-06-06:
 - public payment balance is JWT-scoped and no longer supports arbitrary public `userId` lookup;
 - Payment no longer registers the duplicate `AuctionCompletedEvent` consumer;
 - lot moderation now uses `Draft -> PendingModeration -> Active`; seller submit endpoint is `/api/lots/{id}/submit-for-moderation`;
-- integration and E2E projects are placeholders;
+- backend integration projects contain API smoke tests; `.NET E2E.Tests` is still a placeholder;
 - frontend production build passes without Google Fonts network dependency;
 - frontend lint passes cleanly;
 - CI unit-test step runs unit test projects explicitly.
@@ -189,8 +189,9 @@ Test projects:
 
 Current state:
 - unit tests cover core domain/application behavior and currently pass;
-- integration and E2E projects exist but still need real coverage;
-- CI workflow exists and runs real unit test projects; integration tests remain disabled until they stop being placeholders.
+- backend integration projects cover API host startup and basic auth/internal-key guards;
+- persistence-backed integration tests and UI E2E still need real coverage;
+- CI workflow exists and runs real unit test projects; integration tests remain disabled until CI strategy is updated.
 
 ## Main User Flow
 

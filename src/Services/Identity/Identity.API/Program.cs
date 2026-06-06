@@ -75,9 +75,9 @@ builder.Services.SwaggerDocument(o =>
 
 var app = builder.Build();
 
-// Apply migrations automatically
-using (var scope = app.Services.CreateScope())
+if (!app.Environment.IsEnvironment("Testing"))
 {
+    using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
     dbContext.Database.Migrate();
 }
@@ -108,8 +108,11 @@ app.Run();
 catch (Exception ex)
 {
     Log.Fatal(ex, "Identity API terminated unexpectedly");
+    throw;
 }
 finally
 {
     Log.CloseAndFlush();
 }
+
+public partial class Program;
