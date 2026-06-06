@@ -4,7 +4,7 @@ using Payment.Application.Commands.ChargeWinner;
 
 namespace Payment.API.Endpoints.Payment;
 
-public class ChargeWinnerEndpoint : Endpoint<ChargeWinnerRequest>
+public class ChargeWinnerEndpoint : Endpoint<ChargeWinnerRequest, PaymentOperationResponse>
 {
     private readonly ChargeWinnerCommandHandler _handler;
 
@@ -47,7 +47,7 @@ public class ChargeWinnerEndpoint : Endpoint<ChargeWinnerRequest>
             return;
         }
 
-        await SendOkAsync(new { Success = true, Message = "Winner charged" }, ct);
+        Response = new PaymentOperationResponse(true, "Winner charged");
     }
 }
 

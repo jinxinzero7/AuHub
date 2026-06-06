@@ -4,7 +4,7 @@ using Payment.Application.Commands.TransferToSeller;
 
 namespace Payment.API.Endpoints.Payment;
 
-public class TransferToSellerEndpoint : Endpoint<TransferToSellerRequest>
+public class TransferToSellerEndpoint : Endpoint<TransferToSellerRequest, PaymentOperationResponse>
 {
     private readonly TransferToSellerCommandHandler _handler;
 
@@ -47,7 +47,7 @@ public class TransferToSellerEndpoint : Endpoint<TransferToSellerRequest>
             return;
         }
 
-        await SendOkAsync(new { Success = true, Message = "Funds transferred to seller" }, ct);
+        Response = new PaymentOperationResponse(true, "Funds transferred to seller");
     }
 }
 

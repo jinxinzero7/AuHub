@@ -18,6 +18,7 @@ Current architecture:
 Verified on 2026-06-06:
 - backend build passes with 0 warnings and 0 errors;
 - backend test run contains 199 xUnit cases, currently 199 passed / 0 failed;
+- all backend API services use FastEndpoints 8.1.0;
 - integration and E2E projects are placeholders;
 - frontend production build passes without Google Fonts network dependency;
 - frontend lint passes cleanly;
@@ -33,7 +34,7 @@ Project docs:
 
 | Area | Technology |
 |---|---|
-| Backend | .NET 10, ASP.NET Core, FastEndpoints |
+| Backend | .NET 10, ASP.NET Core, FastEndpoints 8.1.0 |
 | Architecture | Clean Architecture, CQRS, DDD |
 | Gateway | YARP |
 | Auth | JWT, refresh token rotation, BCrypt, role-based auth |

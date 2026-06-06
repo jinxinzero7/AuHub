@@ -4,7 +4,7 @@ using Payment.Application.Commands.RefundFunds;
 
 namespace Payment.API.Endpoints.Payment;
 
-public class RefundFundsEndpoint : Endpoint<RefundFundsRequest>
+public class RefundFundsEndpoint : Endpoint<RefundFundsRequest, PaymentOperationResponse>
 {
     private readonly RefundFundsCommandHandler _handler;
 
@@ -47,7 +47,7 @@ public class RefundFundsEndpoint : Endpoint<RefundFundsRequest>
             return;
         }
 
-        await SendOkAsync(new { Success = true, Message = "Funds refunded" }, ct);
+        Response = new PaymentOperationResponse(true, "Funds refunded");
     }
 }
 

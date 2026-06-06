@@ -4,7 +4,7 @@ using Payment.Application.Commands.ReleaseFunds;
 
 namespace Payment.API.Endpoints.Payment;
 
-public class ReleaseFundsEndpoint : Endpoint<ReleaseFundsRequest>
+public class ReleaseFundsEndpoint : Endpoint<ReleaseFundsRequest, PaymentOperationResponse>
 {
     private readonly ReleaseFundsCommandHandler _handler;
 
@@ -47,7 +47,7 @@ public class ReleaseFundsEndpoint : Endpoint<ReleaseFundsRequest>
             return;
         }
 
-        await SendOkAsync(new { Success = true, Message = "Funds released" }, ct);
+        Response = new PaymentOperationResponse(true, "Funds released");
     }
 }
 

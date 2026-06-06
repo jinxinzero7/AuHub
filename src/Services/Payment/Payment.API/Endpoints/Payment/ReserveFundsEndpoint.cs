@@ -4,7 +4,7 @@ using Payment.Application.Commands.ReserveFunds;
 
 namespace Payment.API.Endpoints.Payment;
 
-public class ReserveFundsEndpoint : Endpoint<ReserveFundsRequest>
+public class ReserveFundsEndpoint : Endpoint<ReserveFundsRequest, PaymentOperationResponse>
 {
     private readonly ReserveFundsCommandHandler _handler;
 
@@ -47,7 +47,7 @@ public class ReserveFundsEndpoint : Endpoint<ReserveFundsRequest>
             return;
         }
 
-        await SendOkAsync(new { Success = true, Message = "Funds reserved" }, ct);
+        Response = new PaymentOperationResponse(true, "Funds reserved");
     }
 }
 

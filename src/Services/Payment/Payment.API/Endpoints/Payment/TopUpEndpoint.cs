@@ -51,9 +51,10 @@ public class TopUpEndpoint : Endpoint<TopUpRequest>
         if (result.IsFailure)
         {
             ThrowError(result.Error, result.StatusCode);
+            return;
         }
 
-        await SendOkAsync(ct);
+        Response = new { Success = true, Message = "Wallet topped up" };
     }
 }
 
