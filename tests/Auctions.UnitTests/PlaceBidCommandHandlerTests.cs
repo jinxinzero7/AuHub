@@ -46,6 +46,7 @@ public class PlaceBidCommandHandlerTests
     private Lot CreateActiveLot()
     {
         var lot = Lot.Create("Test Lot", "Desc", Money.FromDecimal(1000m), TimeSpan.FromDays(3), SellerId);
+        lot.SubmitForModeration();
         lot.Approve();
         return lot;
     }

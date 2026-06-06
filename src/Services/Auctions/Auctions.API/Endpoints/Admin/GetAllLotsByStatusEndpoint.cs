@@ -20,7 +20,7 @@ public class GetAllLotsByStatusEndpoint : EndpointWithoutRequest<List<LotRespons
         Summary(s =>
         {
             s.Summary = "Get all lots by status (Admin only)";
-            s.Description = "Retrieve all lots filtered by status. Query param: ?status=Draft|Approved|Rejected|Active|Frozen|Completed";
+            s.Description = "Retrieve all lots filtered by status. Query param examples: Draft, PendingModeration, Rejected, Active, Frozen, Completed";
         });
     }
 
@@ -46,7 +46,6 @@ public class GetAllLotsByStatusEndpoint : EndpointWithoutRequest<List<LotRespons
 
         var lots = result.Value.Lots;
 
-        // Filter by status if provided
         if (!string.IsNullOrEmpty(statusParam))
         {
             lots = lots.Where(l => l.Status.Equals(statusParam, StringComparison.OrdinalIgnoreCase)).ToList();

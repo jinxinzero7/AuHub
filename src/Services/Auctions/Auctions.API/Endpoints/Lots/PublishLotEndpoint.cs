@@ -15,12 +15,12 @@ public class PublishLotEndpoint : EndpointWithoutRequest<PublishLotResponse>
 
     public override void Configure()
     {
-        Post("/api/lots/{id}/publish");
+        Post("/api/lots/{id}/submit-for-moderation");
         Roles("User");
         Summary(s =>
         {
-            s.Summary = "Publish a lot (Owner only)";
-            s.Description = "Change lot status from Approved to Active. Only the owner can publish.";
+            s.Summary = "Submit a lot for moderation (Owner only)";
+            s.Description = "Change lot status from Draft to PendingModeration. Only the owner can submit.";
         });
     }
 
@@ -45,6 +45,7 @@ public class PublishLotEndpoint : EndpointWithoutRequest<PublishLotResponse>
         if (!result.IsSuccess)
         {
             ThrowError(result.Error, result.StatusCode);
+            return;
         }
 
         Response = result.Value;

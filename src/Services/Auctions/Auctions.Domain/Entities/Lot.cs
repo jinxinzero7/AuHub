@@ -69,35 +69,38 @@ public class Lot
         };
     }
 
-    public void Approve()
+    public void SubmitForModeration()
     {
         if (Status != LotStatus.Draft)
-            throw new InvalidOperationException("Only draft lots can be approved");
+            throw new InvalidOperationException("Only draft lots can be submitted for moderation");
 
-        Status = LotStatus.Active;
-        StartTime = DateTime.UtcNow;
-        EndTime = StartTime.Value.Add(Duration);
-        UpdatedAt = DateTime.UtcNow;
-    }
-
-    public void Reject(string reason)
-    {
-        if (Status != LotStatus.Draft)
-            throw new InvalidOperationException("Only draft lots can be rejected");
-
-        Status = LotStatus.Rejected;
-        AdminComment = reason;
+        Status = LotStatus.PendingModeration;
         UpdatedAt = DateTime.UtcNow;
     }
 
     public void Publish()
     {
-        if (Status != LotStatus.Approved)
-            throw new InvalidOperationException("Only approved lots can be published");
+        SubmitForModeration();
+    }
+
+    public void Approve()
+    {
+        if (Status != LotStatus.PendingModeration)
+            throw new InvalidOperationException("Only lots pending moderation can be approved");
 
         StartTime = DateTime.UtcNow;
         EndTime = StartTime.Value.Add(Duration);
         Status = LotStatus.Active;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Reject(string reason)
+    {
+        if (Status != LotStatus.PendingModeration)
+            throw new InvalidOperationException("Only lots pending moderation can be rejected");
+
+        Status = LotStatus.Rejected;
+        AdminComment = reason;
         UpdatedAt = DateTime.UtcNow;
     }
 
@@ -193,10 +196,16 @@ public class Lot
 
     public void SetDeliveryAddress(string address)
     {
-        if (Status != LotStatus.PaymentPending && Status != LotStatus.ShippingPending)
+        RequestDelivery(address);
+    }
+
+    public void RequestDelivery(string address)
+    {
+        if (Status != LotStatus.DeliveryRequestPending)
             throw new InvalidOperationException("Cannot set delivery address in current status");
 
         DeliveryAddress = address;
+        Status = LotStatus.ShippingPending;
         UpdatedAt = DateTime.UtcNow;
     }
 
@@ -213,6 +222,11 @@ public class Lot
         UpdatedAt = DateTime.UtcNow;
     }
 
+    public void MarkShipped(string trackingNumber)
+    {
+        Ship(trackingNumber);
+    }
+
     public void ConfirmDelivery()
     {
         if (Status != LotStatus.Shipped)
@@ -222,13 +236,44 @@ public class Lot
         UpdatedAt = DateTime.UtcNow;
     }
 
+    public void CompleteTransaction()
+    {
+        if (Status != LotStatus.Delivered)
+            throw new InvalidOperationException("Only delivered lots can be completed");
+
+        Status = LotStatus.TransactionComplete;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     public void OpenDispute(string reason)
     {
-        if (Status != LotStatus.Completed && Status != LotStatus.PaymentPending && Status != LotStatus.ShippingPending)
+        if (Status != LotStatus.Completed &&
+            Status != LotStatus.DeliveryRequestPending &&
+            Status != LotStatus.ShippingPending &&
+            Status != LotStatus.Shipped &&
+            Status != LotStatus.Delivered)
             throw new InvalidOperationException("Cannot dispute lot in current status");
 
         Status = LotStatus.Disputed;
         DisputeReason = reason;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void OpenDeliveryRequestWindow()
+    {
+        if (Status != LotStatus.Completed)
+            throw new InvalidOperationException("Only completed lots can open delivery request window");
+
+        Status = LotStatus.DeliveryRequestPending;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void ExpireDeliveryRequest()
+    {
+        if (Status != LotStatus.DeliveryRequestPending)
+            throw new InvalidOperationException("Only lots pending delivery request can expire");
+
+        Status = LotStatus.DeliveryRequestExpired;
         UpdatedAt = DateTime.UtcNow;
     }
 

@@ -17,7 +17,7 @@ Current architecture:
 
 Verified on 2026-06-06:
 - backend build passes with 0 warnings and 0 errors;
-- backend test run contains 200 xUnit cases, currently 200 passed / 0 failed;
+- backend test run contains 205 xUnit cases, currently 205 passed / 0 failed;
 - all backend API services use FastEndpoints 8.1.0;
 - Auctions demo seed no longer calls the invalid `Approve()` then `Publish()` chain;
 - manual auction completion is admin-only through `/api/admin/lots/{id}/force-complete`;
@@ -25,6 +25,7 @@ Verified on 2026-06-06:
 - Payment internal operations and Notifications direct-send endpoint require `X-Internal-Api-Key`;
 - public payment balance is JWT-scoped and no longer supports arbitrary public `userId` lookup;
 - Payment no longer registers the duplicate `AuctionCompletedEvent` consumer;
+- lot moderation now uses `Draft -> PendingModeration -> Active`; seller submit endpoint is `/api/lots/{id}/submit-for-moderation`;
 - integration and E2E projects are placeholders;
 - frontend production build passes without Google Fonts network dependency;
 - frontend lint passes cleanly;
@@ -196,13 +197,14 @@ Current state:
 1. User registers/logs in through Identity.
 2. User creates a lot through Auctions.
 3. Images are uploaded to MinIO.
-4. Admin/moderation flow currently approves a draft lot directly into active status.
-5. Another user places a bid.
-6. Auctions checks business rules and payment balance.
-7. Payment reserves bidder funds and releases previous bidder funds.
-8. Auctions saves bid with idempotency and optimistic concurrency protection.
-9. SignalR pushes real-time update to clients.
-10. RabbitMQ/MassTransit notifies other services asynchronously.
+4. Seller submits the draft lot for moderation.
+5. Admin approves the `PendingModeration` lot into active status.
+6. Another user places a bid.
+7. Auctions checks business rules and payment balance.
+8. Payment reserves bidder funds and releases previous bidder funds.
+9. Auctions saves bid with idempotency and optimistic concurrency protection.
+10. SignalR pushes real-time update to clients.
+11. RabbitMQ/MassTransit notifies other services asynchronously.
 
 Internal Payment operations and direct notification send are protected by `X-Internal-Api-Key`. This is a diploma baseline for service-to-service protection; stronger network isolation/service auth is still future hardening.
 

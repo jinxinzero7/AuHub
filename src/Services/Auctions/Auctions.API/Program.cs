@@ -176,9 +176,13 @@ using (var scope = app.Services.CreateScope())
         var lot4 = Lot.Create("Антикварный письменный прибор, бронза", "Чернильница с подсвечником, Франция, конец XIX века. Патина, гравировка.", Money.FromDecimal(15000), TimeSpan.FromDays(5), sellerId);
         var lot5 = Lot.Create("Серебряный набор столовых приборов (12 предметов)", "Серебро 925 пробы, СССР, 1950-е годы. В оригинальном футляре.", Money.FromDecimal(35000), TimeSpan.FromDays(7), sellerId);
 
+        lot1.SubmitForModeration();
         lot1.Approve();
+        lot2.SubmitForModeration();
         lot2.Approve();
+        lot3.SubmitForModeration();
         lot3.Approve();
+        lot4.SubmitForModeration();
         lot4.Approve();
         // lot5 stays Draft
 

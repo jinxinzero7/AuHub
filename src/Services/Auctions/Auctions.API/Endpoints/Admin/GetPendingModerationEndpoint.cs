@@ -19,7 +19,7 @@ public class GetPendingModerationEndpoint : EndpointWithoutRequest<List<LotRespo
         Summary(s =>
         {
             s.Summary = "Get lots pending moderation (Admin only)";
-            s.Description = "Retrieve all lots with Draft status awaiting admin approval.";
+            s.Description = "Retrieve all lots with PendingModeration status awaiting admin approval.";
         });
     }
 
@@ -41,9 +41,8 @@ public class GetPendingModerationEndpoint : EndpointWithoutRequest<List<LotRespo
             return;
         }
 
-        // Filter only Draft status
         var pendingLots = result.Value.Lots
-            .Where(l => l.Status == "Draft")
+            .Where(l => l.Status == "PendingModeration")
             .ToList();
 
         Response = pendingLots;

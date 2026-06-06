@@ -18,6 +18,7 @@ public class LotTests
     private static Lot CreateActiveLot()
     {
         var lot = CreateValidLot();
+        lot.SubmitForModeration();
         lot.Approve();
         return lot;
     }
@@ -47,9 +48,29 @@ public class LotTests
     // --- Status transitions ---
 
     [Fact]
-    public void Approve_TransitionsDraftToActive()
+    public void SubmitForModeration_TransitionsDraftToPendingModeration()
     {
         var lot = CreateValidLot();
+        lot.SubmitForModeration();
+        lot.Status.Should().Be(LotStatus.PendingModeration);
+        lot.StartTime.Should().BeNull();
+        lot.EndTime.Should().BeNull();
+    }
+
+    [Fact]
+    public void SubmitForModeration_NonDraft_Throws()
+    {
+        var lot = CreateValidLot();
+        lot.SubmitForModeration();
+        var act = () => lot.SubmitForModeration();
+        act.Should().Throw<InvalidOperationException>().WithMessage("Only draft lots can be submitted for moderation");
+    }
+
+    [Fact]
+    public void Approve_TransitionsPendingModerationToActive()
+    {
+        var lot = CreateValidLot();
+        lot.SubmitForModeration();
         lot.Approve();
         lot.Status.Should().Be(LotStatus.Active);
         lot.StartTime.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
@@ -57,18 +78,18 @@ public class LotTests
     }
 
     [Fact]
-    public void Approve_NonDraft_Throws()
+    public void Approve_NonPendingModeration_Throws()
     {
         var lot = CreateValidLot();
-        lot.Approve();
         var act = () => lot.Approve();
-        act.Should().Throw<InvalidOperationException>().WithMessage("Only draft lots can be approved");
+        act.Should().Throw<InvalidOperationException>().WithMessage("Only lots pending moderation can be approved");
     }
 
     [Fact]
     public void Reject_SetsStatusAndComment()
     {
         var lot = CreateValidLot();
+        lot.SubmitForModeration();
         lot.Reject("Bad quality");
         lot.Status.Should().Be(LotStatus.Rejected);
         lot.AdminComment.Should().Be("Bad quality");
@@ -78,29 +99,16 @@ public class LotTests
     public void Reject_NonDraft_Throws()
     {
         var lot = CreateValidLot();
-        lot.Approve();
         var act = () => lot.Reject("reason");
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<InvalidOperationException>().WithMessage("Only lots pending moderation can be rejected");
     }
 
     [Fact]
-    public void Publish_TransitionsApprovedToActive()
+    public void Publish_TransitionsDraftToPendingModeration()
     {
         var lot = CreateValidLot();
-        lot.GetType().GetProperty("Status")!.SetValue(lot, LotStatus.Approved);
         lot.Publish();
-
-        lot.Status.Should().Be(LotStatus.Active);
-        lot.StartTime.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
-        lot.EndTime.Should().Be(lot.StartTime!.Value.Add(TimeSpan.FromDays(3)));
-    }
-
-    [Fact]
-    public void Publish_NonApproved_Throws()
-    {
-        var lot = CreateValidLot();
-        var act = () => lot.Publish();
-        act.Should().Throw<InvalidOperationException>().WithMessage("Only approved lots can be published");
+        lot.Status.Should().Be(LotStatus.PendingModeration);
     }
 
     // --- PlaceBid ---
@@ -218,6 +226,49 @@ public class LotTests
         var evt = lot.DomainEvents.OfType<AuctionCompletedDomainEvent>().Single();
         evt.LotId.Should().Be(lot.Id);
         evt.FinalPrice.Should().Be(1500m);
+    }
+
+    [Fact]
+    public void OpenDeliveryRequestWindow_Completed_SetsDeliveryRequestPending()
+    {
+        var lot = CreateActiveLot();
+        lot.Complete();
+        lot.OpenDeliveryRequestWindow();
+        lot.Status.Should().Be(LotStatus.DeliveryRequestPending);
+    }
+
+    [Fact]
+    public void RequestDelivery_PendingDeliveryRequest_SetsAddressAndShippingPending()
+    {
+        var lot = CreateActiveLot();
+        lot.Complete();
+        lot.OpenDeliveryRequestWindow();
+        lot.RequestDelivery("PVZ address");
+        lot.Status.Should().Be(LotStatus.ShippingPending);
+        lot.DeliveryAddress.Should().Be("PVZ address");
+    }
+
+    [Fact]
+    public void ExpireDeliveryRequest_PendingDeliveryRequest_SetsExpired()
+    {
+        var lot = CreateActiveLot();
+        lot.Complete();
+        lot.OpenDeliveryRequestWindow();
+        lot.ExpireDeliveryRequest();
+        lot.Status.Should().Be(LotStatus.DeliveryRequestExpired);
+    }
+
+    [Fact]
+    public void CompleteTransaction_Delivered_SetsTransactionComplete()
+    {
+        var lot = CreateActiveLot();
+        lot.Complete();
+        lot.OpenDeliveryRequestWindow();
+        lot.RequestDelivery("PVZ address");
+        lot.MarkShipped("TRACK-1");
+        lot.ConfirmDelivery();
+        lot.CompleteTransaction();
+        lot.Status.Should().Be(LotStatus.TransactionComplete);
     }
 
     // --- Cancel ---

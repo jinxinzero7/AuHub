@@ -25,7 +25,7 @@ public class RejectLotEndpoint : Endpoint<RejectLotRequest>
         Summary(s =>
         {
             s.Summary = "Reject a lot (Admin only)";
-            s.Description = "Change lot status from Draft to Rejected with a reason.";
+            s.Description = "Change lot status from PendingModeration to Rejected with a reason.";
         });
     }
 
@@ -46,7 +46,16 @@ public class RejectLotEndpoint : Endpoint<RejectLotRequest>
             return;
         }
 
-        lot.Reject(req.Reason);
+        try
+        {
+            lot.Reject(req.Reason);
+        }
+        catch (InvalidOperationException ex)
+        {
+            ThrowError(ex.Message, 400);
+            return;
+        }
+
         await _lotRepository.SaveChangesAsync(ct);
 
         await _notificationClient.SendNotificationAsync(lot.SellerId, NotificationType.LotRejected, "Лот отклонён", $"Ваш лот «{lot.Title}» отклонён. Причина: {req.Reason}", ct);

@@ -31,7 +31,7 @@ public class PublishLotCommandHandler
                 return Result.Failure<PublishLotResponse>("You are not the owner of this lot", 403);
             }
 
-            lot.Publish();
+            lot.SubmitForModeration();
 
             await _lotRepository.SaveChangesAsync(cancellationToken);
 
@@ -39,7 +39,7 @@ public class PublishLotCommandHandler
             {
                 Success = true,
                 LotId = lot.Id,
-                Message = "Lot published successfully"
+                Message = "Lot submitted for moderation successfully"
             };
 
             return Result.Success(response);
@@ -50,7 +50,7 @@ public class PublishLotCommandHandler
         }
         catch (Exception ex)
         {
-            return Result.Failure<PublishLotResponse>($"Failed to publish lot: {ex.Message}", 500);
+            return Result.Failure<PublishLotResponse>($"Failed to submit lot for moderation: {ex.Message}", 500);
         }
     }
 }

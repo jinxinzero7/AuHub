@@ -26,7 +26,7 @@ public class ApproveLotEndpoint : EndpointWithoutRequest
         Summary(s =>
         {
             s.Summary = "Approve a lot (Admin only)";
-            s.Description = "Change lot status from Draft to Active after moderation.";
+            s.Description = "Change lot status from PendingModeration to Active after moderation.";
         });
     }
 
@@ -41,7 +41,16 @@ public class ApproveLotEndpoint : EndpointWithoutRequest
             return;
         }
 
-        lot.Approve();
+        try
+        {
+            lot.Approve();
+        }
+        catch (InvalidOperationException ex)
+        {
+            ThrowError(ex.Message, 400);
+            return;
+        }
+
         await _lotRepository.SaveChangesAsync(ct);
 
         await _notificationClient.SendNotificationAsync(lot.SellerId, NotificationType.LotApproved, "Лот одобрен", $"Ваш лот «{lot.Title}» прошёл модерацию", ct);
