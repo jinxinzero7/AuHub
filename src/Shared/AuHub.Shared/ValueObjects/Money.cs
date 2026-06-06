@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json.Serialization;
 using AuHub.Shared.Converters;
 
@@ -37,5 +38,5 @@ public sealed record Money : IComparable<Money>
     public static bool operator >=(Money a, Money b) => a.Amount >= b.Amount;
     public static bool operator <=(Money a, Money b) => a.Amount <= b.Amount;
 
-    public override string ToString() => $"{Amount:N2} {Currency}";
+    public override string ToString() => $"{Amount.ToString("N2", CultureInfo.InvariantCulture)} {Currency}";
 }

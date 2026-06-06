@@ -15,13 +15,13 @@ Current architecture:
 - Docker Compose deployment;
 - GitHub Actions CI.
 
-Verified on 2026-05-31:
-- backend build passes, with package-version warnings to clean up;
-- backend test run contains 199 xUnit cases, currently 198 passed / 1 failed;
+Verified on 2026-06-06:
+- backend build passes with 0 warnings and 0 errors;
+- backend test run contains 199 xUnit cases, currently 199 passed / 0 failed;
 - integration and E2E projects are placeholders;
-- frontend production build passes with network access for Google Fonts;
-- frontend lint currently fails and needs cleanup;
-- current CI test filter should be fixed because `Category=Unit` matches no tests.
+- frontend production build passes without Google Fonts network dependency;
+- frontend lint passes cleanly;
+- CI unit-test step runs unit test projects explicitly.
 
 Project docs:
 - project context: `../CONTEXT.md`
@@ -179,9 +179,9 @@ Test projects:
 - `E2E.Tests`
 
 Current state:
-- unit tests cover core domain/application behavior, but one culture-sensitive `Money.ToString()` test currently fails;
+- unit tests cover core domain/application behavior and currently pass;
 - integration and E2E projects exist but still need real coverage;
-- CI workflow exists, but the current `Category=Unit` filter matches no tests until test traits or CI commands are fixed.
+- CI workflow exists and runs real unit test projects; integration tests remain disabled until they stop being placeholders.
 
 ## Main User Flow
 

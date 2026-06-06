@@ -28,11 +28,11 @@ jobs:
 
       - name: Unit Tests
         run: |
-          dotnet test AuctionHub.slnx --no-build --configuration Release \
-            --filter "Category=Unit" \
-            --logger "trx;LogFileName=unit-test-results.trx" \
-            --collect:"XPlat Code Coverage" \
-            --settings tests/coverlet.runsettings
+          dotnet test tests/Shared.UnitTests/Shared.UnitTests.csproj --no-build --configuration Release --logger "trx;LogFileName=shared-unit-test-results.trx" --collect:"XPlat Code Coverage" --settings tests/coverlet.runsettings
+          dotnet test tests/Auctions.UnitTests/Auctions.UnitTests.csproj --no-build --configuration Release --logger "trx;LogFileName=auctions-unit-test-results.trx" --collect:"XPlat Code Coverage" --settings tests/coverlet.runsettings
+          dotnet test tests/Identity.UnitTests/Identity.UnitTests.csproj --no-build --configuration Release --logger "trx;LogFileName=identity-unit-test-results.trx" --collect:"XPlat Code Coverage" --settings tests/coverlet.runsettings
+          dotnet test tests/Notifications.UnitTests/Notifications.UnitTests.csproj --no-build --configuration Release --logger "trx;LogFileName=notifications-unit-test-results.trx" --collect:"XPlat Code Coverage" --settings tests/coverlet.runsettings
+          dotnet test tests/Payment.UnitTests/Payment.UnitTests.csproj --no-build --configuration Release --logger "trx;LogFileName=payment-unit-test-results.trx" --collect:"XPlat Code Coverage" --settings tests/coverlet.runsettings
 
       - name: Upload Coverage
         uses: actions/upload-artifact@v4

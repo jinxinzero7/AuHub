@@ -121,7 +121,7 @@ public class MoneyTests
     [Fact]
     public void ToString_FormatsCorrectly()
     {
-        Money.FromDecimal(100.50m).ToString().Should().Be("100,50 RUB");
+        Money.FromDecimal(100.50m).ToString().Should().Be("100.50 RUB");
     }
 
     [Fact]
