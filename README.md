@@ -17,7 +17,7 @@ Current architecture:
 
 Verified on 2026-06-06:
 - backend build passes with 0 warnings and 0 errors;
-- backend test run contains 213 xUnit cases, currently 213 passed / 0 failed;
+- backend test run contains 216 xUnit cases, currently 216 passed / 0 failed;
 - all backend API services use FastEndpoints 8.1.0;
 - Auctions demo seed no longer calls the invalid `Approve()` then `Publish()` chain;
 - manual auction completion is admin-only through `/api/admin/lots/{id}/force-complete`;
@@ -27,6 +27,7 @@ Verified on 2026-06-06:
 - Payment no longer registers the duplicate `AuctionCompletedEvent` consumer;
 - lot moderation now uses `Draft -> PendingModeration -> Active`; seller submit endpoint is `/api/lots/{id}/submit-for-moderation`;
 - lot creation supports seller-selected delivery providers: `Cdek`, `YandexDelivery`, `RussianPost`;
+- auction completion opens a 3-day winner delivery request window; winner request endpoint is `/api/lots/{id}/delivery-request`;
 - backend integration projects contain API smoke tests; `.NET E2E.Tests` is still a placeholder;
 - frontend production build passes without Google Fonts network dependency;
 - frontend lint passes cleanly;

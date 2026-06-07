@@ -27,6 +27,10 @@ public class CompleteLotCommandHandler
             }
 
             lot.Complete();
+            if (lot.WinnerId.HasValue)
+            {
+                lot.OpenDeliveryRequestWindow();
+            }
 
             await _lotRepository.SaveChangesAsync(cancellationToken);
 

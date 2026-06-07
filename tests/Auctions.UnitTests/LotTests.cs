@@ -3,6 +3,7 @@ using Auctions.Domain.Enums;
 using Auctions.Domain.Events;
 using AuHub.Shared.ValueObjects;
 using FluentAssertions;
+using System.Reflection;
 
 namespace Auctions.UnitTests;
 
@@ -28,6 +29,20 @@ public class LotTests
         lot.SubmitForModeration();
         lot.Approve();
         return lot;
+    }
+
+    private static void PlaceBidAndAttach(Lot lot, Money amount, Guid bidderId, string bidderName)
+    {
+        lot.PlaceBid(amount, bidderId, bidderName);
+        var bidsField = typeof(Lot).GetField("_bids", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        var bids = (List<Bid>)bidsField.GetValue(lot)!;
+        bids.Add(Bid.Create(lot.Id, bidderId, amount));
+    }
+
+    private static void SetDeliveryRequestDeadline(Lot lot, DateTime deadline)
+    {
+        typeof(Lot).GetProperty(nameof(Lot.DeliveryRequestDeadlineAt))!
+            .SetValue(lot, deadline);
     }
 
     [Fact]
@@ -167,6 +182,7 @@ public class LotTests
         var lot = CreateActiveLot();
         lot.Complete();
         lot.Status.Should().Be(LotStatus.Completed);
+        lot.WinnerId.Should().BeNull();
     }
 
     [Fact]
@@ -217,8 +233,10 @@ public class LotTests
     public void Complete_SetsStatusAndWinner()
     {
         var lot = CreateActiveLot();
+        PlaceBidAndAttach(lot, Money.FromDecimal(1500m), BidderId, "Bidder");
         lot.Complete();
         lot.Status.Should().Be(LotStatus.Completed);
+        lot.WinnerId.Should().Be(BidderId);
     }
 
     [Fact]
@@ -233,7 +251,7 @@ public class LotTests
     public void Complete_RaisesDomainEvent()
     {
         var lot = CreateActiveLot();
-        lot.PlaceBid(Money.FromDecimal(1500m), BidderId, "Bidder");
+        PlaceBidAndAttach(lot, Money.FromDecimal(1500m), BidderId, "Bidder");
         lot.ClearDomainEvents();
         lot.Complete("WinnerName");
 
@@ -247,26 +265,83 @@ public class LotTests
     public void OpenDeliveryRequestWindow_Completed_SetsDeliveryRequestPending()
     {
         var lot = CreateActiveLot();
+        PlaceBidAndAttach(lot, Money.FromDecimal(1500m), BidderId, "Bidder");
         lot.Complete();
         lot.OpenDeliveryRequestWindow();
         lot.Status.Should().Be(LotStatus.DeliveryRequestPending);
+        lot.DeliveryRequestDeadlineAt.Should().BeCloseTo(DateTime.UtcNow.AddDays(3), TimeSpan.FromSeconds(5));
     }
 
     [Fact]
-    public void RequestDelivery_PendingDeliveryRequest_SetsAddressAndShippingPending()
+    public void OpenDeliveryRequestWindow_CompletedWithoutWinner_Throws()
     {
         var lot = CreateActiveLot();
         lot.Complete();
+
+        var act = () => lot.OpenDeliveryRequestWindow();
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("Only completed lots with a winner can open delivery request window");
+    }
+
+    [Fact]
+    public void RequestDelivery_PendingDeliveryRequest_SetsDeliveryDetailsAndShippingPending()
+    {
+        var lot = CreateActiveLot();
+        PlaceBidAndAttach(lot, Money.FromDecimal(1500m), BidderId, "Bidder");
+        lot.Complete();
         lot.OpenDeliveryRequestWindow();
-        lot.RequestDelivery("PVZ address");
+        lot.RequestDelivery(DeliveryProvider.Cdek, "PVZ address", "Test Recipient", "+79990000000");
         lot.Status.Should().Be(LotStatus.ShippingPending);
+        lot.SelectedDeliveryProvider.Should().Be(DeliveryProvider.Cdek);
         lot.DeliveryAddress.Should().Be("PVZ address");
+        lot.DeliveryRecipientName.Should().Be("Test Recipient");
+        lot.DeliveryRecipientPhone.Should().Be("+79990000000");
+        lot.DeliveryRequestedAt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void RequestDelivery_UnsupportedProvider_Throws()
+    {
+        var lot = CreateActiveLot();
+        PlaceBidAndAttach(lot, Money.FromDecimal(1500m), BidderId, "Bidder");
+        lot.Complete();
+        lot.OpenDeliveryRequestWindow();
+
+        var act = () => lot.RequestDelivery(
+            DeliveryProvider.YandexDelivery,
+            "PVZ address",
+            "Test Recipient",
+            "+79990000000");
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("Delivery provider is not supported for this lot");
+    }
+
+    [Fact]
+    public void RequestDelivery_AfterDeadline_Throws()
+    {
+        var lot = CreateActiveLot();
+        PlaceBidAndAttach(lot, Money.FromDecimal(1500m), BidderId, "Bidder");
+        lot.Complete();
+        lot.OpenDeliveryRequestWindow();
+        SetDeliveryRequestDeadline(lot, DateTime.UtcNow.AddSeconds(-1));
+
+        var act = () => lot.RequestDelivery(
+            DeliveryProvider.Cdek,
+            "PVZ address",
+            "Test Recipient",
+            "+79990000000");
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("Delivery request deadline has expired");
     }
 
     [Fact]
     public void ExpireDeliveryRequest_PendingDeliveryRequest_SetsExpired()
     {
         var lot = CreateActiveLot();
+        PlaceBidAndAttach(lot, Money.FromDecimal(1500m), BidderId, "Bidder");
         lot.Complete();
         lot.OpenDeliveryRequestWindow();
         lot.ExpireDeliveryRequest();
@@ -277,9 +352,10 @@ public class LotTests
     public void CompleteTransaction_Delivered_SetsTransactionComplete()
     {
         var lot = CreateActiveLot();
+        PlaceBidAndAttach(lot, Money.FromDecimal(1500m), BidderId, "Bidder");
         lot.Complete();
         lot.OpenDeliveryRequestWindow();
-        lot.RequestDelivery("PVZ address");
+        lot.RequestDelivery(DeliveryProvider.Cdek, "PVZ address", "Test Recipient", "+79990000000");
         lot.MarkShipped("TRACK-1");
         lot.ConfirmDelivery();
         lot.CompleteTransaction();

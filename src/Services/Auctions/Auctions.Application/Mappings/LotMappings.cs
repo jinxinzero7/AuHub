@@ -25,7 +25,9 @@ public static class LotMappings
             BidsCount = lot.Bids.Count,
             CoverImageUrl = lot.CoverImageUrl,
             TrackingNumber = lot.TrackingNumber,
-            DeliveryAddress = lot.DeliveryAddress,
+            SelectedDeliveryProvider = lot.SelectedDeliveryProvider?.ToString(),
+            DeliveryRequestedAt = lot.DeliveryRequestedAt,
+            DeliveryRequestDeadlineAt = lot.DeliveryRequestDeadlineAt,
             SupportedDeliveryProviders = lot.SupportedDeliveryProviders.Select(provider => provider.ToString()).ToList(),
             AdminComment = lot.AdminComment,
             CreatedAt = lot.CreatedAt
@@ -51,7 +53,9 @@ public static class LotMappings
             UpdatedAt = lot.UpdatedAt,
             BidsCount = lot.Bids.Count,
             TrackingNumber = lot.TrackingNumber,
-            DeliveryAddress = lot.DeliveryAddress,
+            SelectedDeliveryProvider = lot.SelectedDeliveryProvider?.ToString(),
+            DeliveryRequestedAt = lot.DeliveryRequestedAt,
+            DeliveryRequestDeadlineAt = lot.DeliveryRequestDeadlineAt,
             SupportedDeliveryProviders = lot.SupportedDeliveryProviders.Select(provider => provider.ToString()).ToList(),
             AdminComment = lot.AdminComment,
             Bids = lot.Bids.Select(b => b.ToDetailDto()).OrderByDescending(b => b.PlacedAt).ToList()

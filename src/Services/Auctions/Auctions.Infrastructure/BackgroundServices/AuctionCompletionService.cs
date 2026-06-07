@@ -71,6 +71,10 @@ public class AuctionCompletionService : BackgroundService
                 {
                     var previousStatus = lot.Status;
                     lot.Complete();
+                    if (lot.WinnerId.HasValue)
+                    {
+                        lot.OpenDeliveryRequestWindow();
+                    }
 
                     if (previousStatus != lot.Status)
                     {

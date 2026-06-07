@@ -86,7 +86,9 @@ public class GetLotsEndpoint : EndpointWithoutRequest<GetLotsResponse>
                 BidsCount = l.BidsCount,
                 CoverImageUrl = coverImageUrl,
                 TrackingNumber = l.TrackingNumber,
-                DeliveryAddress = l.DeliveryAddress,
+                SelectedDeliveryProvider = l.SelectedDeliveryProvider,
+                DeliveryRequestedAt = l.DeliveryRequestedAt,
+                DeliveryRequestDeadlineAt = l.DeliveryRequestDeadlineAt,
                 SupportedDeliveryProviders = l.SupportedDeliveryProviders,
                 AdminComment = l.AdminComment
             });
@@ -132,6 +134,9 @@ public record LotDto
     public string? CoverImageUrl { get; init; }
     public string? TrackingNumber { get; init; }
     public string? DeliveryAddress { get; init; }
+    public string? SelectedDeliveryProvider { get; init; }
+    public DateTime? DeliveryRequestedAt { get; init; }
+    public DateTime? DeliveryRequestDeadlineAt { get; init; }
     public List<string> SupportedDeliveryProviders { get; init; } = new();
     public string? AdminComment { get; init; }
 }

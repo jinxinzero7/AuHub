@@ -82,6 +82,20 @@ namespace Auctions.Infrastructure.Data.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<DateTime?>("DeliveryRequestDeadlineAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeliveryRequestedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeliveryRecipientName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("DeliveryRecipientPhone")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(2000)
@@ -108,6 +122,10 @@ namespace Auctions.Infrastructure.Data.Migrations
 
                     b.Property<Guid>("SellerId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("SelectedDeliveryProvider")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<DateTime?>("StartTime")
                         .HasColumnType("timestamp with time zone");

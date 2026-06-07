@@ -67,6 +67,16 @@ public class AuctionsDbContext : DbContext
             entity.Property(l => l.DeliveryAddress)
                 .HasMaxLength(500);
 
+            entity.Property(l => l.DeliveryRecipientName)
+                .HasMaxLength(200);
+
+            entity.Property(l => l.DeliveryRecipientPhone)
+                .HasMaxLength(50);
+
+            entity.Property(l => l.SelectedDeliveryProvider)
+                .HasConversion<string>()
+                .HasMaxLength(50);
+
             entity.Property(l => l.SupportedDeliveryProviders)
                 .HasConversion(
                     providers => string.Join(",", providers.Select(provider => provider.ToString())),

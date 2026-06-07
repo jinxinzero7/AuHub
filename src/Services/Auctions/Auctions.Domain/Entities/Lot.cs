@@ -26,6 +26,11 @@ public class Lot
 
     public string? TrackingNumber { get; private set; }
     public string? DeliveryAddress { get; private set; }
+    public string? DeliveryRecipientName { get; private set; }
+    public string? DeliveryRecipientPhone { get; private set; }
+    public DeliveryProvider? SelectedDeliveryProvider { get; private set; }
+    public DateTime? DeliveryRequestedAt { get; private set; }
+    public DateTime? DeliveryRequestDeadlineAt { get; private set; }
     public string? DisputeReason { get; private set; }
     public List<DeliveryProvider> SupportedDeliveryProviders { get; private set; } = new();
 
@@ -153,7 +158,7 @@ public class Lot
             throw new InvalidOperationException("Only active lots can be completed");
 
         Status = LotStatus.Completed;
-        WinnerId = _bids.OrderByDescending(b => b.Amount).Select(b => b.BidderId).FirstOrDefault();
+        WinnerId = _bids.OrderByDescending(b => b.Amount).Select(b => (Guid?)b.BidderId).FirstOrDefault();
         UpdatedAt = DateTime.UtcNow;
 
         _domainEvents.Add(new AuctionCompletedDomainEvent
@@ -200,17 +205,35 @@ public class Lot
         UpdatedAt = DateTime.UtcNow;
     }
 
-    public void SetDeliveryAddress(string address)
-    {
-        RequestDelivery(address);
-    }
-
-    public void RequestDelivery(string address)
+    public void RequestDelivery(
+        DeliveryProvider provider,
+        string address,
+        string recipientName,
+        string recipientPhone)
     {
         if (Status != LotStatus.DeliveryRequestPending)
             throw new InvalidOperationException("Cannot set delivery address in current status");
 
+        if (!SupportedDeliveryProviders.Contains(provider))
+            throw new InvalidOperationException("Delivery provider is not supported for this lot");
+
+        if (DeliveryRequestDeadlineAt.HasValue && DateTime.UtcNow > DeliveryRequestDeadlineAt.Value)
+            throw new InvalidOperationException("Delivery request deadline has expired");
+
+        if (string.IsNullOrWhiteSpace(address))
+            throw new InvalidOperationException("Delivery address is required");
+
+        if (string.IsNullOrWhiteSpace(recipientName))
+            throw new InvalidOperationException("Recipient name is required");
+
+        if (string.IsNullOrWhiteSpace(recipientPhone))
+            throw new InvalidOperationException("Recipient phone is required");
+
+        SelectedDeliveryProvider = provider;
         DeliveryAddress = address;
+        DeliveryRecipientName = recipientName;
+        DeliveryRecipientPhone = recipientPhone;
+        DeliveryRequestedAt = DateTime.UtcNow;
         Status = LotStatus.ShippingPending;
         UpdatedAt = DateTime.UtcNow;
     }
@@ -270,7 +293,11 @@ public class Lot
         if (Status != LotStatus.Completed)
             throw new InvalidOperationException("Only completed lots can open delivery request window");
 
+        if (!WinnerId.HasValue)
+            throw new InvalidOperationException("Only completed lots with a winner can open delivery request window");
+
         Status = LotStatus.DeliveryRequestPending;
+        DeliveryRequestDeadlineAt = DateTime.UtcNow.AddDays(3);
         UpdatedAt = DateTime.UtcNow;
     }
 
