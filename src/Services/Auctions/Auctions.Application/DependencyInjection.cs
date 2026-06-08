@@ -12,6 +12,7 @@ public static class DependencyInjection
         services.AddScoped<Commands.CompleteLot.CompleteLotCommandHandler>();
         services.AddScoped<Commands.CancelLot.CancelLotCommandHandler>();
         services.AddScoped<Commands.PlaceBid.PlaceBidCommandHandler>();
+        services.AddScoped<Services.AuctionSettlementService>();
 
         // Register Query Handlers
         services.AddScoped<Queries.GetLots.GetLotsQueryHandler>();

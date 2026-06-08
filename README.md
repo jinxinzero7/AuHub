@@ -17,7 +17,7 @@ Current architecture:
 
 Verified on 2026-06-08:
 - backend build passes with 0 warnings and 0 errors;
-- backend test run contains 237 xUnit cases, currently 237 passed / 0 failed;
+- backend test run contains 242 xUnit cases, currently 242 passed / 0 failed;
 - all backend API services use FastEndpoints 8.1.0;
 - Auctions demo seed no longer calls the invalid `Approve()` then `Publish()` chain;
 - manual auction completion is admin-only through `/api/admin/lots/{id}/force-complete`;
@@ -31,6 +31,7 @@ Verified on 2026-06-08:
 - overdue delivery requests automatically move to `DeliveryRequestExpired`; sellers can mark requested delivery as shipped through `/api/lots/{id}/ship`;
 - bidding tests cover previous bidder release, same-bidder non-release and reserve compensation on exhausted concurrency;
 - Payment command tests cover reserve, charge, release, refund, seller payout and duplicate operation idempotency;
+- Auctions settlement tests cover 1% commission, no seller payout on completion, seller payout and buyer refund;
 - backend integration projects contain API smoke tests; `.NET E2E.Tests` is still a placeholder;
 - frontend production build passes without Google Fonts network dependency;
 - frontend lint passes cleanly;
@@ -194,7 +195,7 @@ Test projects:
 
 Current state:
 - unit tests cover core domain/application behavior and currently pass;
-- bidding/payment money-side-effect coverage has been strengthened, but full escrow integration coverage is still pending;
+- bidding/payment money-side-effect coverage has been strengthened, but persistence-backed escrow integration coverage is still pending;
 - backend integration projects cover API host startup and basic auth/internal-key guards;
 - persistence-backed integration tests and UI E2E still need real coverage;
 - CI workflow exists and runs real unit test projects; integration tests remain disabled until CI strategy is updated.

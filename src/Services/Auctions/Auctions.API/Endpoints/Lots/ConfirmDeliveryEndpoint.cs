@@ -1,16 +1,21 @@
 using FastEndpoints;
 using System.Security.Claims;
 using Auctions.Domain.Interfaces;
+using Auctions.Application.Services;
 
 namespace Auctions.API.Endpoints.Lots;
 
 public class ConfirmDeliveryEndpoint : EndpointWithoutRequest
 {
     private readonly ILotRepository _lotRepository;
+    private readonly AuctionSettlementService _settlementService;
 
-    public ConfirmDeliveryEndpoint(ILotRepository lotRepository)
+    public ConfirmDeliveryEndpoint(
+        ILotRepository lotRepository,
+        AuctionSettlementService settlementService)
     {
         _lotRepository = lotRepository;
+        _settlementService = settlementService;
     }
 
     public override void Configure()
@@ -49,8 +54,22 @@ public class ConfirmDeliveryEndpoint : EndpointWithoutRequest
         }
 
         lot.ConfirmDelivery();
+
+        var payoutResult = await _settlementService.PaySellerAsync(lot, ct);
+        if (payoutResult.IsFailure)
+        {
+            ThrowError(payoutResult.Error, payoutResult.StatusCode);
+            return;
+        }
+
+        lot.CompleteTransaction();
         await _lotRepository.SaveChangesAsync(ct);
 
-        Response = new { Success = true, Message = "Delivery confirmed" };
+        Response = new
+        {
+            Success = true,
+            Message = "Delivery confirmed",
+            SellerPayout = payoutResult.Value.Amount
+        };
     }
 }
