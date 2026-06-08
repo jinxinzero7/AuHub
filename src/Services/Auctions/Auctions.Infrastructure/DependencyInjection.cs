@@ -33,6 +33,7 @@ public static class DependencyInjection
         if (!configuration.GetValue<bool>("DisableHostedServices"))
         {
             services.AddHostedService<AuctionCompletionService>();
+            services.AddHostedService<DeliveryRequestExpirationService>();
             services.AddHostedService<OutboxProcessor>();
         }
 

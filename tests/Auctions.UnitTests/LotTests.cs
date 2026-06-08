@@ -349,6 +349,21 @@ public class LotTests
     }
 
     [Fact]
+    public void Ship_ShippingPending_SetsTrackingNumberAndShipped()
+    {
+        var lot = CreateActiveLot();
+        PlaceBidAndAttach(lot, Money.FromDecimal(1500m), BidderId, "Bidder");
+        lot.Complete();
+        lot.OpenDeliveryRequestWindow();
+        lot.RequestDelivery(DeliveryProvider.Cdek, "PVZ address", "Test Recipient", "+79990000000");
+
+        lot.Ship("TRACK-1");
+
+        lot.Status.Should().Be(LotStatus.Shipped);
+        lot.TrackingNumber.Should().Be("TRACK-1");
+    }
+
+    [Fact]
     public void CompleteTransaction_Delivered_SetsTransactionComplete()
     {
         var lot = CreateActiveLot();
