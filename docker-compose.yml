@@ -115,6 +115,7 @@ services:
       - Jwt__Secret=${JWT_SECRET}
       - Jwt__Issuer=AuHub
       - Jwt__Audience=AuHub-Users
+      - InternalApiKey=${INTERNAL_API_KEY:?INTERNAL_API_KEY is required}
       - ExternalUrl__BaseUrl=http://localhost:5000
       - Notifications__BaseUrl=http://notifications-api:8080
       - Payment__BaseUrl=http://payment-api:8080
@@ -150,6 +151,7 @@ services:
       - Jwt__Secret=${JWT_SECRET}
       - Jwt__Issuer=AuHub
       - Jwt__Audience=AuHub-Users
+      - InternalApiKey=${INTERNAL_API_KEY:?INTERNAL_API_KEY is required}
       - RabbitMQ__Host=rabbitmq
       - RabbitMQ__User=${RABBITMQ_USER:-auhub}
       - RabbitMQ__Password=${RABBITMQ_PASSWORD:-AuHub_Rabbit_2026!}
@@ -174,6 +176,7 @@ services:
       - Jwt__Secret=${JWT_SECRET}
       - Jwt__Issuer=AuHub
       - Jwt__Audience=AuHub-Users
+      - InternalApiKey=${INTERNAL_API_KEY:?INTERNAL_API_KEY is required}
       - RabbitMQ__Host=rabbitmq
       - RabbitMQ__User=${RABBITMQ_USER:-auhub}
       - RabbitMQ__Password=${RABBITMQ_PASSWORD:-AuHub_Rabbit_2026!}

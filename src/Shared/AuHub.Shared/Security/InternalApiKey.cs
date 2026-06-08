@@ -9,23 +9,29 @@ namespace AuHub.Shared.Security;
 public static class InternalApiKey
 {
     public const string HeaderName = "X-Internal-Api-Key";
-    private const string DefaultValue = "AuHub-Internal-Secret-2026";
 
     public static bool IsValid(HttpContext context)
     {
         var configuration = context.RequestServices.GetRequiredService<IConfiguration>();
-        var expected = GetExpectedValue(configuration);
+        var expected = TryGetExpectedValue(configuration);
         var actual = context.Request.Headers[HeaderName].FirstOrDefault();
 
-        return IsMatch(actual, expected);
+        return expected is not null && IsMatch(actual, expected);
     }
 
     public static string GetExpectedValue(IConfiguration configuration)
     {
-        return configuration["InternalApiKey"]
+        return TryGetExpectedValue(configuration)
+            ?? throw new InvalidOperationException("Internal API key is not configured");
+    }
+
+    private static string? TryGetExpectedValue(IConfiguration configuration)
+    {
+        var value = configuration["InternalApiKey"]
             ?? configuration["InternalApiKey:Value"]
-            ?? Environment.GetEnvironmentVariable("INTERNAL_API_KEY")
-            ?? DefaultValue;
+            ?? Environment.GetEnvironmentVariable("INTERNAL_API_KEY");
+
+        return string.IsNullOrWhiteSpace(value) ? null : value;
     }
 
     private static bool IsMatch(string? actual, string expected)

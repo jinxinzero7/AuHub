@@ -64,6 +64,12 @@ public class DeleteLotImageEndpoint : EndpointWithoutRequest
             return;
         }
 
+        if (image.LotId != lotId)
+        {
+            ThrowError("Image not found", 404);
+            return;
+        }
+
         await _storageService.DeleteAsync(image.ObjectName, ct);
 
         _imageRepository.Remove(image);

@@ -17,12 +17,13 @@ Current architecture:
 
 Verified on 2026-06-08:
 - backend build passes with 0 warnings and 0 errors;
-- backend test run contains 243 xUnit cases, currently 243 passed / 0 failed;
+- backend test run contains 249 xUnit cases, currently 249 passed / 0 failed;
 - all backend API services use FastEndpoints 8.1.0;
 - Auctions demo seed no longer calls the invalid `Approve()` then `Publish()` chain;
 - manual auction completion is admin-only through `/api/admin/lots/{id}/force-complete`;
 - public registration always creates regular users; admin self-registration is disabled;
 - Payment internal operations and Notifications direct-send endpoint require `X-Internal-Api-Key`;
+- `X-Internal-Api-Key` must be explicitly configured; there is no hardcoded fallback key;
 - public payment balance is JWT-scoped and no longer supports arbitrary public `userId` lookup;
 - Payment no longer registers the duplicate `AuctionCompletedEvent` consumer;
 - lot moderation now uses `Draft -> PendingModeration -> Active`; seller submit endpoint is `/api/lots/{id}/submit-for-moderation`;
@@ -151,6 +152,8 @@ Start:
 docker compose up -d --build
 ```
 
+Required local secrets are listed in `.env.example`. At minimum, set `JWT_SECRET` and `INTERNAL_API_KEY` before starting the stack.
+
 Stop:
 
 ```powershell
@@ -214,7 +217,7 @@ Current state:
 10. SignalR pushes real-time update to clients.
 11. RabbitMQ/MassTransit notifies other services asynchronously.
 
-Internal Payment operations and direct notification send are protected by `X-Internal-Api-Key`. This is a diploma baseline for service-to-service protection; stronger network isolation/service auth is still future hardening.
+Internal Payment operations and direct notification send are protected by `X-Internal-Api-Key`. The key is required from configuration/environment and has no hardcoded fallback. This is a diploma baseline for service-to-service protection; stronger network isolation/service auth is still future hardening.
 
 ## Important Patterns
 
