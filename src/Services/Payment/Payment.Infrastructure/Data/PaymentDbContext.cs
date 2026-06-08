@@ -52,6 +52,9 @@ public class PaymentDbContext : DbContext
             entity.HasIndex(t => t.UserId);
             entity.HasIndex(t => t.CreatedAt);
             entity.HasIndex(t => t.ReferenceId);
+            entity.HasIndex(t => new { t.UserId, t.Type, t.ReferenceId })
+                .IsUnique()
+                .HasFilter("\"ReferenceId\" IS NOT NULL");
         });
     }
 }

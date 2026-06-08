@@ -19,6 +19,12 @@ public class TransferToSellerCommandHandlerTests
     {
         _walletRepo = Substitute.For<IWalletRepository>();
         _transactionRepo = Substitute.For<ITransactionRepository>();
+        _transactionRepo.GetByUserIdTypeAndReferenceIdAsync(
+                Arg.Any<Guid>(),
+                Arg.Any<TransactionType>(),
+                Arg.Any<Guid>(),
+                Arg.Any<CancellationToken>())
+            .Returns((Transaction?)null);
         _handler = new TransferToSellerCommandHandler(_walletRepo, _transactionRepo);
     }
 
@@ -52,6 +58,31 @@ public class TransferToSellerCommandHandlerTests
             t.ReferenceId == command.ReferenceId
         ), Arg.Any<CancellationToken>());
         await _walletRepo.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task HandleAsync_DuplicateTransfer_ReturnsSuccessWithoutDepositingAgain()
+    {
+        var command = CreateCommand();
+        var existing = Transaction.Create(
+            command.SellerId,
+            TransactionType.Transfer,
+            command.Amount,
+            "Existing transfer",
+            command.ReferenceId);
+        _transactionRepo.GetByUserIdTypeAndReferenceIdAsync(
+                command.SellerId,
+                TransactionType.Transfer,
+                command.ReferenceId,
+                Arg.Any<CancellationToken>())
+            .Returns(existing);
+
+        var result = await _handler.HandleAsync(command);
+
+        result.IsSuccess.Should().BeTrue();
+        await _walletRepo.DidNotReceive().GetByUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await _walletRepo.DidNotReceive().AddAsync(Arg.Any<Wallet>(), Arg.Any<CancellationToken>());
+        await _transactionRepo.DidNotReceive().AddAsync(Arg.Any<Transaction>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

@@ -20,6 +20,12 @@ public class ChargeWinnerCommandHandlerTests
     {
         _walletRepo = Substitute.For<IWalletRepository>();
         _transactionRepo = Substitute.For<ITransactionRepository>();
+        _transactionRepo.GetByUserIdTypeAndReferenceIdAsync(
+                Arg.Any<Guid>(),
+                Arg.Any<TransactionType>(),
+                Arg.Any<Guid>(),
+                Arg.Any<CancellationToken>())
+            .Returns((Transaction?)null);
         _handler = new ChargeWinnerCommandHandler(_walletRepo, _transactionRepo);
     }
 
@@ -54,6 +60,30 @@ public class ChargeWinnerCommandHandlerTests
             t.ReferenceId == command.ReferenceId
         ), Arg.Any<CancellationToken>());
         await _walletRepo.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task HandleAsync_DuplicateCharge_ReturnsSuccessWithoutChargingAgain()
+    {
+        var command = CreateCommand();
+        var existing = Transaction.Create(
+            command.UserId,
+            TransactionType.Win,
+            command.Amount,
+            "Existing charge",
+            command.ReferenceId);
+        _transactionRepo.GetByUserIdTypeAndReferenceIdAsync(
+                command.UserId,
+                TransactionType.Win,
+                command.ReferenceId,
+                Arg.Any<CancellationToken>())
+            .Returns(existing);
+
+        var result = await _handler.HandleAsync(command);
+
+        result.IsSuccess.Should().BeTrue();
+        await _walletRepo.DidNotReceive().GetByUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await _transactionRepo.DidNotReceive().AddAsync(Arg.Any<Transaction>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

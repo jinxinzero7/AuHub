@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Payment.Domain.Entities;
 using Payment.Application.Repositories;
 using Payment.Infrastructure.Data;
+using Payment.Domain.Enums;
 
 namespace Payment.Infrastructure.Repositories;
 
@@ -45,6 +46,20 @@ public class TransactionRepository : ITransactionRepository
         return await _context.Transactions
             .Where(t => t.UserId == userId)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<Transaction?> GetByUserIdTypeAndReferenceIdAsync(
+        Guid userId,
+        TransactionType type,
+        Guid referenceId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Transactions
+            .FirstOrDefaultAsync(t =>
+                t.UserId == userId &&
+                t.Type == type &&
+                t.ReferenceId == referenceId,
+                cancellationToken);
     }
 
     public async Task AddAsync(Transaction transaction, CancellationToken cancellationToken = default)

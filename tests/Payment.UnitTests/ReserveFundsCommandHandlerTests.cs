@@ -20,6 +20,12 @@ public class ReserveFundsCommandHandlerTests
     {
         _walletRepo = Substitute.For<IWalletRepository>();
         _transactionRepo = Substitute.For<ITransactionRepository>();
+        _transactionRepo.GetByUserIdTypeAndReferenceIdAsync(
+                Arg.Any<Guid>(),
+                Arg.Any<TransactionType>(),
+                Arg.Any<Guid>(),
+                Arg.Any<CancellationToken>())
+            .Returns((Transaction?)null);
         _handler = new ReserveFundsCommandHandler(_walletRepo, _transactionRepo);
     }
 
@@ -53,6 +59,55 @@ public class ReserveFundsCommandHandlerTests
             t.ReferenceId == command.ReferenceId
         ), Arg.Any<CancellationToken>());
         await _walletRepo.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task HandleAsync_DuplicateReserve_ReturnsSuccessWithoutFreezingAgain()
+    {
+        var command = CreateCommand();
+        var existing = Transaction.Create(
+            command.UserId,
+            TransactionType.Reserve,
+            command.Amount,
+            "Existing reserve",
+            command.ReferenceId);
+        _transactionRepo.GetByUserIdTypeAndReferenceIdAsync(
+                command.UserId,
+                TransactionType.Reserve,
+                command.ReferenceId,
+                Arg.Any<CancellationToken>())
+            .Returns(existing);
+
+        var result = await _handler.HandleAsync(command);
+
+        result.IsSuccess.Should().BeTrue();
+        await _walletRepo.DidNotReceive().GetByUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await _transactionRepo.DidNotReceive().AddAsync(Arg.Any<Transaction>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task HandleAsync_DuplicateReserveWithDifferentAmount_ReturnsConflict()
+    {
+        var command = CreateCommand();
+        var existing = Transaction.Create(
+            command.UserId,
+            TransactionType.Reserve,
+            Money.FromDecimal(250),
+            "Existing reserve",
+            command.ReferenceId);
+        _transactionRepo.GetByUserIdTypeAndReferenceIdAsync(
+                command.UserId,
+                TransactionType.Reserve,
+                command.ReferenceId,
+                Arg.Any<CancellationToken>())
+            .Returns(existing);
+
+        var result = await _handler.HandleAsync(command);
+
+        result.IsFailure.Should().BeTrue();
+        result.StatusCode.Should().Be(409);
+        await _walletRepo.DidNotReceive().GetByUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await _transactionRepo.DidNotReceive().AddAsync(Arg.Any<Transaction>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

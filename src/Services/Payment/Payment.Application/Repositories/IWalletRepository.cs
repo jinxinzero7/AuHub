@@ -1,4 +1,5 @@
 using Payment.Domain.Entities;
+using Payment.Domain.Enums;
 
 namespace Payment.Application.Repositories;
 
@@ -12,6 +13,11 @@ public interface IWalletRepository
 public interface ITransactionRepository
 {
     Task<List<Transaction>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<Transaction?> GetByUserIdTypeAndReferenceIdAsync(
+        Guid userId,
+        TransactionType type,
+        Guid referenceId,
+        CancellationToken cancellationToken = default);
     Task AddAsync(Transaction transaction, CancellationToken cancellationToken = default);
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

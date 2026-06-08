@@ -56,6 +56,10 @@ namespace Payment.Infrastructure.Data.Migrations
 
                     b.HasIndex("UserId");
 
+                    b.HasIndex("UserId", "Type", "ReferenceId")
+                        .IsUnique()
+                        .HasFilter("\"ReferenceId\" IS NOT NULL");
+
                     b.ToTable("Transactions", (string)null);
                 });
 

@@ -2,6 +2,7 @@ using AuHub.Shared.Results;
 using Payment.Domain.Entities;
 using Payment.Domain.Enums;
 using Payment.Application.Repositories;
+using Payment.Application.Services;
 
 namespace Payment.Application.Commands.ReleaseFunds;
 
@@ -22,6 +23,16 @@ public class ReleaseFundsCommandHandler
     {
         try
         {
+            var duplicateResult = await PaymentOperationIdempotency.CheckAsync(
+                _transactionRepository,
+                command.UserId,
+                TransactionType.Release,
+                command.Amount,
+                command.ReferenceId,
+                cancellationToken);
+            if (duplicateResult != null)
+                return duplicateResult;
+
             var wallet = await _walletRepository.GetByUserIdAsync(command.UserId, cancellationToken);
             if (wallet == null)
                 return Result.Failure<bool>("Wallet not found", 404);
