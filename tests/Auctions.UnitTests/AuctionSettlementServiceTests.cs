@@ -100,5 +100,21 @@ public class AuctionSettlementServiceTests
 
         result.IsSuccess.Should().BeTrue();
         await _paymentClient.Received(1).RefundFundsAsync(WinnerId, 1000m, lot.Id, Arg.Any<CancellationToken>());
+        await _paymentClient.DidNotReceive().TransferToSellerAsync(
+            Arg.Any<Guid>(), Arg.Any<decimal>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RefundWinnerAsync_WhenPaymentFails_ReturnsFailure()
+    {
+        var lot = CreateCompletedLotWithWinner();
+        _paymentClient.RefundFundsAsync(WinnerId, 1000m, lot.Id, Arg.Any<CancellationToken>())
+            .Returns(new PaymentResult(false, "Payment unavailable"));
+
+        var result = await _service.RefundWinnerAsync(lot);
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().Be("Payment unavailable");
+        result.StatusCode.Should().Be(503);
     }
 }

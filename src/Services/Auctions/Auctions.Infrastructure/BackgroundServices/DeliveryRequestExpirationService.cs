@@ -1,3 +1,4 @@
+using Auctions.Application.Services;
 using Auctions.Domain.Entities;
 using Auctions.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -46,6 +47,7 @@ public class DeliveryRequestExpirationService : BackgroundService
     {
         using var scope = _serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AuctionsDbContext>();
+        var settlementService = scope.ServiceProvider.GetRequiredService<AuctionSettlementService>();
         var now = DateTime.UtcNow;
 
         var lots = await context.Lots
@@ -60,12 +62,29 @@ public class DeliveryRequestExpirationService : BackgroundService
             return;
         }
 
+        var expiredCount = 0;
         foreach (var lot in lots)
         {
+            var refundResult = await settlementService.RefundWinnerAsync(lot, cancellationToken);
+            if (refundResult.IsFailure)
+            {
+                _logger.LogWarning(
+                    "Failed to refund winner for expired delivery request {LotId}: {Error}",
+                    lot.Id,
+                    refundResult.Error);
+                continue;
+            }
+
             lot.ExpireDeliveryRequest();
+            expiredCount++;
+        }
+
+        if (expiredCount == 0)
+        {
+            return;
         }
 
         await context.SaveChangesAsync(cancellationToken);
-        _logger.LogInformation("Expired {Count} overdue delivery requests", lots.Count);
+        _logger.LogInformation("Expired {Count} overdue delivery requests", expiredCount);
     }
 }
