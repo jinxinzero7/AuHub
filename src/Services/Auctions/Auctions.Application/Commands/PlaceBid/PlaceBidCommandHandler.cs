@@ -44,8 +44,9 @@ public class PlaceBidCommandHandler
         CancellationToken cancellationToken = default)
     {
         const int maxRetries = 3;
+        var fundsReserved = false;
+        var reservedLotId = Guid.Empty;
 
-        // Idempotency check
         if (command.IdempotencyKey.HasValue)
         {
             var existingBid = await _bidRepository.GetByIdempotencyKeyAsync(command.IdempotencyKey.Value, cancellationToken);
@@ -70,8 +71,9 @@ public class PlaceBidCommandHandler
                     return Result.Failure<PlaceBidResponse>("Lot not found", 404);
                 if (lot.SellerId == command.BidderId)
                     return Result.Failure<PlaceBidResponse>("You cannot bid on your own lot", 403);
+                if (command.Amount <= lot.CurrentPrice)
+                    return Result.Failure<PlaceBidResponse>("Bid amount must be higher than current price", 400);
 
-                // Check balance via Payment Service
                 var balanceResult = await _paymentClient.GetBalanceAsync(command.BidderId, cancellationToken);
                 if (!balanceResult.Success)
                     return Result.Failure<PlaceBidResponse>("Payment service unavailable", 503);
@@ -79,20 +81,23 @@ public class PlaceBidCommandHandler
                     return Result.Failure<PlaceBidResponse>(
                         $"Insufficient funds. Required: {command.Amount}, Available: {balanceResult.Balance:C2}", 400);
 
-                // Store previous bidder info for releasing funds (before PlaceBid updates CurrentPrice)
                 var previousBid = lot.Bids.OrderByDescending(b => b.Amount).FirstOrDefault();
                 var previousBidderId = previousBid?.BidderId;
                 var previousBidAmount = lot.CurrentPrice;
 
-                // Reserve funds for new bid
-                var reserveResult = await _paymentClient.ReserveFundsAsync(
-                    command.BidderId, command.Amount.Amount, lot.Id, cancellationToken);
-                if (!reserveResult.Success)
-                    return Result.Failure<PlaceBidResponse>("Failed to reserve funds", 503);
+                if (!fundsReserved)
+                {
+                    var reserveResult = await _paymentClient.ReserveFundsAsync(
+                        command.BidderId, command.Amount.Amount, lot.Id, cancellationToken);
+                    if (!reserveResult.Success)
+                        return Result.Failure<PlaceBidResponse>("Failed to reserve funds", 503);
+
+                    fundsReserved = true;
+                    reservedLotId = lot.Id;
+                }
 
                 lot.PlaceBid(command.Amount, command.BidderId, command.BidderName);
 
-                // Sniper protection: extend auction if bid placed in last 30 seconds
                 if (lot.EndTime.HasValue && (lot.EndTime.Value - DateTime.UtcNow).TotalSeconds < 30)
                 {
                     lot.ExtendEndTime(TimeSpan.FromMinutes(2));
@@ -101,14 +106,6 @@ public class PlaceBidCommandHandler
                 var bid = Bid.Create(lot.Id, command.BidderId, command.Amount, command.IdempotencyKey);
                 await _bidRepository.AddAsync(bid, cancellationToken);
 
-                // Release funds for previous bidder (if exists and different from current)
-                if (previousBidderId.HasValue && previousBidderId.Value != command.BidderId)
-                {
-                    await _paymentClient.ReleaseFundsAsync(
-                        previousBidderId.Value, previousBidAmount.Amount, lot.Id, cancellationToken);
-                }
-
-                // Outbox for async notification dispatch
                 var outboxPayload = JsonSerializer.Serialize(new
                 {
                     lotId = lot.Id, sellerId = lot.SellerId, bidderId = command.BidderId,
@@ -119,12 +116,17 @@ public class PlaceBidCommandHandler
                 await _bidRepository.SaveChangesAsync(cancellationToken);
                 await _lotRepository.SaveChangesAsync(cancellationToken);
 
+                if (previousBidderId.HasValue && previousBidderId.Value != command.BidderId)
+                {
+                    await _paymentClient.ReleaseFundsAsync(
+                        previousBidderId.Value, previousBidAmount.Amount, lot.Id, cancellationToken);
+                }
+
                 await _domainEventDispatcher.DispatchAllAsync(lot.DomainEvents, cancellationToken);
                 lot.ClearDomainEvents();
 
                 await _eventPublisher.PublishNewBidAsync(lot.Id, lot.CurrentPrice.Amount, command.BidderName, cancellationToken);
 
-                // Publish integration event via MassTransit
                 await _publishEndpoint.Publish(new BidPlacedEvent
                 {
                     LotId = lot.Id,
@@ -145,17 +147,48 @@ public class PlaceBidCommandHandler
             {
                 await Task.Delay(100 * attempt, cancellationToken);
             }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (fundsReserved)
+                {
+                    await ReleaseReservedFundsAsync(command, reservedLotId, cancellationToken);
+                }
+
+                return Result.Failure<PlaceBidResponse>("Too many concurrent bids, please try again", 409);
+            }
             catch (InvalidOperationException ex)
             {
+                if (fundsReserved)
+                {
+                    await ReleaseReservedFundsAsync(command, reservedLotId, cancellationToken);
+                }
+
                 return Result.Failure<PlaceBidResponse>(ex.Message, 400);
             }
             catch (Exception ex)
             {
+                if (fundsReserved)
+                {
+                    await ReleaseReservedFundsAsync(command, reservedLotId, cancellationToken);
+                }
+
                 return Result.Failure<PlaceBidResponse>($"Failed to place bid: {ex.Message}", 500);
             }
         }
 
         return Result.Failure<PlaceBidResponse>("Too many concurrent bids, please try again", 409);
+    }
+
+    private Task<PaymentResult> ReleaseReservedFundsAsync(
+        PlaceBidCommand command,
+        Guid lotId,
+        CancellationToken cancellationToken)
+    {
+        return _paymentClient.ReleaseFundsAsync(
+            command.BidderId,
+            command.Amount.Amount,
+            lotId,
+            cancellationToken);
     }
 }
 

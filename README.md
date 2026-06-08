@@ -15,9 +15,9 @@ Current architecture:
 - Docker Compose deployment;
 - GitHub Actions CI.
 
-Verified on 2026-06-06:
+Verified on 2026-06-08:
 - backend build passes with 0 warnings and 0 errors;
-- backend test run contains 217 xUnit cases, currently 217 passed / 0 failed;
+- backend test run contains 231 xUnit cases, currently 231 passed / 0 failed;
 - all backend API services use FastEndpoints 8.1.0;
 - Auctions demo seed no longer calls the invalid `Approve()` then `Publish()` chain;
 - manual auction completion is admin-only through `/api/admin/lots/{id}/force-complete`;
@@ -29,6 +29,8 @@ Verified on 2026-06-06:
 - lot creation supports seller-selected delivery providers: `Cdek`, `YandexDelivery`, `RussianPost`;
 - auction completion opens a 3-day winner delivery request window; winner request endpoint is `/api/lots/{id}/delivery-request`;
 - overdue delivery requests automatically move to `DeliveryRequestExpired`; sellers can mark requested delivery as shipped through `/api/lots/{id}/ship`;
+- bidding tests cover previous bidder release, same-bidder non-release and reserve compensation on exhausted concurrency;
+- Payment command tests cover reserve, charge, release, refund and seller payout handlers;
 - backend integration projects contain API smoke tests; `.NET E2E.Tests` is still a placeholder;
 - frontend production build passes without Google Fonts network dependency;
 - frontend lint passes cleanly;
@@ -192,6 +194,7 @@ Test projects:
 
 Current state:
 - unit tests cover core domain/application behavior and currently pass;
+- bidding/payment money-side-effect coverage has been strengthened, but full escrow/idempotency integration coverage is still pending;
 - backend integration projects cover API host startup and basic auth/internal-key guards;
 - persistence-backed integration tests and UI E2E still need real coverage;
 - CI workflow exists and runs real unit test projects; integration tests remain disabled until CI strategy is updated.

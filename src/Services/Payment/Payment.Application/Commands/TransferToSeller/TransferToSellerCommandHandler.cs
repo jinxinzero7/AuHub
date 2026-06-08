@@ -43,6 +43,10 @@ public class TransferToSellerCommandHandler
 
             return Result.Success(true);
         }
+        catch (InvalidOperationException ex)
+        {
+            return Result.Failure<bool>(ex.Message, 400);
+        }
         catch (Exception ex)
         {
             return Result.Failure<bool>($"Failed to transfer to seller: {ex.Message}", 500);

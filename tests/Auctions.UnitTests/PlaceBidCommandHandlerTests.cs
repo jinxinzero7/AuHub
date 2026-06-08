@@ -11,6 +11,7 @@ using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
+using System.Reflection;
 
 namespace Auctions.UnitTests;
 
@@ -50,6 +51,14 @@ public class PlaceBidCommandHandlerTests
         lot.SubmitForModeration();
         lot.Approve();
         return lot;
+    }
+
+    private static void PlaceBidAndAttach(Lot lot, Money amount, Guid bidderId, string bidderName)
+    {
+        lot.PlaceBid(amount, bidderId, bidderName);
+        var bidsField = typeof(Lot).GetField("_bids", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        var bids = (List<Bid>)bidsField.GetValue(lot)!;
+        bids.Add(Bid.Create(lot.Id, bidderId, amount));
     }
 
     private PlaceBidCommand CreateCommand(decimal amount = 1500m, Guid? bidderId = null)
@@ -101,21 +110,25 @@ public class PlaceBidCommandHandlerTests
     [Fact]
     public async Task HandleAsync_IdempotencyKeyMatch_ReturnsEarly()
     {
-        var existingBid = Bid.Create(LotId, BidderId, Money.FromDecimal(1500m), Guid.NewGuid());
-        _bidRepo.GetByIdempotencyKeyAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+        var idempotencyKey = Guid.NewGuid();
+        var existingBid = Bid.Create(LotId, BidderId, Money.FromDecimal(1500m), idempotencyKey);
+        _bidRepo.GetByIdempotencyKeyAsync(idempotencyKey, Arg.Any<CancellationToken>())
             .Returns(existingBid);
 
         var command = new PlaceBidCommand
         {
             LotId = LotId, BidderId = BidderId, BidderName = "Test",
-            Amount = Money.FromDecimal(1500m), IdempotencyKey = Guid.NewGuid()
+            Amount = Money.FromDecimal(1500m), IdempotencyKey = idempotencyKey
         };
 
         var result = await _handler.HandleAsync(command);
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Message.Should().Be("Bid already exists (idempotent retry)");
+        await _bidRepo.Received(1).GetByIdempotencyKeyAsync(idempotencyKey, Arg.Any<CancellationToken>());
         await _lotRepo.DidNotReceive().GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await _paymentClient.DidNotReceive().ReserveFundsAsync(
+            Arg.Any<Guid>(), Arg.Any<decimal>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -177,7 +190,7 @@ public class PlaceBidCommandHandlerTests
     public async Task HandleAsync_DoesNotReleaseSameBidderFunds()
     {
         var lot = CreateActiveLot();
-        lot.PlaceBid(Money.FromDecimal(1200m), BidderId, "SameBidder");
+        PlaceBidAndAttach(lot, Money.FromDecimal(1200m), BidderId, "SameBidder");
         _lotRepo.GetByIdAsync(LotId, Arg.Any<CancellationToken>()).Returns(lot);
         _paymentClient.GetBalanceAsync(BidderId, Arg.Any<CancellationToken>())
             .Returns(new BalanceResult(true, 5000m));
@@ -187,6 +200,42 @@ public class PlaceBidCommandHandlerTests
         await _handler.HandleAsync(CreateCommand(1500m));
 
         await _paymentClient.DidNotReceive().ReleaseFundsAsync(
+            Arg.Any<Guid>(), Arg.Any<decimal>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task HandleAsync_PreviousDifferentBidder_ReleasesPreviousBidderFundsAfterSave()
+    {
+        var previousBidderId = Guid.NewGuid();
+        var lot = CreateActiveLot();
+        PlaceBidAndAttach(lot, Money.FromDecimal(1200m), previousBidderId, "PreviousBidder");
+        _lotRepo.GetByIdAsync(LotId, Arg.Any<CancellationToken>()).Returns(lot);
+        _paymentClient.GetBalanceAsync(BidderId, Arg.Any<CancellationToken>())
+            .Returns(new BalanceResult(true, 5000m));
+        _paymentClient.ReserveFundsAsync(BidderId, 1500m, lot.Id, Arg.Any<CancellationToken>())
+            .Returns(new PaymentResult(true));
+        _paymentClient.ReleaseFundsAsync(previousBidderId, 1200m, lot.Id, Arg.Any<CancellationToken>())
+            .Returns(new PaymentResult(true));
+
+        var result = await _handler.HandleAsync(CreateCommand(1500m));
+
+        result.IsSuccess.Should().BeTrue();
+        await _paymentClient.Received(1).ReleaseFundsAsync(
+            previousBidderId, 1200m, lot.Id, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task HandleAsync_AmountNotHigherThanCurrentPrice_DoesNotReserveFunds()
+    {
+        var lot = CreateActiveLot();
+        PlaceBidAndAttach(lot, Money.FromDecimal(1200m), Guid.NewGuid(), "PreviousBidder");
+        _lotRepo.GetByIdAsync(LotId, Arg.Any<CancellationToken>()).Returns(lot);
+
+        var result = await _handler.HandleAsync(CreateCommand(1200m));
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().Be("Bid amount must be higher than current price");
+        await _paymentClient.DidNotReceive().ReserveFundsAsync(
             Arg.Any<Guid>(), Arg.Any<decimal>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
@@ -296,16 +345,19 @@ public class PlaceBidCommandHandlerTests
         var result = await _handler.HandleAsync(CreateCommand());
 
         result.IsSuccess.Should().BeTrue();
+        await _paymentClient.Received(1).ReserveFundsAsync(
+            BidderId, 1500m, Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task HandleAsync_ConcurrencyExhausted_ReturnsError()
+    public async Task HandleAsync_ConcurrencyExhausted_ReleasesReservedFundsAndReturnsConflict()
     {
-        var lot = CreateActiveLot();
         _lotRepo.GetByIdAsync(LotId, Arg.Any<CancellationToken>()).Returns(_ => CreateActiveLot());
         _paymentClient.GetBalanceAsync(BidderId, Arg.Any<CancellationToken>())
             .Returns(new BalanceResult(true, 5000m));
         _paymentClient.ReserveFundsAsync(BidderId, 1500m, Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(new PaymentResult(true));
+        _paymentClient.ReleaseFundsAsync(BidderId, 1500m, Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(new PaymentResult(true));
 
         _bidRepo.SaveChangesAsync(Arg.Any<CancellationToken>())
@@ -314,5 +366,10 @@ public class PlaceBidCommandHandlerTests
         var result = await _handler.HandleAsync(CreateCommand());
 
         result.IsFailure.Should().BeTrue();
+        result.StatusCode.Should().Be(409);
+        await _paymentClient.Received(1).ReserveFundsAsync(
+            BidderId, 1500m, Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await _paymentClient.Received(1).ReleaseFundsAsync(
+            BidderId, 1500m, Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 }

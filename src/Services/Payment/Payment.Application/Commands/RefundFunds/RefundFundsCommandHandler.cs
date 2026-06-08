@@ -43,6 +43,10 @@ public class RefundFundsCommandHandler
 
             return Result.Success(true);
         }
+        catch (InvalidOperationException ex)
+        {
+            return Result.Failure<bool>(ex.Message, 400);
+        }
         catch (Exception ex)
         {
             return Result.Failure<bool>($"Failed to refund: {ex.Message}", 500);
