@@ -38,6 +38,6 @@ public class GetTransactionHistoryQueryHandlerTests
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.Transactions.Should().ContainSingle();
-        result.Value.Transactions[0].Effect.Should().Be(WalletTransactionEffect.Freeze);
+        result.Value.Transactions[0].Effect.Should().Be("Freeze");
     }
 }

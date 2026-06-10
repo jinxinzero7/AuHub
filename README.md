@@ -17,7 +17,7 @@ Current architecture:
 
 Verified on 2026-06-10:
 - backend build passes with 0 warnings and 0 errors;
-- backend test run contains 266 xUnit cases, currently 266 passed / 0 failed;
+- backend test run contains 267 xUnit cases, currently 267 passed / 0 failed;
 - all backend API services use FastEndpoints 8.1.0;
 - Auctions demo seed no longer calls the invalid `Approve()` then `Publish()` chain;
 - manual auction completion is admin-only through `/api/admin/lots/{id}/force-complete`;
@@ -37,6 +37,7 @@ Verified on 2026-06-10:
 - service commission is deposited to the platform wallet as a separate `ServiceFee` transaction;
 - Payment top-up goes through `IPaymentProvider` with local `DemoPaymentProvider` as the current baseline;
 - Payment command/query tests cover reserve, charge, release, refund, seller payout, wallet transaction effects, provider rejection and duplicate operation idempotency;
+- Payment integration tests cover authenticated demo top-up, balance and transaction history through in-memory repositories;
 - Auctions settlement tests cover 1% commission, no seller payout on completion, seller payout and buyer refund;
 - backend integration projects contain API smoke tests; `.NET E2E.Tests` is still a placeholder;
 - frontend production build passes without Google Fonts network dependency;

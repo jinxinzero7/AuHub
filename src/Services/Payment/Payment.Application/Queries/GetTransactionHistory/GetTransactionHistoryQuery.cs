@@ -14,7 +14,7 @@ public record TransactionDto
 {
     public Guid Id { get; init; }
     public TransactionType Type { get; init; }
-    public WalletTransactionEffect Effect { get; init; }
+    public string Effect { get; init; } = string.Empty;
     public Money Amount { get; init; } = Money.Zero;
     public string Description { get; init; } = string.Empty;
     public DateTime CreatedAt { get; init; }

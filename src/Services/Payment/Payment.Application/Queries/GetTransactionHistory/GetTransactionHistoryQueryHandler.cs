@@ -28,7 +28,7 @@ public class GetTransactionHistoryQueryHandler
                 {
                     Id = t.Id,
                     Type = t.Type,
-                    Effect = t.Type.GetWalletEffect(),
+                    Effect = t.Type.GetWalletEffect().ToString(),
                     Amount = t.Amount,
                     Description = t.Description,
                     CreatedAt = t.CreatedAt,
