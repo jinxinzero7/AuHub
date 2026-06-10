@@ -26,6 +26,7 @@ Verified on 2026-06-10:
 - `X-Internal-Api-Key` must be explicitly configured; there is no hardcoded fallback key;
 - public payment balance is JWT-scoped and no longer supports arbitrary public `userId` lookup;
 - Payment no longer registers the duplicate `AuctionCompletedEvent` consumer;
+- stale Auctions admin-user stub endpoints were removed; admin user moderation belongs to Identity/Gateway;
 - lot moderation now uses `Draft -> PendingModeration -> Active`; seller submit endpoint is `/api/lots/{id}/submit-for-moderation`;
 - auctions without bids now end as `CompletedNoWinner`; winner-based `Completed` is reserved for real deals;
 - sniper protection extends last-30-second bids by 2 minutes, capped at 10 total extension minutes;
