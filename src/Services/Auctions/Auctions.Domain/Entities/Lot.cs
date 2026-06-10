@@ -6,6 +6,10 @@ namespace Auctions.Domain.Entities;
 
 public class Lot
 {
+    public static readonly TimeSpan SniperProtectionWindow = TimeSpan.FromSeconds(30);
+    public static readonly TimeSpan SniperProtectionExtension = TimeSpan.FromMinutes(2);
+    public static readonly TimeSpan MaxSniperProtectionExtension = TimeSpan.FromMinutes(10);
+
     public Guid Id { get; private set; }
     public string Title { get; private set; } = string.Empty;
     public string Description { get; private set; } = string.Empty;
@@ -152,13 +156,31 @@ public class Lot
         UpdatedAt = DateTime.UtcNow;
     }
 
+    public bool ApplySniperProtection(DateTime now)
+    {
+        if (!StartTime.HasValue || !EndTime.HasValue)
+            return false;
+
+        if (now > EndTime.Value || EndTime.Value - now >= SniperProtectionWindow)
+            return false;
+
+        var maxEndTime = StartTime.Value.Add(Duration).Add(MaxSniperProtectionExtension);
+        if (EndTime.Value >= maxEndTime)
+            return false;
+
+        var nextEndTime = EndTime.Value.Add(SniperProtectionExtension);
+        EndTime = nextEndTime > maxEndTime ? maxEndTime : nextEndTime;
+        UpdatedAt = DateTime.UtcNow;
+        return true;
+    }
+
     public void Complete(string? winnerName = null)
     {
         if (Status != LotStatus.Active)
             throw new InvalidOperationException("Only active lots can be completed");
 
-        Status = LotStatus.Completed;
         WinnerId = _bids.OrderByDescending(b => b.Amount).Select(b => (Guid?)b.BidderId).FirstOrDefault();
+        Status = WinnerId.HasValue ? LotStatus.Completed : LotStatus.CompletedNoWinner;
         UpdatedAt = DateTime.UtcNow;
 
         _domainEvents.Add(new AuctionCompletedDomainEvent
@@ -177,7 +199,10 @@ public class Lot
         if (Status == LotStatus.Cancelled)
             throw new InvalidOperationException("Lot is already cancelled");
 
-        if (Status == LotStatus.Completed || Status == LotStatus.Delivered || Status == LotStatus.TransactionComplete)
+        if (Status == LotStatus.Completed ||
+            Status == LotStatus.CompletedNoWinner ||
+            Status == LotStatus.Delivered ||
+            Status == LotStatus.TransactionComplete)
             throw new InvalidOperationException("Cannot cancel finalized lot");
 
         if (Status == LotStatus.Active && _bids.Count > 0)

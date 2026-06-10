@@ -61,6 +61,12 @@ public class PlaceBidCommandHandlerTests
         bids.Add(Bid.Create(lot.Id, bidderId, amount));
     }
 
+    private static void SetAuctionTiming(Lot lot, DateTime startTime, DateTime endTime)
+    {
+        typeof(Lot).GetProperty(nameof(Lot.StartTime))!.SetValue(lot, startTime);
+        typeof(Lot).GetProperty(nameof(Lot.EndTime))!.SetValue(lot, endTime);
+    }
+
     private PlaceBidCommand CreateCommand(decimal amount = 1500m, Guid? bidderId = null)
     {
         return new PlaceBidCommand
@@ -254,6 +260,25 @@ public class PlaceBidCommandHandlerTests
         await _handler.HandleAsync(CreateCommand(1500m));
 
         lot.EndTime.Should().BeAfter(DateTime.UtcNow.Add(TimeSpan.FromMinutes(1)));
+    }
+
+    [Fact]
+    public async Task HandleAsync_SniperProtection_WhenCapReached_DoesNotExtendEndTime()
+    {
+        var lot = CreateActiveLot();
+        var cappedEndTime = DateTime.UtcNow.AddSeconds(25);
+        var startTime = cappedEndTime - lot.Duration - Lot.MaxSniperProtectionExtension;
+        SetAuctionTiming(lot, startTime, cappedEndTime);
+
+        _lotRepo.GetByIdAsync(LotId, Arg.Any<CancellationToken>()).Returns(lot);
+        _paymentClient.GetBalanceAsync(BidderId, Arg.Any<CancellationToken>())
+            .Returns(new BalanceResult(true, 5000m));
+        _paymentClient.ReserveFundsAsync(BidderId, 1500m, Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(new PaymentResult(true));
+
+        await _handler.HandleAsync(CreateCommand(1500m));
+
+        lot.EndTime.Should().Be(cappedEndTime);
     }
 
     [Fact]

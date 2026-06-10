@@ -37,6 +37,7 @@ public class LotRepository : ILotRepository
             .Include(l => l.Images)
             .Where(l => l.Status == LotStatus.Active || 
                         l.Status == LotStatus.Completed || 
+                        l.Status == LotStatus.CompletedNoWinner ||
                         l.Status == LotStatus.Frozen);
 
         if (!string.IsNullOrWhiteSpace(searchTerm))

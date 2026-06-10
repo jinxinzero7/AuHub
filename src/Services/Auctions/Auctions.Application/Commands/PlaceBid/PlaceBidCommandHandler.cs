@@ -98,10 +98,7 @@ public class PlaceBidCommandHandler
 
                 lot.PlaceBid(command.Amount, command.BidderId, command.BidderName);
 
-                if (lot.EndTime.HasValue && (lot.EndTime.Value - DateTime.UtcNow).TotalSeconds < 30)
-                {
-                    lot.ExtendEndTime(TimeSpan.FromMinutes(2));
-                }
+                lot.ApplySniperProtection(DateTime.UtcNow);
 
                 var bid = Bid.Create(lot.Id, command.BidderId, command.Amount, command.IdempotencyKey);
                 await _bidRepository.AddAsync(bid, cancellationToken);

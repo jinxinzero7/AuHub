@@ -15,5 +15,6 @@ public enum LotStatus
     Delivered = 10,
     TransactionComplete = 11,
     Disputed = 12,
-    DeliveryRequestExpired = 13
+    DeliveryRequestExpired = 13,
+    CompletedNoWinner = 14
 }

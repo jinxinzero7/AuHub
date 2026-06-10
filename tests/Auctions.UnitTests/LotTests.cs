@@ -177,11 +177,11 @@ public class LotTests
     }
 
     [Fact]
-    public void Complete_SetsStatus()
+    public void Complete_WithoutBids_SetsCompletedNoWinner()
     {
         var lot = CreateActiveLot();
         lot.Complete();
-        lot.Status.Should().Be(LotStatus.Completed);
+        lot.Status.Should().Be(LotStatus.CompletedNoWinner);
         lot.WinnerId.Should().BeNull();
     }
 
@@ -225,6 +225,45 @@ public class LotTests
         var lot = CreateValidLot();
         lot.ExtendEndTime(TimeSpan.FromMinutes(2));
         lot.EndTime.Should().BeNull();
+    }
+
+    [Fact]
+    public void ApplySniperProtection_WhenInsideWindow_ExtendsEndTime()
+    {
+        var lot = CreateActiveLot();
+        lot.ExtendEndTime(-lot.Duration + TimeSpan.FromSeconds(25));
+        var originalEnd = lot.EndTime!.Value;
+
+        var applied = lot.ApplySniperProtection(originalEnd.AddSeconds(-25));
+
+        applied.Should().BeTrue();
+        lot.EndTime.Should().Be(originalEnd.Add(Lot.SniperProtectionExtension));
+    }
+
+    [Fact]
+    public void ApplySniperProtection_WhenMaxExtensionReached_DoesNotExtend()
+    {
+        var lot = CreateActiveLot();
+        var initialEnd = lot.EndTime!.Value;
+        lot.ExtendEndTime(Lot.MaxSniperProtectionExtension);
+
+        var applied = lot.ApplySniperProtection(lot.EndTime!.Value.AddSeconds(-25));
+
+        applied.Should().BeFalse();
+        lot.EndTime.Should().Be(initialEnd.Add(Lot.MaxSniperProtectionExtension));
+    }
+
+    [Fact]
+    public void ApplySniperProtection_WhenExtensionWouldExceedMax_CapsEndTime()
+    {
+        var lot = CreateActiveLot();
+        var maxEndTime = lot.EndTime!.Value.Add(Lot.MaxSniperProtectionExtension);
+        lot.ExtendEndTime(Lot.MaxSniperProtectionExtension - TimeSpan.FromSeconds(30));
+
+        var applied = lot.ApplySniperProtection(lot.EndTime!.Value.AddSeconds(-25));
+
+        applied.Should().BeTrue();
+        lot.EndTime.Should().Be(maxEndTime);
     }
 
     // --- Complete ---
@@ -281,7 +320,7 @@ public class LotTests
         var act = () => lot.OpenDeliveryRequestWindow();
 
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("Only completed lots with a winner can open delivery request window");
+            .WithMessage("Only completed lots can open delivery request window");
     }
 
     [Fact]
@@ -517,6 +556,7 @@ public class LotTests
     public void OpenDispute_SetsDisputed()
     {
         var lot = CreateActiveLot();
+        PlaceBidAndAttach(lot, Money.FromDecimal(1500m), BidderId, "Bidder");
         lot.Complete();
         lot.OpenDispute("Item not as described");
         lot.Status.Should().Be(LotStatus.Disputed);
@@ -527,6 +567,7 @@ public class LotTests
     public void ResolveDispute_InFavorOfBuyer_Cancels()
     {
         var lot = CreateActiveLot();
+        PlaceBidAndAttach(lot, Money.FromDecimal(1500m), BidderId, "Bidder");
         lot.Complete();
         lot.OpenDispute("broken");
         lot.ResolveDispute(true);
@@ -537,6 +578,7 @@ public class LotTests
     public void ResolveDispute_InFavorOfSeller_Completes()
     {
         var lot = CreateActiveLot();
+        PlaceBidAndAttach(lot, Money.FromDecimal(1500m), BidderId, "Bidder");
         lot.Complete();
         lot.OpenDispute("broken");
         lot.ResolveDispute(false);
