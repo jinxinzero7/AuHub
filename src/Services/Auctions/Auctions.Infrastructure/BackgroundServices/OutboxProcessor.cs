@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Auctions.Domain.Entities;
 using Auctions.Infrastructure.Data;
+using Auctions.Application.Services;
 using System.Text.Json;
 
 namespace Auctions.Infrastructure.BackgroundServices;
@@ -83,6 +84,9 @@ public class OutboxProcessor : BackgroundService
             case "AuctionCompleted":
                 await HandleAuctionCompletedAsync(payload, serviceProvider, cancellationToken);
                 break;
+            case "ReleasePreviousBidderFunds":
+                await HandleReleasePreviousBidderFundsAsync(payload, serviceProvider, cancellationToken);
+                break;
             default:
                 _logger.LogWarning("Unknown outbox message type: {Type}", message.Type);
                 break;
@@ -116,7 +120,11 @@ public class OutboxProcessor : BackgroundService
     {
         var notificationClient = serviceProvider.GetRequiredService<Auctions.Application.Services.INotificationClient>();
 
-        var winnerId = payload.RootElement.GetProperty("winnerId").GetGuid();
+        var winnerIdElement = payload.RootElement.GetProperty("winnerId");
+        if (winnerIdElement.ValueKind == JsonValueKind.Null)
+            return;
+
+        var winnerId = winnerIdElement.GetGuid();
         var lotTitle = payload.RootElement.GetProperty("lotTitle").GetString() ?? "";
         var finalPrice = payload.RootElement.GetProperty("finalPrice").GetDecimal();
 
@@ -126,5 +134,21 @@ public class OutboxProcessor : BackgroundService
             "Вы выиграли аукцион!",
             $"Поздравляем! Вы выиграли лот \"{lotTitle}\" с финальной ставкой {finalPrice:C}",
             cancellationToken);
+    }
+
+    private static async Task HandleReleasePreviousBidderFundsAsync(
+        JsonDocument payload,
+        IServiceProvider serviceProvider,
+        CancellationToken cancellationToken)
+    {
+        var paymentClient = serviceProvider.GetRequiredService<IPaymentClient>();
+
+        var userId = payload.RootElement.GetProperty("userId").GetGuid();
+        var amount = payload.RootElement.GetProperty("amount").GetDecimal();
+        var lotId = payload.RootElement.GetProperty("lotId").GetGuid();
+
+        var result = await paymentClient.ReleaseFundsAsync(userId, amount, lotId, cancellationToken);
+        if (!result.Success)
+            throw new InvalidOperationException(result.Message);
     }
 }

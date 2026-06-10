@@ -231,6 +231,32 @@ public class PlaceBidCommandHandlerTests
     }
 
     [Fact]
+    public async Task HandleAsync_PreviousBidderReleaseFailure_EnqueuesRetryableRelease()
+    {
+        var previousBidderId = Guid.NewGuid();
+        var lot = CreateActiveLot();
+        PlaceBidAndAttach(lot, Money.FromDecimal(1200m), previousBidderId, "PreviousBidder");
+        _lotRepo.GetByIdAsync(LotId, Arg.Any<CancellationToken>()).Returns(lot);
+        _paymentClient.GetBalanceAsync(BidderId, Arg.Any<CancellationToken>())
+            .Returns(new BalanceResult(true, 5000m));
+        _paymentClient.ReserveFundsAsync(BidderId, 1500m, lot.Id, Arg.Any<CancellationToken>())
+            .Returns(new PaymentResult(true));
+        _paymentClient.ReleaseFundsAsync(previousBidderId, 1200m, lot.Id, Arg.Any<CancellationToken>())
+            .Returns(new PaymentResult(false, "Payment unavailable"));
+
+        var result = await _handler.HandleAsync(CreateCommand(1500m));
+
+        result.IsSuccess.Should().BeTrue();
+        await _outbox.Received(1).AddAsync(
+            "ReleasePreviousBidderFunds",
+            Arg.Is<string>(payload =>
+                payload.Contains(previousBidderId.ToString(), StringComparison.OrdinalIgnoreCase) &&
+                payload.Contains("1200") &&
+                payload.Contains(lot.Id.ToString(), StringComparison.OrdinalIgnoreCase)),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task HandleAsync_AmountNotHigherThanCurrentPrice_DoesNotReserveFunds()
     {
         var lot = CreateActiveLot();

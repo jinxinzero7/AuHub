@@ -110,6 +110,17 @@ public class PlaceBidCommandHandler
                 });
                 await _outbox.AddAsync("BidPlaced", outboxPayload, cancellationToken);
 
+                if (previousBidderId.HasValue && previousBidderId.Value != command.BidderId)
+                {
+                    var releasePayload = JsonSerializer.Serialize(new
+                    {
+                        userId = previousBidderId.Value,
+                        amount = previousBidAmount.Amount,
+                        lotId = lot.Id
+                    });
+                    await _outbox.AddAsync("ReleasePreviousBidderFunds", releasePayload, cancellationToken);
+                }
+
                 await _bidRepository.SaveChangesAsync(cancellationToken);
                 await _lotRepository.SaveChangesAsync(cancellationToken);
 

@@ -17,7 +17,7 @@ Current architecture:
 
 Verified on 2026-06-10:
 - backend build passes with 0 warnings and 0 errors;
-- backend test run contains 253 xUnit cases, currently 253 passed / 0 failed;
+- backend test run contains 254 xUnit cases, currently 254 passed / 0 failed;
 - all backend API services use FastEndpoints 8.1.0;
 - Auctions demo seed no longer calls the invalid `Approve()` then `Publish()` chain;
 - manual auction completion is admin-only through `/api/admin/lots/{id}/force-complete`;
@@ -33,6 +33,7 @@ Verified on 2026-06-10:
 - auction completion opens a 3-day winner delivery request window; winner request endpoint is `/api/lots/{id}/delivery-request`;
 - overdue delivery requests refund the buyer before moving to `DeliveryRequestExpired`; sellers can mark requested delivery as shipped through `/api/lots/{id}/ship`;
 - bidding tests cover previous bidder release, same-bidder non-release and reserve compensation on exhausted concurrency;
+- previous bidder release now has retryable outbox compensation if the direct Payment release path fails;
 - Payment command tests cover reserve, charge, release, refund, seller payout and duplicate operation idempotency;
 - Auctions settlement tests cover 1% commission, no seller payout on completion, seller payout and buyer refund;
 - backend integration projects contain API smoke tests; `.NET E2E.Tests` is still a placeholder;
