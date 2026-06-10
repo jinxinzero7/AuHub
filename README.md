@@ -160,6 +160,7 @@ docker compose up -d --build
 ```
 
 Required local secrets are listed in `.env.example`. At minimum, set `JWT_SECRET` and `INTERNAL_API_KEY` before starting the stack.
+Set `ADMIN_BOOTSTRAP_EMAIL`, `ADMIN_BOOTSTRAP_PASSWORD` and optionally `ADMIN_BOOTSTRAP_NAME` to seed one admin account through Identity startup. Leave them empty to disable admin bootstrap.
 
 Stop:
 

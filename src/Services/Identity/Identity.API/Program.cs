@@ -80,6 +80,7 @@ if (!app.Environment.IsEnvironment("Testing"))
     using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
     dbContext.Database.Migrate();
+    await AdminBootstrapper.SeedAsync(scope.ServiceProvider);
 }
 
 // Configure pipeline
