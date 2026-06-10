@@ -2,8 +2,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Payment.Application.Repositories;
+using Payment.Application.Services;
 using Payment.Infrastructure.Data;
 using Payment.Infrastructure.Repositories;
+using Payment.Infrastructure.Services;
 
 namespace Payment.Infrastructure;
 
@@ -18,6 +20,7 @@ public static class DependencyInjection
 
         services.AddScoped<IWalletRepository, WalletRepository>();
         services.AddScoped<ITransactionRepository, TransactionRepository>();
+        services.AddScoped<IPaymentProvider, DemoPaymentProvider>();
 
         return services;
     }

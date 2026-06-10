@@ -3,6 +3,7 @@ using AuHub.Shared.ValueObjects;
 using FluentAssertions;
 using Payment.Application.Commands.TopUpWallet;
 using Payment.Application.Repositories;
+using Payment.Application.Services;
 using Payment.Domain.Entities;
 using Payment.Domain.Enums;
 using NSubstitute;
@@ -14,13 +15,17 @@ public class TopUpWalletCommandHandlerTests
 {
     private readonly IWalletRepository _walletRepo;
     private readonly ITransactionRepository _transactionRepo;
+    private readonly IPaymentProvider _paymentProvider;
     private readonly TopUpWalletCommandHandler _handler;
 
     public TopUpWalletCommandHandlerTests()
     {
         _walletRepo = Substitute.For<IWalletRepository>();
         _transactionRepo = Substitute.For<ITransactionRepository>();
-        _handler = new TopUpWalletCommandHandler(_walletRepo, _transactionRepo);
+        _paymentProvider = Substitute.For<IPaymentProvider>();
+        _paymentProvider.ConfirmTopUpAsync(Arg.Any<Guid>(), Arg.Any<Money>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Success(new PaymentProviderConfirmation("TestProvider", Guid.NewGuid().ToString("N"))));
+        _handler = new TopUpWalletCommandHandler(_walletRepo, _transactionRepo, _paymentProvider);
     }
 
     private TopUpWalletCommand CreateCommand()
@@ -74,13 +79,30 @@ public class TopUpWalletCommandHandlerTests
     {
         var command = CreateCommand();
         command = command with { Amount = Money.Zero };
-        _walletRepo.GetByUserIdAsync(command.UserId, Arg.Any<CancellationToken>()).Returns((Wallet?)null);
+        _paymentProvider.ConfirmTopUpAsync(command.UserId, command.Amount, Arg.Any<CancellationToken>())
+            .Returns(Result.Failure<PaymentProviderConfirmation>("Amount must be positive", 400));
 
         var result = await _handler.HandleAsync(command);
 
         result.IsFailure.Should().BeTrue();
-        result.Error.Should().Contain("positive");
+        result.Error.Should().Be("Amount must be positive");
         result.StatusCode.Should().Be(400);
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenProviderRejectsPayment_DoesNotMutateWallet()
+    {
+        var command = CreateCommand();
+        _paymentProvider.ConfirmTopUpAsync(command.UserId, command.Amount, Arg.Any<CancellationToken>())
+            .Returns(Result.Failure<PaymentProviderConfirmation>("Payment rejected", 402));
+
+        var result = await _handler.HandleAsync(command);
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().Be("Payment rejected");
+        result.StatusCode.Should().Be(402);
+        await _walletRepo.DidNotReceive().GetByUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await _transactionRepo.DidNotReceive().AddAsync(Arg.Any<Transaction>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
