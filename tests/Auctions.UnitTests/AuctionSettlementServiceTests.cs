@@ -72,21 +72,21 @@ public class AuctionSettlementServiceTests
         result.IsSuccess.Should().BeTrue();
         await _paymentClient.Received(1).ChargeWinnerAsync(WinnerId, 1000m, lot.Id, Arg.Any<CancellationToken>());
         await _paymentClient.DidNotReceive().TransferToSellerAsync(
-            Arg.Any<Guid>(), Arg.Any<decimal>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+            Arg.Any<Guid>(), Arg.Any<decimal>(), Arg.Any<decimal>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task PaySellerAsync_TransfersFinalPriceMinusOnePercentFee()
     {
         var lot = CreateCompletedLotWithWinner();
-        _paymentClient.TransferToSellerAsync(SellerId, 990m, lot.Id, Arg.Any<CancellationToken>())
+        _paymentClient.TransferToSellerAsync(SellerId, 990m, 10m, lot.Id, Arg.Any<CancellationToken>())
             .Returns(new PaymentResult(true));
 
         var result = await _service.PaySellerAsync(lot);
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().Be(Money.FromDecimal(990m));
-        await _paymentClient.Received(1).TransferToSellerAsync(SellerId, 990m, lot.Id, Arg.Any<CancellationToken>());
+        await _paymentClient.Received(1).TransferToSellerAsync(SellerId, 990m, 10m, lot.Id, Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -101,7 +101,7 @@ public class AuctionSettlementServiceTests
         result.IsSuccess.Should().BeTrue();
         await _paymentClient.Received(1).RefundFundsAsync(WinnerId, 1000m, lot.Id, Arg.Any<CancellationToken>());
         await _paymentClient.DidNotReceive().TransferToSellerAsync(
-            Arg.Any<Guid>(), Arg.Any<decimal>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+            Arg.Any<Guid>(), Arg.Any<decimal>(), Arg.Any<decimal>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

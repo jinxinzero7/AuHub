@@ -62,9 +62,9 @@ public class PaymentClient : IPaymentClient
         return await ExecutePaymentAsync("/api/payment/charge-winner", new { UserId = winnerId, Amount = amount, LotId = lotId }, ct);
     }
 
-    public async Task<PaymentResult> TransferToSellerAsync(Guid sellerId, decimal amount, Guid lotId, CancellationToken ct = default)
+    public async Task<PaymentResult> TransferToSellerAsync(Guid sellerId, decimal amount, decimal serviceFee, Guid lotId, CancellationToken ct = default)
     {
-        return await ExecutePaymentAsync("/api/payment/transfer-seller", new { UserId = sellerId, Amount = amount, LotId = lotId }, ct);
+        return await ExecutePaymentAsync("/api/payment/transfer-seller", new { UserId = sellerId, Amount = amount, ServiceFee = serviceFee, LotId = lotId }, ct);
     }
 
     public async Task<PaymentResult> RefundFundsAsync(Guid userId, decimal amount, Guid lotId, CancellationToken ct = default)

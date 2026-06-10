@@ -1,4 +1,5 @@
 using AuHub.Shared.Results;
+using AuHub.Shared.ValueObjects;
 using Payment.Domain.Entities;
 using Payment.Domain.Enums;
 using Payment.Application.Repositories;
@@ -33,12 +34,7 @@ public class TransferToSellerCommandHandler
             if (duplicateResult != null)
                 return duplicateResult;
 
-            var wallet = await _walletRepository.GetByUserIdAsync(command.SellerId, cancellationToken);
-            if (wallet == null)
-            {
-                wallet = Wallet.Create(command.SellerId);
-                await _walletRepository.AddAsync(wallet, cancellationToken);
-            }
+            var wallet = await GetOrCreateWalletAsync(command.SellerId, cancellationToken);
 
             wallet.Deposit(command.Amount);
 
@@ -50,6 +46,25 @@ public class TransferToSellerCommandHandler
                 command.ReferenceId);
 
             await _transactionRepository.AddAsync(transaction, cancellationToken);
+
+            if (command.ServiceFee > Money.Zero)
+            {
+                var platformWallet = await GetOrCreateWalletAsync(
+                    TransferToSellerCommand.PlatformWalletUserId,
+                    cancellationToken);
+
+                platformWallet.Deposit(command.ServiceFee);
+
+                var serviceFeeTransaction = Transaction.Create(
+                    TransferToSellerCommand.PlatformWalletUserId,
+                    TransactionType.ServiceFee,
+                    command.ServiceFee,
+                    $"Service fee for lot {command.ReferenceId}",
+                    command.ReferenceId);
+
+                await _transactionRepository.AddAsync(serviceFeeTransaction, cancellationToken);
+            }
+
             await _walletRepository.SaveChangesAsync(cancellationToken);
 
             return Result.Success(true);
@@ -62,5 +77,16 @@ public class TransferToSellerCommandHandler
         {
             return Result.Failure<bool>($"Failed to transfer to seller: {ex.Message}", 500);
         }
+    }
+
+    private async Task<Wallet> GetOrCreateWalletAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var wallet = await _walletRepository.GetByUserIdAsync(userId, cancellationToken);
+        if (wallet != null)
+            return wallet;
+
+        wallet = Wallet.Create(userId);
+        await _walletRepository.AddAsync(wallet, cancellationToken);
+        return wallet;
     }
 }

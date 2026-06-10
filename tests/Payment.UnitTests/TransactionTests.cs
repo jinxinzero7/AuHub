@@ -46,7 +46,8 @@ public class TransactionTests
             TransactionType.Win,
             TransactionType.Transfer,
             TransactionType.Refund,
-            TransactionType.DisputeRefund
+            TransactionType.DisputeRefund,
+            TransactionType.ServiceFee
         };
 
         foreach (var type in types)

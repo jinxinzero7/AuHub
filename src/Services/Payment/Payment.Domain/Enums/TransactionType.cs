@@ -9,5 +9,6 @@ public enum TransactionType
     Win = 4,
     Transfer = 5,
     Refund = 6,
-    DisputeRefund = 7
+    DisputeRefund = 7,
+    ServiceFee = 8
 }

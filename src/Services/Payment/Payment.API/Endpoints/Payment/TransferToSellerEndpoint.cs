@@ -43,6 +43,7 @@ public class TransferToSellerEndpoint : Endpoint<TransferToSellerRequest, Paymen
         {
             SellerId = req.UserId,
             Amount = req.Amount,
+            ServiceFee = req.ServiceFee,
             ReferenceId = req.LotId
         };
 
@@ -62,5 +63,6 @@ public record TransferToSellerRequest
 {
     public Guid UserId { get; init; }
     public Money Amount { get; init; } = Money.Zero;
+    public Money ServiceFee { get; init; } = Money.Zero;
     public Guid LotId { get; init; }
 }

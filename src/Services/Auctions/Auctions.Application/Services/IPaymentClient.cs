@@ -6,7 +6,7 @@ public interface IPaymentClient
     Task<PaymentResult> ReserveFundsAsync(Guid userId, decimal amount, Guid lotId, CancellationToken ct = default);
     Task<PaymentResult> ReleaseFundsAsync(Guid userId, decimal amount, Guid lotId, CancellationToken ct = default);
     Task<PaymentResult> ChargeWinnerAsync(Guid winnerId, decimal amount, Guid lotId, CancellationToken ct = default);
-    Task<PaymentResult> TransferToSellerAsync(Guid sellerId, decimal amount, Guid lotId, CancellationToken ct = default);
+    Task<PaymentResult> TransferToSellerAsync(Guid sellerId, decimal amount, decimal serviceFee, Guid lotId, CancellationToken ct = default);
     Task<PaymentResult> RefundFundsAsync(Guid userId, decimal amount, Guid lotId, CancellationToken ct = default);
 }
 

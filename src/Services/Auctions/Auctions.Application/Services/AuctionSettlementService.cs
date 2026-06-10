@@ -44,9 +44,11 @@ public class AuctionSettlementService
     public async Task<Result<Money>> PaySellerAsync(Lot lot, CancellationToken cancellationToken = default)
     {
         var sellerPayout = CalculateSellerPayout(lot.CurrentPrice);
+        var serviceFee = CalculateServiceFee(lot.CurrentPrice);
         var result = await _paymentClient.TransferToSellerAsync(
             lot.SellerId,
             sellerPayout.Amount,
+            serviceFee.Amount,
             lot.Id,
             cancellationToken);
 

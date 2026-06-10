@@ -102,6 +102,28 @@ public class TransferToSellerCommandHandlerTests
     }
 
     [Fact]
+    public async Task HandleAsync_WithServiceFee_DepositsFeeToPlatformWalletAndWritesTransaction()
+    {
+        var command = CreateCommand() with { ServiceFee = Money.FromDecimal(10m) };
+        var sellerWallet = Wallet.Create(command.SellerId);
+        var platformWallet = Wallet.Create(TransferToSellerCommand.PlatformWalletUserId);
+        _walletRepo.GetByUserIdAsync(command.SellerId, Arg.Any<CancellationToken>()).Returns(sellerWallet);
+        _walletRepo.GetByUserIdAsync(TransferToSellerCommand.PlatformWalletUserId, Arg.Any<CancellationToken>()).Returns(platformWallet);
+
+        var result = await _handler.HandleAsync(command);
+
+        result.IsSuccess.Should().BeTrue();
+        sellerWallet.Balance.Should().Be(command.Amount);
+        platformWallet.Balance.Should().Be(command.ServiceFee);
+        await _transactionRepo.Received(1).AddAsync(Arg.Is<Transaction>(t =>
+            t.UserId == TransferToSellerCommand.PlatformWalletUserId &&
+            t.Type == TransactionType.ServiceFee &&
+            t.Amount == command.ServiceFee &&
+            t.ReferenceId == command.ReferenceId
+        ), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task HandleAsync_WithZeroAmount_ReturnsValidationFailure()
     {
         var command = CreateCommand() with { Amount = Money.Zero };
