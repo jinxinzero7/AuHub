@@ -65,4 +65,19 @@ public class TransactionTests
 
         t1.Id.Should().NotBe(t2.Id);
     }
+
+    [Theory]
+    [InlineData(TransactionType.Deposit, WalletTransactionEffect.AvailableCredit)]
+    [InlineData(TransactionType.Withdraw, WalletTransactionEffect.AvailableDebit)]
+    [InlineData(TransactionType.Reserve, WalletTransactionEffect.Freeze)]
+    [InlineData(TransactionType.Release, WalletTransactionEffect.Release)]
+    [InlineData(TransactionType.Win, WalletTransactionEffect.FrozenDebit)]
+    [InlineData(TransactionType.Transfer, WalletTransactionEffect.AvailableCredit)]
+    [InlineData(TransactionType.Refund, WalletTransactionEffect.AvailableCredit)]
+    [InlineData(TransactionType.DisputeRefund, WalletTransactionEffect.AvailableCredit)]
+    [InlineData(TransactionType.ServiceFee, WalletTransactionEffect.AvailableCredit)]
+    public void GetWalletEffect_MapsTransactionType(TransactionType type, WalletTransactionEffect expected)
+    {
+        type.GetWalletEffect().Should().Be(expected);
+    }
 }

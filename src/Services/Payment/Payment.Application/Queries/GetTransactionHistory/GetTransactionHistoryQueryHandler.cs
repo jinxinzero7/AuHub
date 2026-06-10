@@ -1,5 +1,6 @@
 using AuHub.Shared.Results;
 using Payment.Application.Repositories;
+using Payment.Domain.Enums;
 
 namespace Payment.Application.Queries.GetTransactionHistory;
 
@@ -27,6 +28,7 @@ public class GetTransactionHistoryQueryHandler
                 {
                     Id = t.Id,
                     Type = t.Type,
+                    Effect = t.Type.GetWalletEffect(),
                     Amount = t.Amount,
                     Description = t.Description,
                     CreatedAt = t.CreatedAt,
