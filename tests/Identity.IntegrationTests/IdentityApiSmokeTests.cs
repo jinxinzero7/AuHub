@@ -1,8 +1,22 @@
 using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
+using Identity.API.Middleware;
+using Identity.Domain.Entities;
+using Identity.Domain.Interfaces;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.TestHost;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace Identity.IntegrationTests;
 
@@ -32,8 +46,83 @@ public class IdentityApiSmokeTests
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task AdminBanListAndUnban_UpdatesUserModerationState()
+    {
+        using var factory = new IdentityApiFactory();
+        var user = User.Create("seller@example.com", "hash", "Seller", UserRole.User);
+        factory.Repository.Seed(user);
+
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", CreateJwt(Guid.NewGuid(), "Admin"));
+
+        var banResponse = await client.PostAsJsonAsync($"/api/auth/users/{user.Id}/ban", new { Reason = "Fraud risk" });
+        var bannedResponse = await client.GetAsync("/api/auth/users/banned");
+        var unbanResponse = await client.PostAsync($"/api/auth/users/{user.Id}/unban", null);
+
+        banResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        bannedResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        unbanResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var bannedUsers = await bannedResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var bannedUser = bannedUsers.EnumerateArray().Should().ContainSingle().Subject;
+        bannedUser.GetProperty("userId").GetGuid().Should().Be(user.Id);
+        bannedUser.GetProperty("reason").GetString().Should().Be("Fraud risk");
+        user.IsBanned.Should().BeFalse();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task BanMiddleware_BannedAuthenticatedUser_ReturnsForbidden()
+    {
+        var user = User.Create("banned@example.com", "hash", "Banned User", UserRole.User);
+        user.Ban("Policy violation");
+        var repository = new InMemoryUserRepository();
+        repository.Seed(user);
+        var nextCalled = false;
+        var middleware = new BanMiddleware(_ =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        });
+        var context = new DefaultHttpContext();
+        context.Request.Path = "/api/protected";
+        context.User = new ClaimsPrincipal(new ClaimsIdentity(new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Role, "User")
+        }, "Test"));
+
+        await middleware.InvokeAsync(context, repository);
+
+        context.Response.StatusCode.Should().Be(StatusCodes.Status403Forbidden);
+        nextCalled.Should().BeFalse();
+    }
+
+    private static string CreateJwt(Guid userId, string role)
+    {
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+            new Claim(ClaimTypes.Role, role)
+        };
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("AuHub_Test_Jwt_Secret_That_Is_Long_Enough_2026"));
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        var token = new JwtSecurityToken(
+            issuer: "AuHub",
+            audience: "AuHub-Users",
+            claims: claims,
+            expires: DateTime.UtcNow.AddHours(1),
+            signingCredentials: credentials);
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
     private sealed class IdentityApiFactory : WebApplicationFactory<Program>
     {
+        public InMemoryUserRepository Repository { get; } = new();
+
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.UseEnvironment("Testing");
@@ -47,6 +136,50 @@ public class IdentityApiSmokeTests
                     ["Jwt:Secret"] = "AuHub_Test_Jwt_Secret_That_Is_Long_Enough_2026"
                 });
             });
+            builder.ConfigureTestServices(services =>
+            {
+                services.RemoveAll<IUserRepository>();
+                services.AddSingleton<IUserRepository>(Repository);
+            });
+        }
+    }
+
+    private sealed class InMemoryUserRepository : IUserRepository
+    {
+        private readonly List<User> _users = new();
+
+        public void Seed(User user)
+        {
+            _users.Add(user);
+        }
+
+        public Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(_users.FirstOrDefault(u => u.Id == id));
+        }
+
+        public Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(_users.FirstOrDefault(u => u.Email == email.ToLowerInvariant()));
+        }
+
+        public Task<List<User>> GetBannedUsersAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(_users
+                .Where(u => u.IsBanned)
+                .OrderByDescending(u => u.BannedAt)
+                .ToList());
+        }
+
+        public Task AddAsync(User user, CancellationToken cancellationToken = default)
+        {
+            _users.Add(user);
+            return Task.CompletedTask;
+        }
+
+        public Task SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
         }
     }
 }
