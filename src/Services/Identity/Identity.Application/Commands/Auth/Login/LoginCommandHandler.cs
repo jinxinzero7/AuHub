@@ -41,6 +41,11 @@ public class LoginCommandHandler
                 return Result.Failure<LoginResponse>("Invalid email or password", 401);
             }
 
+            if (user.IsBanned)
+            {
+                return Result.Failure<LoginResponse>("User is banned", 403);
+            }
+
             var accessToken = _authService.GenerateJwtToken(user);
             var refreshTokenValue = _authService.GenerateRefreshToken();
 

@@ -6,10 +6,14 @@ namespace Identity.API.Endpoints.Users;
 public class BanUserEndpoint : Endpoint<BanUserRequest>
 {
     private readonly IUserRepository _userRepository;
+    private readonly IRefreshTokenRepository _refreshTokenRepository;
 
-    public BanUserEndpoint(IUserRepository userRepository)
+    public BanUserEndpoint(
+        IUserRepository userRepository,
+        IRefreshTokenRepository refreshTokenRepository)
     {
         _userRepository = userRepository;
+        _refreshTokenRepository = refreshTokenRepository;
     }
 
     public override void Configure()
@@ -35,7 +39,9 @@ public class BanUserEndpoint : Endpoint<BanUserRequest>
         }
 
         user.Ban(req.Reason);
+        await _refreshTokenRepository.RevokeAllUserTokensAsync(user.Id, ct);
         await _userRepository.SaveChangesAsync(ct);
+        await _refreshTokenRepository.SaveChangesAsync(ct);
 
         await HttpContext.Response.WriteAsJsonAsync(new { success = true }, ct);
     }

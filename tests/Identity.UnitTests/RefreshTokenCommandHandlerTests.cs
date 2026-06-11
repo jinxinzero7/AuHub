@@ -32,6 +32,13 @@ public class RefreshTokenCommandHandlerTests
         return RefreshToken.Create(Guid.NewGuid(), "valid-token", DateTime.UtcNow.AddDays(30), familyId);
     }
 
+    private static void AttachUser(RefreshToken token, User user)
+    {
+        typeof(RefreshToken)
+            .GetProperty(nameof(RefreshToken.User))!
+            .SetValue(token, user);
+    }
+
     [Fact]
     public async Task HandleAsync_WithValidToken_ReturnsNewAccessAndRefreshTokens()
     {
@@ -140,6 +147,26 @@ public class RefreshTokenCommandHandlerTests
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Be("Refresh token expired");
         result.StatusCode.Should().Be(401);
+    }
+
+    [Fact]
+    public async Task HandleAsync_WithBannedUser_ReturnsForbiddenAndRevokesTokenFamily()
+    {
+        var familyId = Guid.NewGuid();
+        var user = User.Create("banned@test.com", "hash", "Banned User", UserRole.User);
+        user.Ban("Policy violation");
+        var token = CreateValidToken(familyId);
+        AttachUser(token, user);
+        _refreshTokenRepo.GetByTokenAsync("valid-token", Arg.Any<CancellationToken>()).Returns(token);
+
+        var result = await _handler.HandleAsync(CreateCommand());
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().Be("User is banned");
+        result.StatusCode.Should().Be(403);
+        await _refreshTokenRepo.Received(1).RevokeFamilyAsync(familyId, Arg.Any<CancellationToken>());
+        await _refreshTokenRepo.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        _authService.DidNotReceive().GenerateJwtToken(Arg.Any<User>());
     }
 
     [Fact]

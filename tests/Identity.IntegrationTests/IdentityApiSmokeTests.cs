@@ -69,6 +69,7 @@ public class IdentityApiSmokeTests
         var bannedUser = bannedUsers.EnumerateArray().Should().ContainSingle().Subject;
         bannedUser.GetProperty("userId").GetGuid().Should().Be(user.Id);
         bannedUser.GetProperty("reason").GetString().Should().Be("Fraud risk");
+        factory.Repository.RevokedUserIds.Should().Contain(user.Id);
         user.IsBanned.Should().BeFalse();
     }
 
@@ -139,14 +140,19 @@ public class IdentityApiSmokeTests
             builder.ConfigureTestServices(services =>
             {
                 services.RemoveAll<IUserRepository>();
+                services.RemoveAll<IRefreshTokenRepository>();
                 services.AddSingleton<IUserRepository>(Repository);
+                services.AddSingleton<IRefreshTokenRepository>(Repository);
             });
         }
     }
 
-    private sealed class InMemoryUserRepository : IUserRepository
+    private sealed class InMemoryUserRepository : IUserRepository, IRefreshTokenRepository
     {
         private readonly List<User> _users = new();
+        private readonly List<RefreshToken> _refreshTokens = new();
+
+        public List<Guid> RevokedUserIds { get; } = new();
 
         public void Seed(User user)
         {
@@ -179,6 +185,50 @@ public class IdentityApiSmokeTests
 
         public Task SaveChangesAsync(CancellationToken cancellationToken = default)
         {
+            return Task.CompletedTask;
+        }
+
+        public Task<RefreshToken?> GetByTokenAsync(string token, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(_refreshTokens.FirstOrDefault(t => t.Token == token));
+        }
+
+        public Task AddAsync(RefreshToken refreshToken, CancellationToken cancellationToken = default)
+        {
+            _refreshTokens.Add(refreshToken);
+            return Task.CompletedTask;
+        }
+
+        public Task UpdateAsync(RefreshToken refreshToken, CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task RevokeAllUserTokensAsync(Guid userId, CancellationToken cancellationToken = default)
+        {
+            RevokedUserIds.Add(userId);
+            foreach (var token in _refreshTokens.Where(t => t.UserId == userId && !t.IsRevoked))
+            {
+                token.Revoke();
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task RevokeTokenAsync(Guid tokenId, CancellationToken cancellationToken = default)
+        {
+            var token = _refreshTokens.FirstOrDefault(t => t.Id == tokenId);
+            token?.Revoke();
+            return Task.CompletedTask;
+        }
+
+        public Task RevokeFamilyAsync(Guid familyId, CancellationToken cancellationToken = default)
+        {
+            foreach (var token in _refreshTokens.Where(t => t.FamilyId == familyId && !t.IsRevoked))
+            {
+                token.Revoke();
+            }
+
             return Task.CompletedTask;
         }
     }

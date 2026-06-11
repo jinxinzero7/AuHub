@@ -47,6 +47,22 @@ public class RefreshTokenCommandHandler
                 return Result.Failure<RefreshTokenResponse>("Refresh token expired", 401);
             }
 
+            if (refreshToken.User is { IsBanned: true })
+            {
+                if (refreshToken.FamilyId.HasValue)
+                {
+                    await _refreshTokenRepository.RevokeFamilyAsync(refreshToken.FamilyId.Value, cancellationToken);
+                }
+                else
+                {
+                    refreshToken.Revoke();
+                    await _refreshTokenRepository.UpdateAsync(refreshToken, cancellationToken);
+                }
+
+                await _refreshTokenRepository.SaveChangesAsync(cancellationToken);
+                return Result.Failure<RefreshTokenResponse>("User is banned", 403);
+            }
+
             var newTokenId = Guid.NewGuid();
             refreshToken.ReplaceBy(newTokenId);
             await _refreshTokenRepository.UpdateAsync(refreshToken, cancellationToken);

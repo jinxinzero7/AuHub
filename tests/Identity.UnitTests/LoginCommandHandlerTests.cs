@@ -149,6 +149,23 @@ public class LoginCommandHandlerTests
     }
 
     [Fact]
+    public async Task HandleAsync_WithBannedUser_ReturnsForbiddenWithoutCreatingRefreshToken()
+    {
+        var user = CreateTestUser();
+        user.Ban("Policy violation");
+        _userRepo.GetByEmailAsync("test@test.com", Arg.Any<CancellationToken>()).Returns(user);
+        _authService.VerifyPassword("password123", "stored_hash").Returns(true);
+
+        var result = await _handler.HandleAsync(CreateCommand());
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().Be("User is banned");
+        result.StatusCode.Should().Be(403);
+        _authService.DidNotReceive().GenerateJwtToken(Arg.Any<User>());
+        await _refreshTokenRepo.DidNotReceive().AddAsync(Arg.Any<RefreshToken>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task HandleAsync_WhenRepositoryThrows_ReturnsFailure()
     {
         _userRepo.GetByEmailAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
