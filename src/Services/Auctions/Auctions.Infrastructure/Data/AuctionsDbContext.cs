@@ -14,6 +14,7 @@ public class AuctionsDbContext : DbContext
     public DbSet<Lot> Lots => Set<Lot>();
     public DbSet<Bid> Bids => Set<Bid>();
     public DbSet<LotImage> LotImages => Set<LotImage>();
+    public DbSet<Review> Reviews => Set<Review>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -23,6 +24,7 @@ public class AuctionsDbContext : DbContext
         ConfigureLot(modelBuilder);
         ConfigureBid(modelBuilder);
         ConfigureLotImage(modelBuilder);
+        ConfigureReview(modelBuilder);
         ConfigureOutboxMessage(modelBuilder);
     }
 
@@ -165,6 +167,37 @@ public class AuctionsDbContext : DbContext
                 .IsRequired();
 
             entity.HasIndex(i => i.LotId);
+        });
+    }
+
+    private void ConfigureReview(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Review>(entity =>
+        {
+            entity.ToTable("Reviews");
+
+            entity.HasKey(review => review.Id);
+
+            entity.Property(review => review.Rating)
+                .IsRequired();
+
+            entity.Property(review => review.Comment)
+                .HasMaxLength(1000);
+
+            entity.Property(review => review.CreatedAt)
+                .IsRequired();
+
+            entity.HasOne(review => review.Lot)
+                .WithMany()
+                .HasForeignKey(review => review.LotId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(review => review.LotId)
+                .IsUnique();
+
+            entity.HasIndex(review => review.SellerId);
+            entity.HasIndex(review => review.BuyerId);
+            entity.HasIndex(review => review.CreatedAt);
         });
     }
 

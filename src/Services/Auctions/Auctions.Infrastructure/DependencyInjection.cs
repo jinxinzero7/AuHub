@@ -23,6 +23,7 @@ public static class DependencyInjection
         services.AddScoped<ILotRepository, LotRepository>();
         services.AddScoped<IBidRepository, BidRepository>();
         services.AddScoped<ILotImageRepository, LotImageRepository>();
+        services.AddScoped<IReviewRepository, ReviewRepository>();
 
         // Register Outbox
         services.AddScoped<IOutbox, Outbox>();
