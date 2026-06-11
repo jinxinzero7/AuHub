@@ -1,4 +1,6 @@
 using FastEndpoints;
+using System.Security.Claims;
+using Auctions.Domain.Entities;
 using Auctions.Domain.Interfaces;
 using Auctions.Application.Services;
 using Auctions.Domain.Enums;
@@ -10,12 +12,18 @@ public class FreezeLotEndpoint : EndpointWithoutRequest
     private readonly ILotRepository _lotRepository;
     private readonly IEventPublisher _eventPublisher;
     private readonly INotificationClient _notificationClient;
+    private readonly IAdminAuditLogRepository _auditLogRepository;
 
-    public FreezeLotEndpoint(ILotRepository lotRepository, IEventPublisher eventPublisher, INotificationClient notificationClient)
+    public FreezeLotEndpoint(
+        ILotRepository lotRepository,
+        IEventPublisher eventPublisher,
+        INotificationClient notificationClient,
+        IAdminAuditLogRepository auditLogRepository)
     {
         _lotRepository = lotRepository;
         _eventPublisher = eventPublisher;
         _notificationClient = notificationClient;
+        _auditLogRepository = auditLogRepository;
     }
 
     public override void Configure()
@@ -42,6 +50,8 @@ public class FreezeLotEndpoint : EndpointWithoutRequest
 
         lot.Freeze();
         await _lotRepository.SaveChangesAsync(ct);
+        await _auditLogRepository.AddAsync(AdminAuditLog.Create(GetActorUserId(), "LotFreeze", "Lot", lot.Id, null), ct);
+        await _auditLogRepository.SaveChangesAsync(ct);
 
         await _notificationClient.SendNotificationAsync(lot.SellerId, NotificationType.LotFrozen, "Лот заморожен", $"Ваш лот «{lot.Title}» заморожен администратором", ct);
         if (lot.WinnerId.HasValue)
@@ -50,5 +60,11 @@ public class FreezeLotEndpoint : EndpointWithoutRequest
         await _eventPublisher.PublishUserNotificationAsync(lot.SellerId, "LotFrozen", $"Ваш лот «{lot.Title}» заморожен", lot.Id, ct);
 
         Response = new { Success = true, Message = "Lot frozen" };
+    }
+
+    private Guid? GetActorUserId()
+    {
+        var actorIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return Guid.TryParse(actorIdClaim, out var actorId) ? actorId : null;
     }
 }

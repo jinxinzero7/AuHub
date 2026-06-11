@@ -52,10 +52,11 @@ public class IdentityApiSmokeTests
     {
         using var factory = new IdentityApiFactory();
         var user = User.Create("seller@example.com", "hash", "Seller", UserRole.User);
+        var adminId = Guid.NewGuid();
         factory.Repository.Seed(user);
 
         using var client = factory.CreateClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", CreateJwt(Guid.NewGuid(), "Admin"));
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", CreateJwt(adminId, "Admin"));
 
         var banResponse = await client.PostAsJsonAsync($"/api/auth/users/{user.Id}/ban", new { Reason = "Fraud risk" });
         var bannedResponse = await client.GetAsync("/api/auth/users/banned");
@@ -70,6 +71,17 @@ public class IdentityApiSmokeTests
         bannedUser.GetProperty("userId").GetGuid().Should().Be(user.Id);
         bannedUser.GetProperty("reason").GetString().Should().Be("Fraud risk");
         factory.Repository.RevokedUserIds.Should().Contain(user.Id);
+        factory.Repository.AuditLogs.Should().Contain(log =>
+            log.ActorUserId == adminId &&
+            log.Action == "UserBan" &&
+            log.TargetType == "User" &&
+            log.TargetId == user.Id &&
+            log.Details == "Fraud risk");
+        factory.Repository.AuditLogs.Should().Contain(log =>
+            log.ActorUserId == adminId &&
+            log.Action == "UserUnban" &&
+            log.TargetType == "User" &&
+            log.TargetId == user.Id);
         user.IsBanned.Should().BeFalse();
     }
 
@@ -141,18 +153,21 @@ public class IdentityApiSmokeTests
             {
                 services.RemoveAll<IUserRepository>();
                 services.RemoveAll<IRefreshTokenRepository>();
+                services.RemoveAll<IAdminAuditLogRepository>();
                 services.AddSingleton<IUserRepository>(Repository);
                 services.AddSingleton<IRefreshTokenRepository>(Repository);
+                services.AddSingleton<IAdminAuditLogRepository>(Repository);
             });
         }
     }
 
-    private sealed class InMemoryUserRepository : IUserRepository, IRefreshTokenRepository
+    private sealed class InMemoryUserRepository : IUserRepository, IRefreshTokenRepository, IAdminAuditLogRepository
     {
         private readonly List<User> _users = new();
         private readonly List<RefreshToken> _refreshTokens = new();
 
         public List<Guid> RevokedUserIds { get; } = new();
+        public List<AdminAuditLog> AuditLogs { get; } = new();
 
         public void Seed(User user)
         {
@@ -196,6 +211,12 @@ public class IdentityApiSmokeTests
         public Task AddAsync(RefreshToken refreshToken, CancellationToken cancellationToken = default)
         {
             _refreshTokens.Add(refreshToken);
+            return Task.CompletedTask;
+        }
+
+        public Task AddAsync(AdminAuditLog auditLog, CancellationToken cancellationToken = default)
+        {
+            AuditLogs.Add(auditLog);
             return Task.CompletedTask;
         }
 

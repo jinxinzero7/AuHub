@@ -1,4 +1,6 @@
 using FastEndpoints;
+using System.Security.Claims;
+using Identity.Domain.Entities;
 using Identity.Domain.Interfaces;
 
 namespace Identity.API.Endpoints.Users;
@@ -7,13 +9,16 @@ public class BanUserEndpoint : Endpoint<BanUserRequest>
 {
     private readonly IUserRepository _userRepository;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
+    private readonly IAdminAuditLogRepository _auditLogRepository;
 
     public BanUserEndpoint(
         IUserRepository userRepository,
-        IRefreshTokenRepository refreshTokenRepository)
+        IRefreshTokenRepository refreshTokenRepository,
+        IAdminAuditLogRepository auditLogRepository)
     {
         _userRepository = userRepository;
         _refreshTokenRepository = refreshTokenRepository;
+        _auditLogRepository = auditLogRepository;
     }
 
     public override void Configure()
@@ -40,10 +45,18 @@ public class BanUserEndpoint : Endpoint<BanUserRequest>
 
         user.Ban(req.Reason);
         await _refreshTokenRepository.RevokeAllUserTokensAsync(user.Id, ct);
+        await _auditLogRepository.AddAsync(AdminAuditLog.Create(GetActorUserId(), "UserBan", "User", user.Id, req.Reason), ct);
         await _userRepository.SaveChangesAsync(ct);
         await _refreshTokenRepository.SaveChangesAsync(ct);
+        await _auditLogRepository.SaveChangesAsync(ct);
 
         await HttpContext.Response.WriteAsJsonAsync(new { success = true }, ct);
+    }
+
+    private Guid? GetActorUserId()
+    {
+        var actorIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return Guid.TryParse(actorIdClaim, out var actorId) ? actorId : null;
     }
 }
 

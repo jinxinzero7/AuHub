@@ -15,6 +15,7 @@ public class AuctionsDbContext : DbContext
     public DbSet<Bid> Bids => Set<Bid>();
     public DbSet<LotImage> LotImages => Set<LotImage>();
     public DbSet<Review> Reviews => Set<Review>();
+    public DbSet<AdminAuditLog> AdminAuditLogs => Set<AdminAuditLog>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -25,6 +26,7 @@ public class AuctionsDbContext : DbContext
         ConfigureBid(modelBuilder);
         ConfigureLotImage(modelBuilder);
         ConfigureReview(modelBuilder);
+        ConfigureAdminAuditLog(modelBuilder);
         ConfigureOutboxMessage(modelBuilder);
     }
 
@@ -198,6 +200,34 @@ public class AuctionsDbContext : DbContext
             entity.HasIndex(review => review.SellerId);
             entity.HasIndex(review => review.BuyerId);
             entity.HasIndex(review => review.CreatedAt);
+        });
+    }
+
+    private void ConfigureAdminAuditLog(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<AdminAuditLog>(entity =>
+        {
+            entity.ToTable("AdminAuditLogs");
+
+            entity.HasKey(log => log.Id);
+
+            entity.Property(log => log.Action)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(log => log.TargetType)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(log => log.Details)
+                .HasMaxLength(1000);
+
+            entity.Property(log => log.CreatedAt)
+                .IsRequired();
+
+            entity.HasIndex(log => log.ActorUserId);
+            entity.HasIndex(log => new { log.TargetType, log.TargetId });
+            entity.HasIndex(log => log.CreatedAt);
         });
     }
 

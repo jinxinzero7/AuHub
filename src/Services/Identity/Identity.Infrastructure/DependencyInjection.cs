@@ -20,6 +20,7 @@ public static class DependencyInjection
         // Register Repositories
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<IAdminAuditLogRepository, AdminAuditLogRepository>();
 
         return services;
     }

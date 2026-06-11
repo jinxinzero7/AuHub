@@ -1,15 +1,20 @@
 using Auctions.Application.Commands.CompleteLot;
+using Auctions.Domain.Entities;
+using Auctions.Domain.Interfaces;
 using FastEndpoints;
+using System.Security.Claims;
 
 namespace Auctions.API.Endpoints.Lots;
 
 public class CompleteLotEndpoint : EndpointWithoutRequest<CompleteLotResponse>
 {
     private readonly CompleteLotCommandHandler _handler;
+    private readonly IAdminAuditLogRepository _auditLogRepository;
 
-    public CompleteLotEndpoint(CompleteLotCommandHandler handler)
+    public CompleteLotEndpoint(CompleteLotCommandHandler handler, IAdminAuditLogRepository auditLogRepository)
     {
         _handler = handler;
+        _auditLogRepository = auditLogRepository;
     }
 
     public override void Configure()
@@ -40,6 +45,15 @@ public class CompleteLotEndpoint : EndpointWithoutRequest<CompleteLotResponse>
             return;
         }
 
+        await _auditLogRepository.AddAsync(AdminAuditLog.Create(GetActorUserId(), "LotForceComplete", "Lot", lotId, null), ct);
+        await _auditLogRepository.SaveChangesAsync(ct);
+
         Response = result.Value;
+    }
+
+    private Guid? GetActorUserId()
+    {
+        var actorIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return Guid.TryParse(actorIdClaim, out var actorId) ? actorId : null;
     }
 }

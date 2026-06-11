@@ -1,4 +1,5 @@
 using FastEndpoints;
+using System.Security.Claims;
 using AuHub.Shared.Results;
 using AuHub.Shared.ValueObjects;
 using Auctions.Domain.Interfaces;
@@ -14,17 +15,20 @@ public class ResolveDisputeEndpoint : Endpoint<ResolveDisputeRequest>
     private readonly IEventPublisher _eventPublisher;
     private readonly INotificationClient _notificationClient;
     private readonly AuctionSettlementService _settlementService;
+    private readonly IAdminAuditLogRepository _auditLogRepository;
 
     public ResolveDisputeEndpoint(
         ILotRepository lotRepository,
         IEventPublisher eventPublisher,
         INotificationClient notificationClient,
-        AuctionSettlementService settlementService)
+        AuctionSettlementService settlementService,
+        IAdminAuditLogRepository auditLogRepository)
     {
         _lotRepository = lotRepository;
         _eventPublisher = eventPublisher;
         _notificationClient = notificationClient;
         _settlementService = settlementService;
+        _auditLogRepository = auditLogRepository;
     }
 
     public override void Configure()
@@ -78,6 +82,9 @@ public class ResolveDisputeEndpoint : Endpoint<ResolveDisputeRequest>
 
         lot.ResolveDispute(req.InFavorOfBuyer);
         await _lotRepository.SaveChangesAsync(ct);
+        var auditDetails = req.InFavorOfBuyer ? "Resolved in favor of buyer" : "Resolved in favor of seller";
+        await _auditLogRepository.AddAsync(AdminAuditLog.Create(GetActorUserId(), "DisputeResolve", "Lot", lot.Id, auditDetails), ct);
+        await _auditLogRepository.SaveChangesAsync(ct);
 
         var resolution = req.InFavorOfBuyer ? "в пользу покупателя" : "в пользу продавца";
         await _notificationClient.SendNotificationAsync(lot.SellerId, NotificationType.DisputeResolved, "Спор разрешён", $"Спор по лоту «{lot.Title}» разрешён {resolution}", ct);
@@ -93,6 +100,12 @@ public class ResolveDisputeEndpoint : Endpoint<ResolveDisputeRequest>
             BuyerRefunded = buyerRefundResult?.Value,
             SellerPayout = sellerPayoutResult?.Value.Amount
         };
+    }
+
+    private Guid? GetActorUserId()
+    {
+        var actorIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return Guid.TryParse(actorIdClaim, out var actorId) ? actorId : null;
     }
 }
 

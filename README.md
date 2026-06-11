@@ -17,7 +17,7 @@ Current architecture:
 
 Verified on 2026-06-11:
 - backend build passes with 0 warnings and 0 errors;
-- backend test run contains 281 xUnit cases, currently 281 passed / 0 failed;
+- backend test run contains 282 xUnit cases, currently 282 passed / 0 failed;
 - all backend API services use FastEndpoints 8.1.0;
 - Auctions demo seed no longer calls the invalid `Approve()` then `Publish()` chain;
 - manual auction completion is admin-only through `/api/admin/lots/{id}/force-complete`;
@@ -27,6 +27,7 @@ Verified on 2026-06-11:
 - public payment balance is JWT-scoped and no longer supports arbitrary public `userId` lookup;
 - Payment no longer registers the duplicate `AuctionCompletedEvent` consumer;
 - stale Auctions admin-user stub endpoints were removed; admin user moderation belongs to Identity/Gateway;
+- service-local admin audit logs exist in Identity and Auctions for user moderation, lot moderation/freeze/force-complete and dispute resolution actions;
 - Identity integration tests cover admin ban/list/unban and banned-user middleware behavior;
 - banning a user revokes refresh tokens and blocks login/refresh with `403`;
 - lot moderation now uses `Draft -> PendingModeration -> Active`; seller submit endpoint is `/api/lots/{id}/submit-for-moderation`;
