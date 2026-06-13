@@ -19,6 +19,7 @@ public class UserTests
         user.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
         user.IsEmailVerified.Should().BeFalse();
         user.IsPhoneVerified.Should().BeFalse();
+        user.DocumentVerificationStatus.Should().Be(UserDocumentVerificationStatus.Unverified);
         user.IsBanned.Should().BeFalse();
     }
 
@@ -65,6 +66,42 @@ public class UserTests
         user.IsPhoneVerified.Should().BeTrue();
         user.PhoneVerifiedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
         user.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
+    }
+
+    [Fact]
+    public void MarkDocumentVerificationPending_SetsPendingReview()
+    {
+        var user = User.Create("test@test.com", "+79990000010", "test_user", "hash", "Test", UserRole.User);
+
+        user.MarkDocumentVerificationPending();
+
+        user.DocumentVerificationStatus.Should().Be(UserDocumentVerificationStatus.PendingReview);
+        user.DocumentVerifiedAt.Should().BeNull();
+        user.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
+    }
+
+    [Fact]
+    public void MarkDocumentVerified_SetsVerifiedState()
+    {
+        var user = User.Create("test@test.com", "+79990000011", "test_user", "hash", "Test", UserRole.User);
+
+        user.MarkDocumentVerified();
+
+        user.DocumentVerificationStatus.Should().Be(UserDocumentVerificationStatus.Verified);
+        user.DocumentVerifiedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
+        user.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
+    }
+
+    [Fact]
+    public void MarkDocumentUnverified_WhenPending_SetsUnverifiedWithoutRejectedStatus()
+    {
+        var user = User.Create("test@test.com", "+79990000012", "test_user", "hash", "Test", UserRole.User);
+        user.MarkDocumentVerificationPending();
+
+        user.MarkDocumentUnverified();
+
+        user.DocumentVerificationStatus.Should().Be(UserDocumentVerificationStatus.Unverified);
+        user.DocumentVerifiedAt.Should().BeNull();
     }
 
     [Fact]

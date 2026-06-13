@@ -12,6 +12,7 @@ public class IdentityDbContext : DbContext
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<EmailVerificationToken> EmailVerificationTokens => Set<EmailVerificationToken>();
     public DbSet<PhoneVerificationCode> PhoneVerificationCodes => Set<PhoneVerificationCode>();
+    public DbSet<DocumentVerificationRequest> DocumentVerificationRequests => Set<DocumentVerificationRequest>();
     public DbSet<AdminAuditLog> AdminAuditLogs => Set<AdminAuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -22,6 +23,7 @@ public class IdentityDbContext : DbContext
         ConfigureRefreshToken(modelBuilder);
         ConfigureEmailVerificationToken(modelBuilder);
         ConfigurePhoneVerificationCode(modelBuilder);
+        ConfigureDocumentVerificationRequest(modelBuilder);
         ConfigureAdminAuditLog(modelBuilder);
     }
 
@@ -77,6 +79,13 @@ public class IdentityDbContext : DbContext
                 .HasDefaultValue(false);
 
             entity.Property(u => u.PhoneVerifiedAt);
+
+            entity.Property(u => u.DocumentVerificationStatus)
+                .HasConversion<string>()
+                .IsRequired()
+                .HasDefaultValue(UserDocumentVerificationStatus.Unverified);
+
+            entity.Property(u => u.DocumentVerifiedAt);
 
             entity.Property(u => u.IsBanned)
                 .IsRequired()
@@ -209,6 +218,47 @@ public class IdentityDbContext : DbContext
 
             entity.HasIndex(code => new { code.UserId, code.CodeHash });
             entity.HasIndex(code => code.UserId);
+        });
+    }
+
+    private void ConfigureDocumentVerificationRequest(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<DocumentVerificationRequest>(entity =>
+        {
+            entity.ToTable("DocumentVerificationRequests");
+
+            entity.HasKey(request => request.Id);
+
+            entity.Property(request => request.PassportImagePath)
+                .IsRequired()
+                .HasMaxLength(1000);
+
+            entity.Property(request => request.SelfieImagePath)
+                .IsRequired()
+                .HasMaxLength(1000);
+
+            entity.Property(request => request.Status)
+                .HasConversion<string>()
+                .IsRequired();
+
+            entity.Property(request => request.RejectionReason)
+                .HasMaxLength(500);
+
+            entity.Property(request => request.CreatedAt)
+                .IsRequired();
+
+            entity.Property(request => request.UpdatedAt);
+            entity.Property(request => request.ReviewedAt);
+            entity.Property(request => request.ReviewedByAdminId);
+
+            entity.HasOne(request => request.User)
+                .WithMany()
+                .HasForeignKey(request => request.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(request => request.UserId);
+            entity.HasIndex(request => request.Status);
+            entity.HasIndex(request => request.CreatedAt);
         });
     }
 }

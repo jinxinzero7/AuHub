@@ -23,6 +23,7 @@ public static class DependencyInjection
         services.AddScoped<IAdminAuditLogRepository, AdminAuditLogRepository>();
         services.AddScoped<IEmailVerificationTokenRepository, EmailVerificationTokenRepository>();
         services.AddScoped<IPhoneVerificationCodeRepository, PhoneVerificationCodeRepository>();
+        services.AddScoped<IDocumentVerificationRequestRepository, DocumentVerificationRequestRepository>();
         services.AddScoped<IEmailVerificationSender, DevEmailVerificationSender>();
         services.AddScoped<IPhoneVerificationSender, DevPhoneVerificationSender>();
 

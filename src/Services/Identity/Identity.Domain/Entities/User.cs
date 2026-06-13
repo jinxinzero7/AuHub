@@ -15,6 +15,8 @@ public class User
     public DateTime? EmailVerifiedAt { get; private set; }
     public bool IsPhoneVerified { get; private set; }
     public DateTime? PhoneVerifiedAt { get; private set; }
+    public UserDocumentVerificationStatus DocumentVerificationStatus { get; private set; }
+    public DateTime? DocumentVerifiedAt { get; private set; }
     public bool IsBanned { get; private set; }
     public DateTime? BannedAt { get; private set; }
     public string? BanReason { get; private set; }
@@ -44,6 +46,7 @@ public class User
             CreatedAt = DateTime.UtcNow,
             IsEmailVerified = false,
             IsPhoneVerified = false,
+            DocumentVerificationStatus = UserDocumentVerificationStatus.Unverified,
             IsBanned = false
         };
     }
@@ -79,6 +82,36 @@ public class User
 
         IsPhoneVerified = true;
         PhoneVerifiedAt = DateTime.UtcNow;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void MarkDocumentVerificationPending()
+    {
+        if (DocumentVerificationStatus == UserDocumentVerificationStatus.Verified)
+        {
+            return;
+        }
+
+        DocumentVerificationStatus = UserDocumentVerificationStatus.PendingReview;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void MarkDocumentVerified()
+    {
+        DocumentVerificationStatus = UserDocumentVerificationStatus.Verified;
+        DocumentVerifiedAt = DateTime.UtcNow;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void MarkDocumentUnverified()
+    {
+        if (DocumentVerificationStatus == UserDocumentVerificationStatus.Verified)
+        {
+            return;
+        }
+
+        DocumentVerificationStatus = UserDocumentVerificationStatus.Unverified;
+        DocumentVerifiedAt = null;
         UpdatedAt = DateTime.UtcNow;
     }
 

@@ -16,7 +16,8 @@ public static class UserMappings
             Name = user.Name,
             Role = user.Role.ToString(),
             IsEmailVerified = user.IsEmailVerified,
-            IsPhoneVerified = user.IsPhoneVerified
+            IsPhoneVerified = user.IsPhoneVerified,
+            DocumentVerificationStatus = user.DocumentVerificationStatus.ToString()
         };
     }
 }

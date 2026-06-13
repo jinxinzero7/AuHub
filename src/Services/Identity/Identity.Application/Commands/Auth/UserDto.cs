@@ -10,4 +10,5 @@ public record UserDto
     public string Role { get; init; } = string.Empty;
     public bool IsEmailVerified { get; init; }
     public bool IsPhoneVerified { get; init; }
+    public string DocumentVerificationStatus { get; init; } = string.Empty;
 }
