@@ -31,6 +31,7 @@
     <ProjectReference Include="..\..\src\Services\Payment\Payment.API\Payment.API.csproj" />
     <ProjectReference Include="..\..\src\Services\Payment\Payment.Infrastructure\Payment.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Shared\AuHub.Shared\AuHub.Shared.csproj" />
+    <ProjectReference Include="..\IntegrationTestSupport\IntegrationTestSupport.csproj" />
   </ItemGroup>
 
 </Project>

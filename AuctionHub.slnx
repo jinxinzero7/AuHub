@@ -26,5 +26,6 @@
   <Project Path="tests/Notifications.IntegrationTests/Notifications.IntegrationTests.csproj" />
   <Project Path="tests/Payment.UnitTests/Payment.UnitTests.csproj" />
   <Project Path="tests/Payment.IntegrationTests/Payment.IntegrationTests.csproj" />
+  <Project Path="tests/IntegrationTestSupport/IntegrationTestSupport.csproj" />
   <Project Path="tests/E2E.Tests/E2E.Tests.csproj" />
 </Solution>
