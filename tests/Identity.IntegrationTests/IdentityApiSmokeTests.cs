@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using Identity.API.Middleware;
+using Identity.Application.Services;
 using Identity.Domain.Entities;
 using Identity.Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
@@ -16,6 +17,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Tokens;
+using NSubstitute;
 using System.IdentityModel.Tokens.Jwt;
 
 namespace Identity.IntegrationTests;
@@ -147,6 +149,50 @@ public class IdentityApiSmokeTests
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task DocumentVerificationUpload_ValidFiles_UploadsPrivateObjects()
+    {
+        using var factory = new IdentityApiFactory();
+        var userId = Guid.NewGuid();
+        factory.DocumentStorage.UploadAsync(Arg.Any<Stream>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(call => call.ArgAt<string>(1));
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", CreateJwt(userId, "User"));
+        using var content = CreateUploadContent(
+            ("passportImage", "passport.jpg", "image/jpeg"),
+            ("selfieImage", "selfie.png", "image/png"));
+
+        var response = await client.PostAsync("/api/auth/document-verification/upload", content);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var payload = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var passportImagePath = payload.GetProperty("passportImagePath").GetString();
+        var selfieImagePath = payload.GetProperty("selfieImagePath").GetString();
+        passportImagePath.Should().StartWith($"document-verifications/{userId}/passport-");
+        selfieImagePath.Should().StartWith($"document-verifications/{userId}/selfie-");
+        await factory.DocumentStorage.Received(1).UploadAsync(Arg.Any<Stream>(), passportImagePath!, "image/jpeg", Arg.Any<CancellationToken>());
+        await factory.DocumentStorage.Received(1).UploadAsync(Arg.Any<Stream>(), selfieImagePath!, "image/png", Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task DocumentVerificationUpload_UnsupportedFileType_ReturnsBadRequest()
+    {
+        using var factory = new IdentityApiFactory();
+        var userId = Guid.NewGuid();
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", CreateJwt(userId, "User"));
+        using var content = CreateUploadContent(
+            ("passportImage", "passport.txt", "text/plain"),
+            ("selfieImage", "selfie.png", "image/png"));
+
+        var response = await client.PostAsync("/api/auth/document-verification/upload", content);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await factory.DocumentStorage.DidNotReceive().UploadAsync(Arg.Any<Stream>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
     private static string CreateJwt(Guid userId, string role)
     {
         var claims = new[]
@@ -166,9 +212,23 @@ public class IdentityApiSmokeTests
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
+    private static MultipartFormDataContent CreateUploadContent(params (string Name, string FileName, string ContentType)[] files)
+    {
+        var content = new MultipartFormDataContent();
+        foreach (var file in files)
+        {
+            var fileContent = new ByteArrayContent("test image"u8.ToArray());
+            fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse(file.ContentType);
+            content.Add(fileContent, file.Name, file.FileName);
+        }
+
+        return content;
+    }
+
     private sealed class IdentityApiFactory : WebApplicationFactory<Program>
     {
         public InMemoryUserRepository Repository { get; } = new();
+        public IDocumentStorageService DocumentStorage { get; } = Substitute.For<IDocumentStorageService>();
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
@@ -188,9 +248,11 @@ public class IdentityApiSmokeTests
                 services.RemoveAll<IUserRepository>();
                 services.RemoveAll<IRefreshTokenRepository>();
                 services.RemoveAll<IAdminAuditLogRepository>();
+                services.RemoveAll<IDocumentStorageService>();
                 services.AddSingleton<IUserRepository>(Repository);
                 services.AddSingleton<IRefreshTokenRepository>(Repository);
                 services.AddSingleton<IAdminAuditLogRepository>(Repository);
+                services.AddSingleton(DocumentStorage);
             });
         }
     }

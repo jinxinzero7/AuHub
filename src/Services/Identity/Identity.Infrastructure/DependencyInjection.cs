@@ -6,6 +6,7 @@ using Identity.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Minio;
 
 namespace Identity.Infrastructure;
 
@@ -26,6 +27,22 @@ public static class DependencyInjection
         services.AddScoped<IDocumentVerificationRequestRepository, DocumentVerificationRequestRepository>();
         services.AddScoped<IEmailVerificationSender, DevEmailVerificationSender>();
         services.AddScoped<IPhoneVerificationSender, DevPhoneVerificationSender>();
+        services.AddSingleton<IDocumentStorageService>(_ =>
+        {
+            var minioEndpoint = configuration["MinIO:Endpoint"] ?? "minio:9000";
+            var minioAccessKey = configuration["MinIO:AccessKey"] ?? "auhub-minio-admin";
+            var minioSecretKey = configuration["MinIO:SecretKey"] ?? "AuHub_MinIO_2026_Secure!";
+            var minioBucket = configuration["MinIO:DocumentBucketName"] ?? "auhub-documents";
+            var minioWithSsl = bool.Parse(configuration["MinIO:WithSSL"] ?? "false");
+
+            var client = new MinioClient()
+                .WithEndpoint(minioEndpoint)
+                .WithCredentials(minioAccessKey, minioSecretKey)
+                .WithSSL(minioWithSsl)
+                .Build();
+
+            return new MinioDocumentStorageService(client, minioBucket);
+        });
 
         return services;
     }

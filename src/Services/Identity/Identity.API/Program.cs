@@ -1,4 +1,5 @@
 using Identity.Application;
+using Identity.Application.Services;
 using Identity.Application.Commands.Auth.Register;
 using Identity.Application.Commands.Auth.Login;
 using Identity.Application.Commands.Auth.RefreshToken;
@@ -80,6 +81,8 @@ if (!app.Environment.IsEnvironment("Testing"))
     using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
     dbContext.Database.Migrate();
+    var documentStorage = scope.ServiceProvider.GetRequiredService<IDocumentStorageService>();
+    await documentStorage.InitializeBucketAsync();
     await AdminBootstrapper.SeedAsync(scope.ServiceProvider);
 }
 

@@ -97,8 +97,15 @@ services:
       - AdminBootstrap__Email=${ADMIN_BOOTSTRAP_EMAIL:-}
       - AdminBootstrap__Password=${ADMIN_BOOTSTRAP_PASSWORD:-}
       - AdminBootstrap__Name=${ADMIN_BOOTSTRAP_NAME:-AuHub Admin}
+      - MinIO__Endpoint=minio:9000
+      - MinIO__AccessKey=${MINIO_ROOT_USER:-auhub-minio-admin}
+      - MinIO__SecretKey=${MINIO_ROOT_PASSWORD:-AuHub_MinIO_2026_Secure!}
+      - MinIO__DocumentBucketName=auhub-documents
+      - MinIO__WithSSL=false
     depends_on:
       identity-db:
+        condition: service_healthy
+      minio:
         condition: service_healthy
     networks:
       - auhub-network
