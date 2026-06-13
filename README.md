@@ -17,7 +17,7 @@ Current architecture:
 
 Verified on 2026-06-11:
 - backend build passes with 0 warnings and 0 errors;
-- backend test run contains 282 xUnit cases, currently 282 passed / 0 failed;
+- backend test run contains 289 xUnit cases, currently 289 passed / 0 failed;
 - all backend API services use FastEndpoints 8.1.0;
 - Auctions demo seed no longer calls the invalid `Approve()` then `Publish()` chain;
 - manual auction completion is admin-only through `/api/admin/lots/{id}/force-complete`;
@@ -31,6 +31,7 @@ Verified on 2026-06-11:
 - Identity integration tests cover admin ban/list/unban and banned-user middleware behavior;
 - banning a user revokes refresh tokens and blocks login/refresh with `403`;
 - lot moderation now uses `Draft -> PendingModeration -> Active`; seller submit endpoint is `/api/lots/{id}/submit-for-moderation`;
+- sellers can edit own `Draft`/`Rejected` lots through `PUT /api/lots/{id}`; rejected lots return to `Draft` after editing;
 - auctions without bids now end as `CompletedNoWinner`; winner-based `Completed` is reserved for real deals;
 - sniper protection extends last-30-second bids by 2 minutes, capped at 10 total extension minutes;
 - lot creation supports seller-selected delivery providers: `Cdek`, `YandexDelivery`, `RussianPost`;

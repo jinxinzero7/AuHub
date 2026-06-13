@@ -1,6 +1,7 @@
 using Auctions.Application;
 using Auctions.Application.Commands.CreateLot;
 using Auctions.Application.Commands.PlaceBid;
+using Auctions.Application.Commands.UpdateLot;
 using Auctions.Application.Options;
 using Auctions.Application.Services;
 using Auctions.Domain.Enums;
@@ -47,6 +48,7 @@ builder.Services.Configure<ExternalUrlOptions>(builder.Configuration.GetSection(
 // FluentValidation
 builder.Services.AddValidatorsFromAssemblyContaining<CreateLotCommandValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<PlaceBidCommandValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<UpdateLotCommandValidator>();
 
 // SignalR
 builder.Services.AddSignalR();

@@ -134,6 +134,62 @@ public class LotTests
     }
 
     [Fact]
+    public void UpdateDraft_DraftLot_UpdatesEditableFields()
+    {
+        var lot = CreateValidLot();
+
+        lot.UpdateDraft(
+            "Updated Lot",
+            "Updated description",
+            Money.FromDecimal(2500m),
+            TimeSpan.FromDays(5),
+            [DeliveryProvider.RussianPost, DeliveryProvider.Cdek]);
+
+        lot.Title.Should().Be("Updated Lot");
+        lot.Description.Should().Be("Updated description");
+        lot.StartingPrice.Should().Be(Money.FromDecimal(2500m));
+        lot.CurrentPrice.Should().Be(Money.FromDecimal(2500m));
+        lot.Duration.Should().Be(TimeSpan.FromDays(5));
+        lot.Status.Should().Be(LotStatus.Draft);
+        lot.SupportedDeliveryProviders.Should().Equal(DeliveryProvider.Cdek, DeliveryProvider.RussianPost);
+        lot.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
+    }
+
+    [Fact]
+    public void UpdateDraft_RejectedLot_ReturnsToDraftAndClearsAdminComment()
+    {
+        var lot = CreateValidLot();
+        lot.SubmitForModeration();
+        lot.Reject("Fix description");
+
+        lot.UpdateDraft(
+            "Updated Lot",
+            "Updated description",
+            Money.FromDecimal(2500m),
+            TimeSpan.FromDays(5),
+            [DeliveryProvider.Cdek]);
+
+        lot.Status.Should().Be(LotStatus.Draft);
+        lot.AdminComment.Should().BeNull();
+    }
+
+    [Fact]
+    public void UpdateDraft_PendingModeration_Throws()
+    {
+        var lot = CreateValidLot();
+        lot.SubmitForModeration();
+
+        var act = () => lot.UpdateDraft(
+            "Updated Lot",
+            "Updated description",
+            Money.FromDecimal(2500m),
+            TimeSpan.FromDays(5),
+            [DeliveryProvider.Cdek]);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("Only draft or rejected lots can be edited");
+    }
+
+    [Fact]
     public void Publish_TransitionsDraftToPendingModeration()
     {
         var lot = CreateValidLot();

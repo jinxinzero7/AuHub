@@ -119,6 +119,29 @@ public class Lot
         UpdatedAt = DateTime.UtcNow;
     }
 
+    public void UpdateDraft(
+        string title,
+        string description,
+        Money startingPrice,
+        TimeSpan duration,
+        IEnumerable<DeliveryProvider> supportedDeliveryProviders)
+    {
+        if (Status != LotStatus.Draft && Status != LotStatus.Rejected)
+            throw new InvalidOperationException("Only draft or rejected lots can be edited");
+
+        var providers = NormalizeDeliveryProviders(supportedDeliveryProviders);
+
+        Title = title;
+        Description = description;
+        StartingPrice = startingPrice;
+        CurrentPrice = startingPrice;
+        Duration = duration;
+        SupportedDeliveryProviders = providers;
+        Status = LotStatus.Draft;
+        AdminComment = null;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     public void PlaceBid(Money amount, Guid bidderId, string bidderName)
     {
         if (Status != LotStatus.Active)
