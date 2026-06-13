@@ -17,7 +17,7 @@ Current architecture:
 
 Verified on 2026-06-13:
 - backend build passes with 0 warnings and 0 errors;
-- backend test run contains 336 xUnit cases, currently 336 passed / 0 failed;
+- backend test run contains 338 xUnit cases, currently 338 passed / 0 failed;
 - all backend API services use FastEndpoints 8.1.0;
 - Auctions demo seed no longer calls the invalid `Approve()` then `Publish()` chain;
 - manual auction completion is admin-only through `/api/admin/lots/{id}/force-complete`;
@@ -26,7 +26,7 @@ Verified on 2026-06-13:
 - login accepts email or phone through `identifier`, with legacy `email` request compatibility;
 - email verification backend endpoints exist, with a dev/mock sender that logs tokens;
 - phone verification backend endpoints exist, with a dev/mock sender that logs SMS codes;
-- document verification backend model and admin review endpoints exist; frontend/admin UI and real private file storage integration are pending;
+- document verification backend model, admin review endpoints and safe public profile endpoint exist; real private file storage integration is pending;
 - Payment internal operations and Notifications direct-send endpoint require `X-Internal-Api-Key`;
 - `X-Internal-Api-Key` must be explicitly configured; there is no hardcoded fallback key;
 - public payment balance is JWT-scoped and no longer supports arbitrary public `userId` lookup;
@@ -52,6 +52,7 @@ Verified on 2026-06-13:
 - Auctions reviews API lets the winning buyer leave one seller review after `TransactionComplete`;
 - seller review aggregation is available through `GET /api/sellers/{sellerId}/reviews`;
 - seller trust score events are stored in Auctions and public seller trust summary is available through `GET /api/sellers/{sellerId}/trust`;
+- safe public seller account profile is available through `GET /api/auth/users/{id}/public-profile` for verified seller badges;
 - backend integration projects contain API smoke tests; `.NET E2E.Tests` is still a placeholder;
 - frontend production build passes without Google Fonts network dependency;
 - frontend lint passes cleanly;

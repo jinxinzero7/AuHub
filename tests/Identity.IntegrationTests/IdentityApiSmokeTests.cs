@@ -113,6 +113,40 @@ public class IdentityApiSmokeTests
         nextCalled.Should().BeFalse();
     }
 
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task PublicProfile_ReturnsSafeSellerTrustFields()
+    {
+        using var factory = new IdentityApiFactory();
+        var user = User.Create("seller@example.com", "+79990001002", "trusted_seller", "hash", "Trusted Seller", UserRole.User);
+        user.MarkDocumentVerified();
+        factory.Repository.Seed(user);
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync($"/api/auth/users/{user.Id}/public-profile");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var profile = await response.Content.ReadFromJsonAsync<JsonElement>();
+        profile.GetProperty("userId").GetGuid().Should().Be(user.Id);
+        profile.GetProperty("nickname").GetString().Should().Be("trusted_seller");
+        profile.GetProperty("name").GetString().Should().Be("Trusted Seller");
+        profile.GetProperty("documentVerificationStatus").GetString().Should().Be("Verified");
+        profile.TryGetProperty("email", out _).Should().BeFalse();
+        profile.TryGetProperty("phoneNumber", out _).Should().BeFalse();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task PublicProfile_UnknownUser_ReturnsNotFound()
+    {
+        using var factory = new IdentityApiFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync($"/api/auth/users/{Guid.NewGuid()}/public-profile");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
     private static string CreateJwt(Guid userId, string role)
     {
         var claims = new[]
