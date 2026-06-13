@@ -11,6 +11,7 @@ public class IdentityDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<EmailVerificationToken> EmailVerificationTokens => Set<EmailVerificationToken>();
+    public DbSet<PhoneVerificationCode> PhoneVerificationCodes => Set<PhoneVerificationCode>();
     public DbSet<AdminAuditLog> AdminAuditLogs => Set<AdminAuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -20,6 +21,7 @@ public class IdentityDbContext : DbContext
         ConfigureUser(modelBuilder);
         ConfigureRefreshToken(modelBuilder);
         ConfigureEmailVerificationToken(modelBuilder);
+        ConfigurePhoneVerificationCode(modelBuilder);
         ConfigureAdminAuditLog(modelBuilder);
     }
 
@@ -177,6 +179,36 @@ public class IdentityDbContext : DbContext
             entity.HasIndex(token => token.TokenHash)
                 .IsUnique();
             entity.HasIndex(token => token.UserId);
+        });
+    }
+
+    private void ConfigurePhoneVerificationCode(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<PhoneVerificationCode>(entity =>
+        {
+            entity.ToTable("PhoneVerificationCodes");
+
+            entity.HasKey(code => code.Id);
+
+            entity.Property(code => code.CodeHash)
+                .IsRequired()
+                .HasMaxLength(64);
+
+            entity.Property(code => code.ExpiresAt)
+                .IsRequired();
+
+            entity.Property(code => code.CreatedAt)
+                .IsRequired();
+
+            entity.Property(code => code.UsedAt);
+
+            entity.HasOne(code => code.User)
+                .WithMany()
+                .HasForeignKey(code => code.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(code => new { code.UserId, code.CodeHash });
+            entity.HasIndex(code => code.UserId);
         });
     }
 }

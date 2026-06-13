@@ -22,7 +22,9 @@ public static class DependencyInjection
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IAdminAuditLogRepository, AdminAuditLogRepository>();
         services.AddScoped<IEmailVerificationTokenRepository, EmailVerificationTokenRepository>();
+        services.AddScoped<IPhoneVerificationCodeRepository, PhoneVerificationCodeRepository>();
         services.AddScoped<IEmailVerificationSender, DevEmailVerificationSender>();
+        services.AddScoped<IPhoneVerificationSender, DevPhoneVerificationSender>();
 
         return services;
     }

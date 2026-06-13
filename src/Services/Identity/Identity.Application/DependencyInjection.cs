@@ -14,6 +14,8 @@ public static class DependencyInjection
         services.AddScoped<Commands.Auth.RefreshToken.RefreshTokenCommandHandler>();
         services.AddScoped<Commands.Auth.EmailVerification.RequestEmailVerificationCommandHandler>();
         services.AddScoped<Commands.Auth.EmailVerification.ConfirmEmailVerificationCommandHandler>();
+        services.AddScoped<Commands.Auth.PhoneVerification.RequestPhoneVerificationCommandHandler>();
+        services.AddScoped<Commands.Auth.PhoneVerification.ConfirmPhoneVerificationCommandHandler>();
 
         return services;
     }

@@ -10,6 +10,11 @@ public static class VerificationTokenService
         return Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
     }
 
+    public static string GenerateNumericCode()
+    {
+        return RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
+    }
+
     public static string HashToken(string token)
     {
         var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(token.Trim()));
