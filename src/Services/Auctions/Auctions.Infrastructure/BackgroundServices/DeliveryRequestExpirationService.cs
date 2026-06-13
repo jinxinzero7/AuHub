@@ -48,6 +48,7 @@ public class DeliveryRequestExpirationService : BackgroundService
         using var scope = _serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AuctionsDbContext>();
         var settlementService = scope.ServiceProvider.GetRequiredService<AuctionSettlementService>();
+        var trustScoreService = scope.ServiceProvider.GetRequiredService<TrustScoreService>();
         var now = DateTime.UtcNow;
 
         var lots = await context.Lots
@@ -76,6 +77,7 @@ public class DeliveryRequestExpirationService : BackgroundService
             }
 
             lot.ExpireDeliveryRequest();
+            await trustScoreService.RecordDeliveryRequestExpiredAsync(lot, cancellationToken);
             expiredCount++;
         }
 

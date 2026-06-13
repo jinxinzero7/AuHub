@@ -9,13 +9,16 @@ public class ConfirmDeliveryEndpoint : EndpointWithoutRequest
 {
     private readonly ILotRepository _lotRepository;
     private readonly AuctionSettlementService _settlementService;
+    private readonly TrustScoreService _trustScoreService;
 
     public ConfirmDeliveryEndpoint(
         ILotRepository lotRepository,
-        AuctionSettlementService settlementService)
+        AuctionSettlementService settlementService,
+        TrustScoreService trustScoreService)
     {
         _lotRepository = lotRepository;
         _settlementService = settlementService;
+        _trustScoreService = trustScoreService;
     }
 
     public override void Configure()
@@ -64,6 +67,7 @@ public class ConfirmDeliveryEndpoint : EndpointWithoutRequest
 
         lot.CompleteTransaction();
         await _lotRepository.SaveChangesAsync(ct);
+        await _trustScoreService.RecordSuccessfulSaleAsync(lot, ct);
 
         Response = new
         {

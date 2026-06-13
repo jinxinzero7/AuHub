@@ -17,7 +17,7 @@ Current architecture:
 
 Verified on 2026-06-11:
 - backend build passes with 0 warnings and 0 errors;
-- backend test run contains 289 xUnit cases, currently 289 passed / 0 failed;
+- backend test run contains 293 xUnit cases, currently 293 passed / 0 failed;
 - all backend API services use FastEndpoints 8.1.0;
 - Auctions demo seed no longer calls the invalid `Approve()` then `Publish()` chain;
 - manual auction completion is admin-only through `/api/admin/lots/{id}/force-complete`;
@@ -46,6 +46,7 @@ Verified on 2026-06-11:
 - Auctions settlement tests cover 1% commission, no seller payout on completion, seller payout and buyer refund;
 - Auctions reviews API lets the winning buyer leave one seller review after `TransactionComplete`;
 - seller review aggregation is available through `GET /api/sellers/{sellerId}/reviews`;
+- seller trust score events are stored in Auctions and public seller trust summary is available through `GET /api/sellers/{sellerId}/trust`;
 - backend integration projects contain API smoke tests; `.NET E2E.Tests` is still a placeholder;
 - frontend production build passes without Google Fonts network dependency;
 - frontend lint passes cleanly;

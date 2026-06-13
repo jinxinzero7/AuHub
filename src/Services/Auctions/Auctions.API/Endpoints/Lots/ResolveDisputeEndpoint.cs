@@ -16,19 +16,22 @@ public class ResolveDisputeEndpoint : Endpoint<ResolveDisputeRequest>
     private readonly INotificationClient _notificationClient;
     private readonly AuctionSettlementService _settlementService;
     private readonly IAdminAuditLogRepository _auditLogRepository;
+    private readonly TrustScoreService _trustScoreService;
 
     public ResolveDisputeEndpoint(
         ILotRepository lotRepository,
         IEventPublisher eventPublisher,
         INotificationClient notificationClient,
         AuctionSettlementService settlementService,
-        IAdminAuditLogRepository auditLogRepository)
+        IAdminAuditLogRepository auditLogRepository,
+        TrustScoreService trustScoreService)
     {
         _lotRepository = lotRepository;
         _eventPublisher = eventPublisher;
         _notificationClient = notificationClient;
         _settlementService = settlementService;
         _auditLogRepository = auditLogRepository;
+        _trustScoreService = trustScoreService;
     }
 
     public override void Configure()
@@ -85,6 +88,7 @@ public class ResolveDisputeEndpoint : Endpoint<ResolveDisputeRequest>
         var auditDetails = req.InFavorOfBuyer ? "Resolved in favor of buyer" : "Resolved in favor of seller";
         await _auditLogRepository.AddAsync(AdminAuditLog.Create(GetActorUserId(), "DisputeResolve", "Lot", lot.Id, auditDetails), ct);
         await _auditLogRepository.SaveChangesAsync(ct);
+        await _trustScoreService.RecordDisputeResolvedAsync(lot, req.InFavorOfBuyer, ct);
 
         var resolution = req.InFavorOfBuyer ? "в пользу покупателя" : "в пользу продавца";
         await _notificationClient.SendNotificationAsync(lot.SellerId, NotificationType.DisputeResolved, "Спор разрешён", $"Спор по лоту «{lot.Title}» разрешён {resolution}", ct);

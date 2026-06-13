@@ -16,6 +16,7 @@ public class AuctionsDbContext : DbContext
     public DbSet<LotImage> LotImages => Set<LotImage>();
     public DbSet<Review> Reviews => Set<Review>();
     public DbSet<AdminAuditLog> AdminAuditLogs => Set<AdminAuditLog>();
+    public DbSet<TrustScoreEvent> TrustScoreEvents => Set<TrustScoreEvent>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -27,6 +28,7 @@ public class AuctionsDbContext : DbContext
         ConfigureLotImage(modelBuilder);
         ConfigureReview(modelBuilder);
         ConfigureAdminAuditLog(modelBuilder);
+        ConfigureTrustScoreEvent(modelBuilder);
         ConfigureOutboxMessage(modelBuilder);
     }
 
@@ -228,6 +230,41 @@ public class AuctionsDbContext : DbContext
             entity.HasIndex(log => log.ActorUserId);
             entity.HasIndex(log => new { log.TargetType, log.TargetId });
             entity.HasIndex(log => log.CreatedAt);
+        });
+    }
+
+    private void ConfigureTrustScoreEvent(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<TrustScoreEvent>(entity =>
+        {
+            entity.ToTable("TrustScoreEvents");
+
+            entity.HasKey(trustEvent => trustEvent.Id);
+
+            entity.Property(trustEvent => trustEvent.Subject)
+                .HasConversion<string>()
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(trustEvent => trustEvent.Reason)
+                .HasConversion<string>()
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(trustEvent => trustEvent.Points)
+                .IsRequired();
+
+            entity.Property(trustEvent => trustEvent.ReferenceType)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(trustEvent => trustEvent.CreatedAt)
+                .IsRequired();
+
+            entity.HasIndex(trustEvent => new { trustEvent.UserId, trustEvent.Subject });
+            entity.HasIndex(trustEvent => new { trustEvent.UserId, trustEvent.Subject, trustEvent.Reason, trustEvent.ReferenceId })
+                .IsUnique();
+            entity.HasIndex(trustEvent => trustEvent.CreatedAt);
         });
     }
 
