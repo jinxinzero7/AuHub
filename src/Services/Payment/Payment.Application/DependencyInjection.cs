@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Payment.Application.Commands.ConfirmTopUp;
 using Payment.Application.Commands.TopUpWallet;
 using Payment.Application.Commands.ReserveFunds;
 using Payment.Application.Commands.ReleaseFunds;
@@ -15,6 +16,7 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         services.AddScoped<TopUpWalletCommandHandler>();
+        services.AddScoped<ConfirmTopUpCommandHandler>();
         services.AddScoped<ReserveFundsCommandHandler>();
         services.AddScoped<ReleaseFundsCommandHandler>();
         services.AddScoped<ChargeWinnerCommandHandler>();

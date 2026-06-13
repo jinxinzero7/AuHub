@@ -17,7 +17,7 @@ Current architecture:
 
 Verified on 2026-06-13:
 - backend build passes with 0 warnings and 0 errors;
-- backend test run contains 340 xUnit cases, currently 340 passed / 0 failed;
+- backend test run contains 347 xUnit cases, currently 347 passed / 0 failed;
 - all backend API services use FastEndpoints 8.1.0;
 - Auctions demo seed no longer calls the invalid `Approve()` then `Publish()` chain;
 - manual auction completion is admin-only through `/api/admin/lots/{id}/force-complete`;
@@ -46,7 +46,8 @@ Verified on 2026-06-13:
 - bidding tests cover previous bidder release, same-bidder non-release and reserve compensation on exhausted concurrency;
 - previous bidder release now has retryable outbox compensation if the direct Payment release path fails;
 - service commission is deposited to the platform wallet as a separate `ServiceFee` transaction;
-- Payment top-up goes through `IPaymentProvider` with local `DemoPaymentProvider` as the current baseline;
+- Payment keeps local immediate top-up through `IPaymentProvider`/`DemoPaymentProvider` and also supports Robokassa demo checkout through `IPaymentCheckoutProvider`;
+- Robokassa checkout endpoint returns a signed test payment URL; ResultURL callback validates signature and deposits idempotently by provider operation ID;
 - Payment command/query tests cover reserve, charge, release, refund, seller payout, wallet transaction effects, provider rejection and duplicate operation idempotency;
 - Payment integration tests cover authenticated demo top-up, balance and transaction history through in-memory repositories;
 - Auctions settlement tests cover 1% commission, no seller payout on completion, seller payout and buyer refund;

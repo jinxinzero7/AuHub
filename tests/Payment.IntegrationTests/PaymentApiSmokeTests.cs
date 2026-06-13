@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Security.Cryptography;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
@@ -84,6 +85,55 @@ public class PaymentApiSmokeTests
         transaction.GetProperty("effect").GetString().Should().Be("AvailableCredit");
     }
 
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task TopUpCheckout_WithConfiguredRobokassa_ReturnsPaymentUrl()
+    {
+        var userId = Guid.NewGuid();
+        using var factory = new PaymentApiFactory();
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", CreateJwt(userId));
+
+        var response = await client.PostAsJsonAsync("/api/payment/topup/checkout", new { Amount = 500m });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var payload = await response.Content.ReadFromJsonAsync<JsonElement>();
+        payload.GetProperty("success").GetBoolean().Should().BeTrue();
+        payload.GetProperty("provider").GetString().Should().Be("Robokassa");
+        payload.GetProperty("isTest").GetBoolean().Should().BeTrue();
+        payload.GetProperty("paymentUrl").GetString().Should().Contain("https://auth.robokassa.ru/Merchant/Index.aspx?");
+        payload.GetProperty("paymentUrl").GetString().Should().Contain("SignatureValue=");
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task RobokassaResultCallback_ValidSignature_DepositsIdempotently()
+    {
+        var userId = Guid.NewGuid();
+        var operationId = Guid.NewGuid();
+        using var factory = new PaymentApiFactory();
+        using var client = factory.CreateClient();
+
+        using var firstCallback = CreateRobokassaCallbackContent(userId, operationId, "500.00", "12345");
+        var firstResponse = await client.PostAsync("/api/payment/topup/robokassa/result", firstCallback);
+        using var secondCallback = CreateRobokassaCallbackContent(userId, operationId, "500.00", "12345");
+        var secondResponse = await client.PostAsync("/api/payment/topup/robokassa/result", secondCallback);
+
+        firstResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await firstResponse.Content.ReadAsStringAsync()).Should().Be("OK12345");
+        secondResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await secondResponse.Content.ReadAsStringAsync()).Should().Be("OK12345");
+
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", CreateJwt(userId));
+        var balance = await client.GetAsync("/api/payment/balance");
+        var history = await client.GetAsync("/api/payment/transactions");
+        var balanceJson = await balance.Content.ReadFromJsonAsync<JsonElement>();
+        var historyJson = await history.Content.ReadFromJsonAsync<JsonElement>();
+
+        balanceJson.GetProperty("balance").GetDecimal().Should().Be(500m);
+        historyJson.GetProperty("transactions").EnumerateArray().Should().ContainSingle();
+    }
+
     private static string CreateJwt(Guid userId)
     {
         var claims = new[]
@@ -103,6 +153,29 @@ public class PaymentApiSmokeTests
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
+    private static FormUrlEncodedContent CreateRobokassaCallbackContent(
+        Guid userId,
+        Guid operationId,
+        string outSum,
+        string invoiceId)
+    {
+        var parameters = new Dictionary<string, string>
+        {
+            ["OutSum"] = outSum,
+            ["InvId"] = invoiceId,
+            ["Shp_operationId"] = operationId.ToString(),
+            ["Shp_userId"] = userId.ToString()
+        };
+        parameters["SignatureValue"] = CreateRobokassaCallbackSignature(parameters);
+        return new FormUrlEncodedContent(parameters);
+    }
+
+    private static string CreateRobokassaCallbackSignature(IReadOnlyDictionary<string, string> parameters)
+    {
+        var source = $"{parameters["OutSum"]}:{parameters["InvId"]}:password-2:Shp_operationId={parameters["Shp_operationId"]}:Shp_userId={parameters["Shp_userId"]}";
+        return Convert.ToHexString(MD5.HashData(Encoding.UTF8.GetBytes(source))).ToUpperInvariant();
+    }
+
     private sealed class PaymentApiFactory : WebApplicationFactory<Program>
     {
         private readonly InMemoryPaymentRepository _repository = new();
@@ -118,7 +191,11 @@ public class PaymentApiSmokeTests
                     ["Jwt:Issuer"] = "AuHub",
                     ["Jwt:Audience"] = "AuHub-Users",
                     ["Jwt:Secret"] = "AuHub_Test_Jwt_Secret_That_Is_Long_Enough_2026",
-                    ["InternalApiKey"] = "test-internal-key"
+                    ["InternalApiKey"] = "test-internal-key",
+                    ["PaymentProviders:Robokassa:MerchantLogin"] = "auhub-demo",
+                    ["PaymentProviders:Robokassa:Password1"] = "password-1",
+                    ["PaymentProviders:Robokassa:Password2"] = "password-2",
+                    ["PaymentProviders:Robokassa:IsTest"] = "true"
                 });
             });
             builder.ConfigureTestServices(services =>
