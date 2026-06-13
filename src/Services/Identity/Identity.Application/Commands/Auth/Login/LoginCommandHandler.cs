@@ -29,16 +29,17 @@ public class LoginCommandHandler
     {
         try
         {
-            var user = await _userRepository.GetByEmailAsync(command.Email, cancellationToken);
+            var identifier = command.GetIdentifier();
+            var user = await _userRepository.GetByEmailOrPhoneAsync(identifier, cancellationToken);
 
             if (user == null)
             {
-                return Result.Failure<LoginResponse>("Invalid email or password", 401);
+                return Result.Failure<LoginResponse>("Invalid email/phone or password", 401);
             }
 
             if (!_authService.VerifyPassword(command.Password, user.PasswordHash))
             {
-                return Result.Failure<LoginResponse>("Invalid email or password", 401);
+                return Result.Failure<LoginResponse>("Invalid email/phone or password", 401);
             }
 
             if (user.IsBanned)

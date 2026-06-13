@@ -33,6 +33,14 @@ public class IdentityDbContext : DbContext
                 .IsRequired()
                 .HasMaxLength(255);
 
+            entity.Property(u => u.PhoneNumber)
+                .IsRequired()
+                .HasMaxLength(32);
+
+            entity.Property(u => u.Nickname)
+                .IsRequired()
+                .HasMaxLength(32);
+
             entity.Property(u => u.PasswordHash)
                 .IsRequired()
                 .HasMaxLength(255);
@@ -47,6 +55,24 @@ public class IdentityDbContext : DbContext
 
             entity.HasIndex(u => u.Email)
                 .IsUnique();
+
+            entity.HasIndex(u => u.PhoneNumber)
+                .IsUnique();
+
+            entity.HasIndex(u => u.Nickname)
+                .IsUnique();
+
+            entity.Property(u => u.IsEmailVerified)
+                .IsRequired()
+                .HasDefaultValue(false);
+
+            entity.Property(u => u.EmailVerifiedAt);
+
+            entity.Property(u => u.IsPhoneVerified)
+                .IsRequired()
+                .HasDefaultValue(false);
+
+            entity.Property(u => u.PhoneVerifiedAt);
 
             entity.Property(u => u.IsBanned)
                 .IsRequired()

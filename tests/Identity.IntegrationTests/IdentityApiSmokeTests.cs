@@ -51,7 +51,7 @@ public class IdentityApiSmokeTests
     public async Task AdminBanListAndUnban_UpdatesUserModerationState()
     {
         using var factory = new IdentityApiFactory();
-        var user = User.Create("seller@example.com", "hash", "Seller", UserRole.User);
+        var user = User.Create("seller@example.com", "+79990001000", "seller_user", "hash", "Seller", UserRole.User);
         var adminId = Guid.NewGuid();
         factory.Repository.Seed(user);
 
@@ -89,7 +89,7 @@ public class IdentityApiSmokeTests
     [Trait("Category", "Integration")]
     public async Task BanMiddleware_BannedAuthenticatedUser_ReturnsForbidden()
     {
-        var user = User.Create("banned@example.com", "hash", "Banned User", UserRole.User);
+        var user = User.Create("banned@example.com", "+79990001001", "banned_user", "hash", "Banned User", UserRole.User);
         user.Ban("Policy violation");
         var repository = new InMemoryUserRepository();
         repository.Seed(user);
@@ -182,6 +182,27 @@ public class IdentityApiSmokeTests
         public Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
         {
             return Task.FromResult(_users.FirstOrDefault(u => u.Email == email.ToLowerInvariant()));
+        }
+
+        public Task<User?> GetByPhoneNumberAsync(string phoneNumber, CancellationToken cancellationToken = default)
+        {
+            var normalizedPhoneNumber = User.NormalizePhoneNumber(phoneNumber);
+
+            return Task.FromResult(_users.FirstOrDefault(u => u.PhoneNumber == normalizedPhoneNumber));
+        }
+
+        public Task<User?> GetByNicknameAsync(string nickname, CancellationToken cancellationToken = default)
+        {
+            var normalizedNickname = nickname.Trim().ToLowerInvariant();
+
+            return Task.FromResult(_users.FirstOrDefault(u => u.Nickname.ToLowerInvariant() == normalizedNickname));
+        }
+
+        public Task<User?> GetByEmailOrPhoneAsync(string identifier, CancellationToken cancellationToken = default)
+        {
+            return identifier.Contains('@')
+                ? GetByEmailAsync(identifier, cancellationToken)
+                : GetByPhoneNumberAsync(identifier, cancellationToken);
         }
 
         public Task<List<User>> GetBannedUsersAsync(CancellationToken cancellationToken = default)

@@ -153,7 +153,7 @@ public class RefreshTokenCommandHandlerTests
     public async Task HandleAsync_WithBannedUser_ReturnsForbiddenAndRevokesTokenFamily()
     {
         var familyId = Guid.NewGuid();
-        var user = User.Create("banned@test.com", "hash", "Banned User", UserRole.User);
+        var user = User.Create("banned@test.com", "+79990003000", "banned_user", "hash", "Banned User", UserRole.User);
         user.Ban("Policy violation");
         var token = CreateValidToken(familyId);
         AttachUser(token, user);

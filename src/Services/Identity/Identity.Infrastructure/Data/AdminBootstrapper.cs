@@ -24,6 +24,14 @@ public static class AdminBootstrapper
         if (string.IsNullOrWhiteSpace(name))
             name = "AuHub Admin";
 
+        var phoneNumber = configuration["AdminBootstrap:PhoneNumber"];
+        if (string.IsNullOrWhiteSpace(phoneNumber))
+            phoneNumber = "+70000000000";
+
+        var nickname = configuration["AdminBootstrap:Nickname"];
+        if (string.IsNullOrWhiteSpace(nickname))
+            nickname = "auhub_admin";
+
         var normalizedEmail = email.Trim().ToLowerInvariant();
         var dbContext = services.GetRequiredService<IdentityDbContext>();
         var existingUser = await dbContext.Users
@@ -40,9 +48,14 @@ public static class AdminBootstrapper
         var authService = services.GetRequiredService<IAuthService>();
         var admin = User.Create(
             normalizedEmail,
+            phoneNumber,
+            nickname,
             authService.HashPassword(password),
             name.Trim(),
             UserRole.Admin);
+
+        admin.MarkEmailVerified();
+        admin.MarkPhoneVerified();
 
         await dbContext.Users.AddAsync(admin, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);

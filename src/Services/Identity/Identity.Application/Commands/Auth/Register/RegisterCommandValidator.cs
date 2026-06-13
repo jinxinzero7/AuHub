@@ -1,8 +1,9 @@
 using FluentValidation;
+using Identity.Domain.Entities;
 
 namespace Identity.Application.Commands.Auth.Register;
 
-public class RegisterCommandValidator : AbstractValidator<RegisterCommand>
+public partial class RegisterCommandValidator : AbstractValidator<RegisterCommand>
 {
     public RegisterCommandValidator()
     {
@@ -10,6 +11,17 @@ public class RegisterCommandValidator : AbstractValidator<RegisterCommand>
             .NotEmpty().WithMessage("Email is required")
             .EmailAddress().WithMessage("Invalid email format")
             .MaximumLength(255).WithMessage("Email must not exceed 255 characters");
+
+        RuleFor(x => x.PhoneNumber)
+            .NotEmpty().WithMessage("Phone number is required")
+            .Must(phone => PhoneNumberRegex().IsMatch(User.NormalizePhoneNumber(phone)))
+            .WithMessage("Invalid phone number format");
+
+        RuleFor(x => x.Nickname)
+            .NotEmpty().WithMessage("Nickname is required")
+            .MinimumLength(3).WithMessage("Nickname must be at least 3 characters")
+            .MaximumLength(32).WithMessage("Nickname must not exceed 32 characters")
+            .Matches("^[a-zA-Z0-9_]+$").WithMessage("Nickname can contain only Latin letters, numbers and underscore");
 
         RuleFor(x => x.Password)
             .NotEmpty().WithMessage("Password is required")
@@ -27,4 +39,7 @@ public class RegisterCommandValidator : AbstractValidator<RegisterCommand>
         RuleFor(x => x.Role)
             .IsInEnum().WithMessage("Invalid role");
     }
+
+    [System.Text.RegularExpressions.GeneratedRegex("^\\+?[1-9]\\d{9,14}$")]
+    private static partial System.Text.RegularExpressions.Regex PhoneNumberRegex();
 }

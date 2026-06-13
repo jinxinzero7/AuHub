@@ -34,6 +34,10 @@ public class AuthService : IAuthService
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.Name, user.Name),
+            new Claim("phone_number", user.PhoneNumber),
+            new Claim("nickname", user.Nickname),
+            new Claim("email_verified", user.IsEmailVerified.ToString().ToLowerInvariant()),
+            new Claim("phone_verified", user.IsPhoneVerified.ToString().ToLowerInvariant()),
             new Claim(ClaimTypes.Role, user.Role.ToString())
         };
 

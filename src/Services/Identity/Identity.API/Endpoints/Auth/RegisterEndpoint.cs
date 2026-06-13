@@ -1,5 +1,7 @@
 using Identity.Application.Commands.Auth.Register;
 using FastEndpoints;
+using Identity.Domain.Entities;
+using System.Text.RegularExpressions;
 
 namespace Identity.API.Endpoints.Auth;
 
@@ -29,6 +31,10 @@ public class RegisterEndpoint : Endpoint<RegisterRequest, RegisterResponse>
         
         if (string.IsNullOrEmpty(req.Email) || !req.Email.Contains('@') || !req.Email.Contains('.'))
             errors.Add("Invalid email format");
+        if (!RegisterValidation.PhoneNumberRegex.IsMatch(Identity.Domain.Entities.User.NormalizePhoneNumber(req.PhoneNumber)))
+            errors.Add("Invalid phone number format");
+        if (!RegisterValidation.NicknameRegex.IsMatch(req.Nickname))
+            errors.Add("Nickname can contain only Latin letters, numbers and underscore");
         if (string.IsNullOrEmpty(req.Password) || req.Password.Length < 8)
             errors.Add("Password must be at least 8 characters");
         if (!req.Password.Any(char.IsUpper))
@@ -50,6 +56,8 @@ public class RegisterEndpoint : Endpoint<RegisterRequest, RegisterResponse>
         var command = new RegisterCommand
         {
             Email = req.Email,
+            PhoneNumber = req.PhoneNumber,
+            Nickname = req.Nickname,
             Password = req.Password,
             Name = req.Name,
             Role = Identity.Domain.Entities.UserRole.User
@@ -69,7 +77,15 @@ public class RegisterEndpoint : Endpoint<RegisterRequest, RegisterResponse>
 public record RegisterRequest
 {
     public string Email { get; init; } = string.Empty;
+    public string PhoneNumber { get; init; } = string.Empty;
+    public string Nickname { get; init; } = string.Empty;
     public string Password { get; init; } = string.Empty;
     public string Name { get; init; } = string.Empty;
     public Identity.Domain.Entities.UserRole Role { get; init; } = Identity.Domain.Entities.UserRole.User;
+}
+
+file static class RegisterValidation
+{
+    public static readonly Regex PhoneNumberRegex = new("^\\+?[1-9]\\d{9,14}$", RegexOptions.Compiled);
+    public static readonly Regex NicknameRegex = new("^[a-zA-Z0-9_]{3,32}$", RegexOptions.Compiled);
 }

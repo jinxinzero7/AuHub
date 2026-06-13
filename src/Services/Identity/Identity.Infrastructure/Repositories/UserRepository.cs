@@ -23,7 +23,32 @@ public class UserRepository : IUserRepository
     public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
         return await _context.Users
-            .FirstOrDefaultAsync(u => u.Email == email.ToLowerInvariant(), cancellationToken);
+            .FirstOrDefaultAsync(u => u.Email == email.Trim().ToLowerInvariant(), cancellationToken);
+    }
+
+    public async Task<User?> GetByPhoneNumberAsync(string phoneNumber, CancellationToken cancellationToken = default)
+    {
+        var normalizedPhoneNumber = User.NormalizePhoneNumber(phoneNumber);
+
+        return await _context.Users
+            .FirstOrDefaultAsync(u => u.PhoneNumber == normalizedPhoneNumber, cancellationToken);
+    }
+
+    public async Task<User?> GetByNicknameAsync(string nickname, CancellationToken cancellationToken = default)
+    {
+        var normalizedNickname = nickname.Trim().ToLowerInvariant();
+
+        return await _context.Users
+            .FirstOrDefaultAsync(u => u.Nickname.ToLower() == normalizedNickname, cancellationToken);
+    }
+
+    public async Task<User?> GetByEmailOrPhoneAsync(string identifier, CancellationToken cancellationToken = default)
+    {
+        var trimmedIdentifier = identifier.Trim();
+
+        return trimmedIdentifier.Contains('@')
+            ? await GetByEmailAsync(trimmedIdentifier, cancellationToken)
+            : await GetByPhoneNumberAsync(trimmedIdentifier, cancellationToken);
     }
 
     public async Task<List<User>> GetBannedUsersAsync(CancellationToken cancellationToken = default)

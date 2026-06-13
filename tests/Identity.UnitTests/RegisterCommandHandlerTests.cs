@@ -22,6 +22,10 @@ public class RegisterCommandHandlerTests
         _refreshTokenRepo = Substitute.For<IRefreshTokenRepository>();
         _authService = Substitute.For<IAuthService>();
         _handler = new RegisterCommandHandler(_userRepo, _refreshTokenRepo, _authService);
+
+        _userRepo.GetByEmailAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns((User?)null);
+        _userRepo.GetByPhoneNumberAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns((User?)null);
+        _userRepo.GetByNicknameAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns((User?)null);
     }
 
     private RegisterCommand CreateCommand(string email = "test@test.com")
@@ -29,6 +33,8 @@ public class RegisterCommandHandlerTests
         return new RegisterCommand
         {
             Email = email,
+            PhoneNumber = "+79990000000",
+            Nickname = "test_user",
             Password = "password123",
             Name = "Test User",
             Role = UserRole.User
@@ -65,6 +71,8 @@ public class RegisterCommandHandlerTests
 
         await _userRepo.Received(1).AddAsync(Arg.Is<User>(u =>
             u.Email == command.Email &&
+            u.PhoneNumber == command.PhoneNumber &&
+            u.Nickname == command.Nickname &&
             u.PasswordHash == hashedPassword &&
             u.PasswordHash != command.Password &&
             u.Name == command.Name &&
@@ -158,12 +166,14 @@ public class RegisterCommandHandlerTests
     [Fact]
     public async Task HandleAsync_WithDuplicateEmail_ReturnsFailure()
     {
-        var existingUser = User.Create("existing@test.com", "hash", "Existing", UserRole.User);
+        var existingUser = User.Create("existing@test.com", "+79990000001", "existing_user", "hash", "Existing", UserRole.User);
         _userRepo.GetByEmailAsync("existing@test.com", Arg.Any<CancellationToken>()).Returns(existingUser);
 
         var result = await _handler.HandleAsync(new RegisterCommand
         {
             Email = "existing@test.com",
+            PhoneNumber = "+79990000002",
+            Nickname = "test_user",
             Password = "password123",
             Name = "Test User",
             Role = UserRole.User
@@ -171,6 +181,37 @@ public class RegisterCommandHandlerTests
 
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Be("User with this email already exists");
+        result.StatusCode.Should().Be(400);
+        await _userRepo.DidNotReceive().AddAsync(Arg.Any<User>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task HandleAsync_WithDuplicatePhone_ReturnsFailure()
+    {
+        var existingUser = User.Create("existing@test.com", "+79990000000", "existing_user", "hash", "Existing", UserRole.User);
+        _userRepo.GetByEmailAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns((User?)null);
+        _userRepo.GetByPhoneNumberAsync("+79990000000", Arg.Any<CancellationToken>()).Returns(existingUser);
+
+        var result = await _handler.HandleAsync(CreateCommand());
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().Be("User with this phone number already exists");
+        result.StatusCode.Should().Be(400);
+        await _userRepo.DidNotReceive().AddAsync(Arg.Any<User>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task HandleAsync_WithDuplicateNickname_ReturnsFailure()
+    {
+        var existingUser = User.Create("existing@test.com", "+79990000001", "test_user", "hash", "Existing", UserRole.User);
+        _userRepo.GetByEmailAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns((User?)null);
+        _userRepo.GetByPhoneNumberAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns((User?)null);
+        _userRepo.GetByNicknameAsync("test_user", Arg.Any<CancellationToken>()).Returns(existingUser);
+
+        var result = await _handler.HandleAsync(CreateCommand());
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().Be("User with this nickname already exists");
         result.StatusCode.Should().Be(400);
         await _userRepo.DidNotReceive().AddAsync(Arg.Any<User>(), Arg.Any<CancellationToken>());
     }

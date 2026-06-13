@@ -27,8 +27,10 @@ public class LoginEndpoint : Endpoint<LoginRequest, LoginResponse>
     {
         var errors = new List<string>();
         
-        if (string.IsNullOrEmpty(req.Email) || !req.Email.Contains('@'))
-            errors.Add("Invalid email format");
+        var identifier = req.GetIdentifier();
+
+        if (string.IsNullOrWhiteSpace(identifier))
+            errors.Add("Email or phone number is required");
         if (string.IsNullOrEmpty(req.Password))
             errors.Add("Password is required");
 
@@ -40,6 +42,7 @@ public class LoginEndpoint : Endpoint<LoginRequest, LoginResponse>
 
         var command = new LoginCommand
         {
+            Identifier = identifier,
             Email = req.Email,
             Password = req.Password
         };
@@ -57,6 +60,14 @@ public class LoginEndpoint : Endpoint<LoginRequest, LoginResponse>
 
 public record LoginRequest
 {
+    public string Identifier { get; init; } = string.Empty;
     public string Email { get; init; } = string.Empty;
     public string Password { get; init; } = string.Empty;
+
+    public string GetIdentifier()
+    {
+        return string.IsNullOrWhiteSpace(Identifier)
+            ? Email
+            : Identifier;
+    }
 }

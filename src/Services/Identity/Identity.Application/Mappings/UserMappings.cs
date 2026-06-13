@@ -11,8 +11,12 @@ public static class UserMappings
         {
             Id = user.Id,
             Email = user.Email,
+            PhoneNumber = user.PhoneNumber,
+            Nickname = user.Nickname,
             Name = user.Name,
-            Role = user.Role.ToString()
+            Role = user.Role.ToString(),
+            IsEmailVerified = user.IsEmailVerified,
+            IsPhoneVerified = user.IsPhoneVerified
         };
     }
 }

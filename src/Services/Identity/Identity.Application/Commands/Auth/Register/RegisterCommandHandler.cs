@@ -35,9 +35,27 @@ public class RegisterCommandHandler
                 return Result.Failure<RegisterResponse>("User with this email already exists", 400);
             }
 
+            var existingPhoneUser = await _userRepository.GetByPhoneNumberAsync(command.PhoneNumber, cancellationToken);
+            if (existingPhoneUser != null)
+            {
+                return Result.Failure<RegisterResponse>("User with this phone number already exists", 400);
+            }
+
+            var existingNicknameUser = await _userRepository.GetByNicknameAsync(command.Nickname, cancellationToken);
+            if (existingNicknameUser != null)
+            {
+                return Result.Failure<RegisterResponse>("User with this nickname already exists", 400);
+            }
+
             var passwordHash = _authService.HashPassword(command.Password);
 
-            var user = User.Create(command.Email, passwordHash, command.Name, UserRole.User);
+            var user = User.Create(
+                command.Email,
+                command.PhoneNumber,
+                command.Nickname,
+                passwordHash,
+                command.Name,
+                UserRole.User);
 
             await _userRepository.AddAsync(user, cancellationToken);
             await _userRepository.SaveChangesAsync(cancellationToken);

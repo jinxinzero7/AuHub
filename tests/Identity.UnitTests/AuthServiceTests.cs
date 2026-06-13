@@ -90,7 +90,7 @@ public class AuthServiceTests
     [Fact]
     public void GenerateJwtToken_ReturnsValidToken()
     {
-        var user = User.Create("test@test.com", "hash", "Test User", UserRole.User);
+        var user = User.Create("test@test.com", "+79990002000", "test_user", "hash", "Test User", UserRole.User);
         var token = _authService.GenerateJwtToken(user);
 
         token.Should().NotBeNullOrEmpty();
@@ -100,7 +100,7 @@ public class AuthServiceTests
     [Fact]
     public void GenerateJwtToken_WithAdminRole_ContainsRoleClaim()
     {
-        var user = User.Create("admin@test.com", "hash", "Admin", UserRole.Admin);
+        var user = User.Create("admin@test.com", "+79990002001", "admin_user", "hash", "Admin", UserRole.Admin);
         var token = _authService.GenerateJwtToken(user);
 
         token.Should().NotBeNullOrEmpty();
