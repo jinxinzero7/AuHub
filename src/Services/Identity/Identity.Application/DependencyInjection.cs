@@ -7,13 +7,13 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        // Register AuthService
         services.AddScoped<IAuthService, AuthService>();
 
-        // Register Command Handlers
         services.AddScoped<Commands.Auth.Register.RegisterCommandHandler>();
         services.AddScoped<Commands.Auth.Login.LoginCommandHandler>();
         services.AddScoped<Commands.Auth.RefreshToken.RefreshTokenCommandHandler>();
+        services.AddScoped<Commands.Auth.EmailVerification.RequestEmailVerificationCommandHandler>();
+        services.AddScoped<Commands.Auth.EmailVerification.ConfirmEmailVerificationCommandHandler>();
 
         return services;
     }
