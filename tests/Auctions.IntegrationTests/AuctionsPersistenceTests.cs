@@ -350,6 +350,67 @@ public class AuctionsPersistenceTests : IAsyncLifetime
         trustScoreEventExists.Should().BeTrue();
     }
 
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task PlaceBid_IdempotentRetry_ReturnsExistingBidWithoutDuplicatePersistenceOrReserve()
+    {
+        var sellerId = Guid.NewGuid();
+        var bidderId = Guid.NewGuid();
+        var adminId = Guid.NewGuid();
+        var idempotencyKey = Guid.NewGuid();
+        using var client = _factory.CreateClient();
+
+        var lotId = await CreateDraftLotAsync(client, sellerId, "Idempotent bid lot");
+        await SubmitAndApproveLotAsync(client, lotId, sellerId, adminId);
+
+        await PlaceBidAsync(client, lotId, bidderId, 1500m, idempotencyKey);
+        await PlaceBidAsync(client, lotId, bidderId, 1500m, idempotencyKey);
+
+        await using var scope = _factory.Services.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AuctionsDbContext>();
+        var bids = await dbContext.Bids.AsNoTracking().Where(bid => bid.LotId == lotId).ToListAsync();
+
+        bids.Should().ContainSingle();
+        bids.Single().IdempotencyKey.Should().Be(idempotencyKey);
+        _factory.PaymentClient.ReservedFunds.Should().ContainSingle(reservation =>
+            reservation.UserId == bidderId &&
+            reservation.Amount == 1500m &&
+            reservation.LotId == lotId);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task HigherBid_ReleasesPreviousBidderAndPersistsReleaseOutbox()
+    {
+        var sellerId = Guid.NewGuid();
+        var firstBidderId = Guid.NewGuid();
+        var secondBidderId = Guid.NewGuid();
+        var adminId = Guid.NewGuid();
+        using var client = _factory.CreateClient();
+
+        var lotId = await CreateDraftLotAsync(client, sellerId, "Previous bidder release lot");
+        await SubmitAndApproveLotAsync(client, lotId, sellerId, adminId);
+        await PlaceBidAsync(client, lotId, firstBidderId, 1500m);
+        await PlaceBidAsync(client, lotId, secondBidderId, 1800m);
+
+        var lot = await LoadLotAsync(lotId);
+        lot.CurrentPrice.Amount.Should().Be(1800m);
+
+        await using var scope = _factory.Services.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AuctionsDbContext>();
+        var bids = await dbContext.Bids.AsNoTracking().Where(bid => bid.LotId == lotId).ToListAsync();
+        bids.Should().HaveCount(2);
+
+        var releaseOutboxExists = await dbContext.OutboxMessages
+            .AnyAsync(message => message.Type == "ReleasePreviousBidderFunds" && message.Payload.Contains(firstBidderId.ToString()));
+        releaseOutboxExists.Should().BeTrue();
+
+        _factory.PaymentClient.ReleasedFunds.Should().ContainSingle(release =>
+            release.UserId == firstBidderId &&
+            release.Amount == 1500m &&
+            release.LotId == lotId);
+    }
+
     private async Task<Guid> CreateDraftLotAsync(HttpClient client, Guid sellerId, string title)
     {
         Authenticate(client, sellerId);
@@ -378,13 +439,13 @@ public class AuctionsPersistenceTests : IAsyncLifetime
         approveResponse.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
-    private static async Task PlaceBidAsync(HttpClient client, Guid lotId, Guid bidderId, decimal amount)
+    private static async Task PlaceBidAsync(HttpClient client, Guid lotId, Guid bidderId, decimal amount, Guid? idempotencyKey = null)
     {
         Authenticate(client, bidderId);
         var bidResponse = await client.PostAsJsonAsync($"/api/lots/{lotId}/bids", new
         {
             amount,
-            idempotencyKey = Guid.NewGuid()
+            idempotencyKey = idempotencyKey ?? Guid.NewGuid()
         });
 
         var bidBody = await bidResponse.Content.ReadAsStringAsync();
@@ -465,6 +526,7 @@ public class AuctionsPersistenceTests : IAsyncLifetime
     private sealed class FakePaymentClient : IPaymentClient
     {
         public List<FundsReservation> ReservedFunds { get; } = new();
+        public List<FundsRelease> ReleasedFunds { get; } = new();
         public List<SellerTransfer> SellerTransfers { get; } = new();
 
         public Task<BalanceResult> GetBalanceAsync(Guid userId, CancellationToken ct = default)
@@ -480,6 +542,7 @@ public class AuctionsPersistenceTests : IAsyncLifetime
 
         public Task<PaymentResult> ReleaseFundsAsync(Guid userId, decimal amount, Guid lotId, CancellationToken ct = default)
         {
+            ReleasedFunds.Add(new FundsRelease(userId, amount, lotId));
             return Task.FromResult(new PaymentResult(true));
         }
 
@@ -501,6 +564,7 @@ public class AuctionsPersistenceTests : IAsyncLifetime
     }
 
     private sealed record FundsReservation(Guid UserId, decimal Amount, Guid LotId);
+    private sealed record FundsRelease(Guid UserId, decimal Amount, Guid LotId);
     private sealed record SellerTransfer(Guid SellerId, decimal Amount, decimal ServiceFee, Guid LotId);
 
     private sealed class NoopEventPublisher : IEventPublisher
