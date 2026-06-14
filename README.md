@@ -64,7 +64,7 @@ Verified on 2026-06-14:
 - frontend production build passes without Google Fonts network dependency;
 - frontend lint passes cleanly;
 - frontend repo has Playwright Chromium smoke tests for public app shell/navigation and client-side auth form validation;
-- frontend repo also has an opt-in full-stack Playwright marketplace spec gated by `E2E_FULL_STACK=true`; it still needs verification against a running Docker/Gateway stack;
+- frontend repo also has a verified opt-in full-stack Playwright marketplace spec gated by `E2E_FULL_STACK=true`;
 - CI unit-test step runs unit test projects explicitly;
 - CI integration-test job runs backend `*.IntegrationTests` projects separately from the unit-test job.
 
@@ -234,7 +234,7 @@ Current state:
 - bidding/payment money-side-effect coverage has been strengthened, but cross-service escrow integration coverage is still pending;
 - backend integration projects cover API host startup, basic auth/internal-key guards and selected PostgreSQL persistence flows;
 - frontend Playwright has self-contained app-shell/auth-form smoke coverage;
-- full Docker-backed marketplace UI E2E has an opt-in spec scaffold and still needs a verified Docker-stack run;
+- full Docker-backed marketplace UI E2E verifies seller registration, lot submission/moderation, buyer top-up and buyer bid through the real UI/Gateway/backend path;
 - CI workflow runs real unit test projects and a separate backend integration-test job.
 
 ## Main User Flow
