@@ -15,9 +15,9 @@ Current architecture:
 - Docker Compose deployment;
 - GitHub Actions CI.
 
-Verified on 2026-06-13:
+Verified on 2026-06-14:
 - backend build passes with 0 warnings and 0 errors;
-- backend test run contains 354 xUnit cases, currently 354 passed / 0 failed;
+- backend test run contains 355 xUnit cases, currently 355 passed / 0 failed;
 - all backend API services use FastEndpoints 8.1.0;
 - Auctions demo seed no longer calls the invalid `Approve()` then `Publish()` chain;
 - manual auction completion is admin-only through `/api/admin/lots/{id}/force-complete`;
@@ -51,6 +51,9 @@ Verified on 2026-06-13:
 - Payment command/query tests cover reserve, charge, release, refund, seller payout, wallet transaction effects, provider rejection and duplicate operation idempotency;
 - Payment integration tests cover authenticated demo top-up, balance and transaction history through in-memory repositories;
 - shared Testcontainers/PostgreSQL support exists; active Payment persistence tests cover top-up/balance/history, reserve/release, charge/refund and seller payout/platform fee;
+- active Identity persistence tests cover register/login, refresh token rotation, refresh token replay family revocation and admin self-registration guard;
+- active Auctions persistence tests cover draft creation, owner-only moderation submit, pending-moderation edit lock, admin approval, audit log persistence, active public listing and fresh migration-chain application;
+- Auctions lot optimistic concurrency uses PostgreSQL `xmin` instead of a physical `bytea RowVersion` column;
 - Auctions settlement tests cover 1% commission, no seller payout on completion, seller payout and buyer refund;
 - Auctions reviews API lets the winning buyer leave one seller review after `TransactionComplete`;
 - seller review aggregation is available through `GET /api/sellers/{sellerId}/reviews`;
@@ -223,9 +226,9 @@ Test projects:
 
 Current state:
 - unit tests cover core domain/application behavior and currently pass;
-- bidding/payment money-side-effect coverage has been strengthened, but persistence-backed escrow integration coverage is still pending;
-- backend integration projects cover API host startup and basic auth/internal-key guards;
-- persistence-backed integration tests and UI E2E still need real coverage;
+- bidding/payment money-side-effect coverage has been strengthened, but cross-service escrow integration coverage is still pending;
+- backend integration projects cover API host startup, basic auth/internal-key guards and selected PostgreSQL persistence flows;
+- UI E2E still needs real coverage;
 - CI workflow exists and runs real unit test projects; integration tests remain disabled until CI strategy is updated.
 
 ## Main User Flow

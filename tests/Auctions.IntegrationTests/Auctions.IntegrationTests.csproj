@@ -29,6 +29,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Services\Auctions\Auctions.API\Auctions.API.csproj" />
     <ProjectReference Include="..\..\src\Shared\AuHub.Shared\AuHub.Shared.csproj" />
+    <ProjectReference Include="..\IntegrationTestSupport\IntegrationTestSupport.csproj" />
   </ItemGroup>
 
 </Project>

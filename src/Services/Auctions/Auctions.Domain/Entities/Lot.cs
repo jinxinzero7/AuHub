@@ -38,7 +38,7 @@ public class Lot
     public string? DisputeReason { get; private set; }
     public List<DeliveryProvider> SupportedDeliveryProviders { get; private set; } = new();
 
-    public byte[] RowVersion { get; private set; } = Array.Empty<byte>();
+    public uint RowVersion { get; private set; }
 
     public bool IsDeleted { get; private set; }
     public DateTime? DeletedAt { get; private set; }
