@@ -63,7 +63,8 @@ Verified on 2026-06-14:
 - backend integration projects contain API smoke tests; `.NET E2E.Tests` is still a placeholder;
 - frontend production build passes without Google Fonts network dependency;
 - frontend lint passes cleanly;
-- CI unit-test step runs unit test projects explicitly.
+- CI unit-test step runs unit test projects explicitly;
+- CI integration-test job runs backend `*.IntegrationTests` projects separately from the unit-test job.
 
 Project docs:
 - project context: `../CONTEXT.md`
@@ -230,7 +231,7 @@ Current state:
 - bidding/payment money-side-effect coverage has been strengthened, but cross-service escrow integration coverage is still pending;
 - backend integration projects cover API host startup, basic auth/internal-key guards and selected PostgreSQL persistence flows;
 - UI E2E still needs real coverage;
-- CI workflow exists and runs real unit test projects; integration tests remain disabled until CI strategy is updated.
+- CI workflow runs real unit test projects and a separate backend integration-test job.
 
 ## Main User Flow
 

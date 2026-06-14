@@ -48,16 +48,39 @@ jobs:
           name: test-results
           path: "**/*.trx"
 
+  integration-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET ${{ env.DOTNET_VERSION }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore AuctionHub.slnx
+
+      - name: Build
+        run: dotnet build AuctionHub.slnx --no-restore --configuration Release
+
       - name: Integration Tests
-        if: false
         run: |
-          dotnet test AuctionHub.slnx --no-build --configuration Release \
-            --filter "Category=Integration" \
-            --logger "trx;LogFileName=integration-test-results.trx"
+          dotnet test tests/Auctions.IntegrationTests/Auctions.IntegrationTests.csproj --no-build --configuration Release --logger "trx;LogFileName=auctions-integration-test-results.trx"
+          dotnet test tests/Identity.IntegrationTests/Identity.IntegrationTests.csproj --no-build --configuration Release --logger "trx;LogFileName=identity-integration-test-results.trx"
+          dotnet test tests/Notifications.IntegrationTests/Notifications.IntegrationTests.csproj --no-build --configuration Release --logger "trx;LogFileName=notifications-integration-test-results.trx"
+          dotnet test tests/Payment.IntegrationTests/Payment.IntegrationTests.csproj --no-build --configuration Release --logger "trx;LogFileName=payment-integration-test-results.trx"
+
+      - name: Upload Integration Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-test-results
+          path: "**/*integration-test-results.trx"
 
   docker-build:
     runs-on: ubuntu-latest
-    needs: build-and-test
+    needs: [build-and-test, integration-tests]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     env:
       JWT_SECRET: AuHub_CI_Jwt_Secret_Only_For_Docker_Build_2026
