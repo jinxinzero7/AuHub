@@ -38,6 +38,7 @@ public class RefreshTokenCommandHandler
                 if (refreshToken.FamilyId.HasValue)
                 {
                     await _refreshTokenRepository.RevokeFamilyAsync(refreshToken.FamilyId.Value, cancellationToken);
+                    await _refreshTokenRepository.SaveChangesAsync(cancellationToken);
                 }
                 return Result.Failure<RefreshTokenResponse>("Refresh token reuse detected. All tokens revoked.", 401);
             }
