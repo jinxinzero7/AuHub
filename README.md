@@ -63,6 +63,7 @@ Verified on 2026-06-14:
 - backend integration projects contain API smoke tests; `.NET E2E.Tests` is still a placeholder;
 - frontend production build passes without Google Fonts network dependency;
 - frontend lint passes cleanly;
+- frontend repo has Playwright Chromium smoke tests for public app shell/navigation and client-side auth form validation;
 - CI unit-test step runs unit test projects explicitly;
 - CI integration-test job runs backend `*.IntegrationTests` projects separately from the unit-test job.
 
@@ -85,7 +86,7 @@ Project docs:
 | Real-time | SignalR |
 | Storage | MinIO |
 | Frontend | Next.js 16.2, React 19, TypeScript, TailwindCSS 4 |
-| Tests | xUnit, NSubstitute, FluentAssertions, coverlet |
+| Tests | xUnit, NSubstitute, FluentAssertions, coverlet, Playwright |
 | Infra | Docker Compose, GitHub Actions |
 
 ## Architecture
@@ -225,12 +226,14 @@ Test projects:
 - `Payment.UnitTests`
 - `*.IntegrationTests`
 - `E2E.Tests`
+- frontend Playwright tests in `../auhub-frontend/e2e`
 
 Current state:
 - unit tests cover core domain/application behavior and currently pass;
 - bidding/payment money-side-effect coverage has been strengthened, but cross-service escrow integration coverage is still pending;
 - backend integration projects cover API host startup, basic auth/internal-key guards and selected PostgreSQL persistence flows;
-- UI E2E still needs real coverage;
+- frontend Playwright has self-contained app-shell/auth-form smoke coverage;
+- full Docker-backed marketplace UI E2E still needs real coverage;
 - CI workflow runs real unit test projects and a separate backend integration-test job.
 
 ## Main User Flow
