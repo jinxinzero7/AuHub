@@ -2,14 +2,21 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
+using AuHub.Shared.Contracts;
 using FluentAssertions;
 using IntegrationTestSupport;
+using MassTransit;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Notifications.API.Consumers;
+using Notifications.Application.Commands.SendNotification;
+using Notifications.Domain.Enums;
 using Notifications.Infrastructure.Data;
+using NSubstitute;
 
 namespace Notifications.IntegrationTests;
 
@@ -90,6 +97,86 @@ public class NotificationsPersistenceTests : IAsyncLifetime
         var notification = await dbContext.Notifications.AsNoTracking().SingleAsync(n => n.Id == notificationId);
         notification.UserId.Should().Be(userId);
         notification.IsRead.Should().BeTrue();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task BidPlacedConsumer_CreatesNewBidNotificationForSeller()
+    {
+        var sellerId = Guid.NewGuid();
+
+        await using var scope = _factory.Services.CreateAsyncScope();
+        var handler = scope.ServiceProvider.GetRequiredService<SendNotificationCommandHandler>();
+        var consumer = new BidPlacedConsumer(handler, Substitute.For<ILogger<BidPlacedConsumer>>());
+        var context = Substitute.For<ConsumeContext<BidPlacedEvent>>();
+        context.Message.Returns(new BidPlacedEvent
+        {
+            LotId = Guid.NewGuid(),
+            BidderId = Guid.NewGuid(),
+            BidderName = "Buyer",
+            Amount = 1500m,
+            SellerId = sellerId,
+            LotTitle = "Vintage camera"
+        });
+
+        await consumer.Consume(context);
+
+        var dbContext = scope.ServiceProvider.GetRequiredService<NotificationsDbContext>();
+        var notification = await dbContext.Notifications.AsNoTracking().SingleAsync(n => n.UserId == sellerId);
+        notification.Type.Should().Be(NotificationType.NewBid);
+        notification.IsRead.Should().BeFalse();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task AuctionCompletedConsumer_WithWinner_CreatesWonAuctionNotification()
+    {
+        var winnerId = Guid.NewGuid();
+
+        await using var scope = _factory.Services.CreateAsyncScope();
+        var handler = scope.ServiceProvider.GetRequiredService<SendNotificationCommandHandler>();
+        var consumer = new AuctionCompletedConsumer(handler, Substitute.For<ILogger<AuctionCompletedConsumer>>());
+        var context = Substitute.For<ConsumeContext<AuctionCompletedEvent>>();
+        context.Message.Returns(new AuctionCompletedEvent
+        {
+            LotId = Guid.NewGuid(),
+            LotTitle = "Mechanical keyboard",
+            WinnerId = winnerId,
+            WinnerName = "Winner",
+            FinalPrice = 2500m,
+            SellerId = Guid.NewGuid()
+        });
+
+        await consumer.Consume(context);
+
+        var dbContext = scope.ServiceProvider.GetRequiredService<NotificationsDbContext>();
+        var notification = await dbContext.Notifications.AsNoTracking().SingleAsync(n => n.UserId == winnerId);
+        notification.Type.Should().Be(NotificationType.WonAuction);
+        notification.IsRead.Should().BeFalse();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task AuctionCompletedConsumer_WithoutWinner_DoesNotCreateNotification()
+    {
+        await using var scope = _factory.Services.CreateAsyncScope();
+        var handler = scope.ServiceProvider.GetRequiredService<SendNotificationCommandHandler>();
+        var consumer = new AuctionCompletedConsumer(handler, Substitute.For<ILogger<AuctionCompletedConsumer>>());
+        var context = Substitute.For<ConsumeContext<AuctionCompletedEvent>>();
+        context.Message.Returns(new AuctionCompletedEvent
+        {
+            LotId = Guid.NewGuid(),
+            LotTitle = "No bid lot",
+            WinnerId = null,
+            FinalPrice = 1200m,
+            SellerId = Guid.NewGuid()
+        });
+
+        await consumer.Consume(context);
+
+        var dbContext = scope.ServiceProvider.GetRequiredService<NotificationsDbContext>();
+        var notificationsCount = await dbContext.Notifications.CountAsync();
+        notificationsCount.Should().Be(0);
     }
 
     private static void Authenticate(HttpClient client, Guid userId, string role = "User")
