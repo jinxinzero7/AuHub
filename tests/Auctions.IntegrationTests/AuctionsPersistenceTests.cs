@@ -179,6 +179,48 @@ public class AuctionsPersistenceTests : IAsyncLifetime
         editedLot.SupportedDeliveryProviders.Should().BeEquivalentTo([DeliveryProvider.YandexDelivery, DeliveryProvider.RussianPost]);
     }
 
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task PlaceBid_OnActiveLot_ReservesFundsAndPersistsBidAndOutbox()
+    {
+        var sellerId = Guid.NewGuid();
+        var bidderId = Guid.NewGuid();
+        var adminId = Guid.NewGuid();
+        using var client = _factory.CreateClient();
+
+        var lotId = await CreateDraftLotAsync(client, sellerId, "Mechanical keyboard");
+        await SubmitAndApproveLotAsync(client, lotId, sellerId, adminId);
+
+        Authenticate(client, bidderId);
+        var bidResponse = await client.PostAsJsonAsync($"/api/lots/{lotId}/bids", new
+        {
+            amount = 1500m,
+            idempotencyKey = Guid.NewGuid()
+        });
+
+        var bidBody = await bidResponse.Content.ReadAsStringAsync();
+        bidResponse.StatusCode.Should().Be(HttpStatusCode.OK, bidBody);
+
+        var lot = await LoadLotAsync(lotId);
+        lot.CurrentPrice.Amount.Should().Be(1500m);
+        lot.WinnerId.Should().BeNull();
+
+        await using var scope = _factory.Services.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AuctionsDbContext>();
+        var bid = await dbContext.Bids.AsNoTracking().SingleAsync(savedBid => savedBid.LotId == lotId);
+        bid.BidderId.Should().Be(bidderId);
+        bid.Amount.Amount.Should().Be(1500m);
+
+        var bidPlacedOutboxExists = await dbContext.OutboxMessages
+            .AnyAsync(message => message.Type == "BidPlaced" && message.Payload.Contains(lotId.ToString()));
+        bidPlacedOutboxExists.Should().BeTrue();
+
+        _factory.PaymentClient.ReservedFunds.Should().ContainSingle(reservation =>
+            reservation.UserId == bidderId &&
+            reservation.Amount == 1500m &&
+            reservation.LotId == lotId);
+    }
+
     private async Task<Guid> CreateDraftLotAsync(HttpClient client, Guid sellerId, string title)
     {
         Authenticate(client, sellerId);
@@ -194,6 +236,17 @@ public class AuctionsPersistenceTests : IAsyncLifetime
         var createBody = await createResponse.Content.ReadAsStringAsync();
         createResponse.StatusCode.Should().Be(HttpStatusCode.Created, createBody);
         return await ReadGuidAsync(createResponse, "lotId");
+    }
+
+    private static async Task SubmitAndApproveLotAsync(HttpClient client, Guid lotId, Guid sellerId, Guid adminId)
+    {
+        Authenticate(client, sellerId);
+        var submitResponse = await client.PostAsync($"/api/lots/{lotId}/submit-for-moderation", null);
+        submitResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        Authenticate(client, adminId, "Admin");
+        var approveResponse = await client.PostAsync($"/api/lots/{lotId}/approve", null);
+        approveResponse.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     private async Task<Lot> LoadLotAsync(Guid lotId)
@@ -221,6 +274,8 @@ public class AuctionsPersistenceTests : IAsyncLifetime
     private sealed class AuctionsPersistenceFactory : WebApplicationFactory<Program>
     {
         private readonly string _connectionString;
+
+        public FakePaymentClient PaymentClient { get; } = new();
 
         public AuctionsPersistenceFactory(string connectionString)
         {
@@ -254,14 +309,54 @@ public class AuctionsPersistenceTests : IAsyncLifetime
                 services.RemoveAll<IEventPublisher>();
                 services.RemoveAll<INotificationClient>();
                 services.RemoveAll<IImageStorageService>();
+                services.RemoveAll<IPaymentClient>();
 
                 services.AddSingleton<IEventPublisher, NoopEventPublisher>();
                 services.AddSingleton<INotificationClient, NoopNotificationClient>();
                 services.AddSingleton<IImageStorageService, NoopImageStorageService>();
+                services.AddSingleton<IPaymentClient>(PaymentClient);
                 services.AddSingleton(Substitute.For<IPublishEndpoint>());
             });
         }
     }
+
+    private sealed class FakePaymentClient : IPaymentClient
+    {
+        public List<FundsReservation> ReservedFunds { get; } = new();
+
+        public Task<BalanceResult> GetBalanceAsync(Guid userId, CancellationToken ct = default)
+        {
+            return Task.FromResult(new BalanceResult(true, 100_000m));
+        }
+
+        public Task<PaymentResult> ReserveFundsAsync(Guid userId, decimal amount, Guid lotId, CancellationToken ct = default)
+        {
+            ReservedFunds.Add(new FundsReservation(userId, amount, lotId));
+            return Task.FromResult(new PaymentResult(true));
+        }
+
+        public Task<PaymentResult> ReleaseFundsAsync(Guid userId, decimal amount, Guid lotId, CancellationToken ct = default)
+        {
+            return Task.FromResult(new PaymentResult(true));
+        }
+
+        public Task<PaymentResult> ChargeWinnerAsync(Guid winnerId, decimal amount, Guid lotId, CancellationToken ct = default)
+        {
+            return Task.FromResult(new PaymentResult(true));
+        }
+
+        public Task<PaymentResult> TransferToSellerAsync(Guid sellerId, decimal amount, decimal serviceFee, Guid lotId, CancellationToken ct = default)
+        {
+            return Task.FromResult(new PaymentResult(true));
+        }
+
+        public Task<PaymentResult> RefundFundsAsync(Guid userId, decimal amount, Guid lotId, CancellationToken ct = default)
+        {
+            return Task.FromResult(new PaymentResult(true));
+        }
+    }
+
+    private sealed record FundsReservation(Guid UserId, decimal Amount, Guid LotId);
 
     private sealed class NoopEventPublisher : IEventPublisher
     {
