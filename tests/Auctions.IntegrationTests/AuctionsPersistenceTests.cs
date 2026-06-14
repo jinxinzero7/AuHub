@@ -51,19 +51,7 @@ public class AuctionsPersistenceTests : IAsyncLifetime
         var adminId = Guid.NewGuid();
         using var client = _factory.CreateClient();
 
-        Authenticate(client, sellerId);
-        var createResponse = await client.PostAsJsonAsync("/api/lots", new
-        {
-            title = "Vintage camera Zenit",
-            description = "Working film camera with original leather case",
-            startingPrice = 1200m,
-            durationHours = 48,
-            supportedDeliveryProviders = new[] { "Cdek", "RussianPost" }
-        });
-
-        var createBody = await createResponse.Content.ReadAsStringAsync();
-        createResponse.StatusCode.Should().Be(HttpStatusCode.Created, createBody);
-        var lotId = await ReadGuidAsync(createResponse, "lotId");
+        var lotId = await CreateDraftLotAsync(client, sellerId, "Vintage camera Zenit");
 
         var createdLot = await LoadLotAsync(lotId);
         createdLot.Status.Should().Be(LotStatus.Draft);
@@ -129,6 +117,83 @@ public class AuctionsPersistenceTests : IAsyncLifetime
         lots!.Select(node => Guid.Parse(node!["id"]!.GetValue<string>()))
             .Should()
             .Contain(lotId);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task RejectedLot_CanBeEditedBackToDraftAndPersistsAuditLog()
+    {
+        var sellerId = Guid.NewGuid();
+        var adminId = Guid.NewGuid();
+        using var client = _factory.CreateClient();
+
+        var lotId = await CreateDraftLotAsync(client, sellerId, "Porcelain tea set");
+
+        Authenticate(client, sellerId);
+        var submitResponse = await client.PostAsync($"/api/lots/{lotId}/submit-for-moderation", null);
+        submitResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        Authenticate(client, adminId, "Admin");
+        var rejectResponse = await client.PostAsJsonAsync($"/api/lots/{lotId}/reject", new
+        {
+            reason = "Photos do not show the item condition"
+        });
+
+        rejectResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var rejectedLot = await LoadLotAsync(lotId);
+        rejectedLot.Status.Should().Be(LotStatus.Rejected);
+        rejectedLot.AdminComment.Should().Be("Photos do not show the item condition");
+
+        await using (var scope = _factory.Services.CreateAsyncScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<AuctionsDbContext>();
+            var auditLogExists = await dbContext.AdminAuditLogs
+                .AnyAsync(log =>
+                    log.ActorUserId == adminId &&
+                    log.Action == "LotReject" &&
+                    log.TargetId == lotId &&
+                    log.Details == "Photos do not show the item condition");
+
+            auditLogExists.Should().BeTrue();
+        }
+
+        Authenticate(client, sellerId);
+        var editResponse = await client.PutAsJsonAsync($"/api/lots/{lotId}", new
+        {
+            title = "Porcelain tea set with detailed photos",
+            description = "Updated description with condition details and complete photo set",
+            startingPrice = 2200m,
+            durationHours = 72,
+            supportedDeliveryProviders = new[] { "YandexDelivery", "RussianPost" },
+            submitForModeration = false
+        });
+
+        editResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var editedLot = await LoadLotAsync(lotId);
+        editedLot.Status.Should().Be(LotStatus.Draft);
+        editedLot.AdminComment.Should().BeNull();
+        editedLot.Title.Should().Be("Porcelain tea set with detailed photos");
+        editedLot.CurrentPrice.Amount.Should().Be(2200m);
+        editedLot.SupportedDeliveryProviders.Should().BeEquivalentTo([DeliveryProvider.YandexDelivery, DeliveryProvider.RussianPost]);
+    }
+
+    private async Task<Guid> CreateDraftLotAsync(HttpClient client, Guid sellerId, string title)
+    {
+        Authenticate(client, sellerId);
+        var createResponse = await client.PostAsJsonAsync("/api/lots", new
+        {
+            title,
+            description = "Working film camera with original leather case",
+            startingPrice = 1200m,
+            durationHours = 48,
+            supportedDeliveryProviders = new[] { "Cdek", "RussianPost" }
+        });
+
+        var createBody = await createResponse.Content.ReadAsStringAsync();
+        createResponse.StatusCode.Should().Be(HttpStatusCode.Created, createBody);
+        return await ReadGuidAsync(createResponse, "lotId");
     }
 
     private async Task<Lot> LoadLotAsync(Guid lotId)
