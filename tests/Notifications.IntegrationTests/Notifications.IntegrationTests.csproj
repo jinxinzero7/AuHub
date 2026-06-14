@@ -31,6 +31,7 @@
     <ProjectReference Include="..\..\src\Services\Notifications\Notifications.API\Notifications.API.csproj" />
     <ProjectReference Include="..\..\src\Services\Notifications\Notifications.Infrastructure\Notifications.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Shared\AuHub.Shared\AuHub.Shared.csproj" />
+    <ProjectReference Include="..\IntegrationTestSupport\IntegrationTestSupport.csproj" />
   </ItemGroup>
 
 </Project>
