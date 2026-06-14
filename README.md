@@ -63,6 +63,7 @@ Verified on 2026-06-14:
 - backend integration projects contain API smoke tests; `.NET E2E.Tests` is still a placeholder;
 - frontend production build passes without Google Fonts network dependency;
 - frontend lint passes cleanly;
+- frontend home/header/lot cards now use an accessible marketplace direction instead of the old gold/luxury auction-house look;
 - frontend repo has Playwright Chromium smoke tests for public app shell/navigation and client-side auth form validation;
 - frontend repo also has a verified opt-in full-stack Playwright marketplace spec gated by `E2E_FULL_STACK=true`;
 - CI unit-test step runs unit test projects explicitly;
