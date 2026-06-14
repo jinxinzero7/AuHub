@@ -191,15 +191,7 @@ public class AuctionsPersistenceTests : IAsyncLifetime
         var lotId = await CreateDraftLotAsync(client, sellerId, "Mechanical keyboard");
         await SubmitAndApproveLotAsync(client, lotId, sellerId, adminId);
 
-        Authenticate(client, bidderId);
-        var bidResponse = await client.PostAsJsonAsync($"/api/lots/{lotId}/bids", new
-        {
-            amount = 1500m,
-            idempotencyKey = Guid.NewGuid()
-        });
-
-        var bidBody = await bidResponse.Content.ReadAsStringAsync();
-        bidResponse.StatusCode.Should().Be(HttpStatusCode.OK, bidBody);
+        await PlaceBidAsync(client, lotId, bidderId, 1500m);
 
         var lot = await LoadLotAsync(lotId);
         lot.CurrentPrice.Amount.Should().Be(1500m);
@@ -219,6 +211,143 @@ public class AuctionsPersistenceTests : IAsyncLifetime
             reservation.UserId == bidderId &&
             reservation.Amount == 1500m &&
             reservation.LotId == lotId);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task ForceComplete_ActiveLotWithoutBids_PersistsCompletedNoWinner()
+    {
+        var sellerId = Guid.NewGuid();
+        var adminId = Guid.NewGuid();
+        using var client = _factory.CreateClient();
+
+        var lotId = await CreateDraftLotAsync(client, sellerId, "No-bid lot");
+        await SubmitAndApproveLotAsync(client, lotId, sellerId, adminId);
+
+        Authenticate(client, adminId, "Admin");
+        var completeResponse = await client.PostAsync($"/api/admin/lots/{lotId}/force-complete", null);
+        completeResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var completedLot = await LoadLotAsync(lotId);
+        completedLot.Status.Should().Be(LotStatus.CompletedNoWinner);
+        completedLot.WinnerId.Should().BeNull();
+        completedLot.DeliveryRequestDeadlineAt.Should().BeNull();
+
+        await using var scope = _factory.Services.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AuctionsDbContext>();
+        var auditLogExists = await dbContext.AdminAuditLogs
+            .AnyAsync(log =>
+                log.ActorUserId == adminId &&
+                log.Action == "LotForceComplete" &&
+                log.TargetId == lotId);
+
+        auditLogExists.Should().BeTrue();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task DeliveryFlow_FromCompletedLot_PersistsShippingConfirmationPayoutAndTrustScore()
+    {
+        var sellerId = Guid.NewGuid();
+        var winnerId = Guid.NewGuid();
+        var otherUserId = Guid.NewGuid();
+        var adminId = Guid.NewGuid();
+        using var client = _factory.CreateClient();
+
+        var lotId = await CreateDraftLotAsync(client, sellerId, "Delivery flow lot");
+        await SubmitAndApproveLotAsync(client, lotId, sellerId, adminId);
+        await PlaceBidAsync(client, lotId, winnerId, 1500m);
+
+        Authenticate(client, adminId, "Admin");
+        var completeResponse = await client.PostAsync($"/api/admin/lots/{lotId}/force-complete", null);
+        completeResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var completedLot = await LoadLotAsync(lotId);
+        completedLot.Status.Should().Be(LotStatus.DeliveryRequestPending);
+        completedLot.WinnerId.Should().Be(winnerId);
+        completedLot.DeliveryRequestDeadlineAt.Should().NotBeNull();
+
+        Authenticate(client, otherUserId);
+        var otherUserDeliveryResponse = await client.PostAsJsonAsync($"/api/lots/{lotId}/delivery-request", new
+        {
+            provider = "Cdek",
+            address = "Moscow, CDEK pickup point 42",
+            recipientName = "Winner",
+            recipientPhone = "+79990000000"
+        });
+        otherUserDeliveryResponse.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        Authenticate(client, winnerId);
+        var unsupportedProviderResponse = await client.PostAsJsonAsync($"/api/lots/{lotId}/delivery-request", new
+        {
+            provider = "YandexDelivery",
+            address = "Moscow, Yandex pickup point 11",
+            recipientName = "Winner",
+            recipientPhone = "+79990000000"
+        });
+        unsupportedProviderResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var deliveryResponse = await client.PostAsJsonAsync($"/api/lots/{lotId}/delivery-request", new
+        {
+            provider = "Cdek",
+            address = "Moscow, CDEK pickup point 42",
+            recipientName = "Winner",
+            recipientPhone = "+79990000000"
+        });
+        deliveryResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var shippingPendingLot = await LoadLotAsync(lotId);
+        shippingPendingLot.Status.Should().Be(LotStatus.ShippingPending);
+        shippingPendingLot.SelectedDeliveryProvider.Should().Be(DeliveryProvider.Cdek);
+        shippingPendingLot.DeliveryAddress.Should().Be("Moscow, CDEK pickup point 42");
+        shippingPendingLot.DeliveryRecipientName.Should().Be("Winner");
+        shippingPendingLot.DeliveryRecipientPhone.Should().Be("+79990000000");
+
+        Authenticate(client, otherUserId);
+        var otherUserShipResponse = await client.PostAsJsonAsync($"/api/lots/{lotId}/ship", new
+        {
+            trackingNumber = "CDEK-123"
+        });
+        otherUserShipResponse.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        Authenticate(client, sellerId);
+        var shipResponse = await client.PostAsJsonAsync($"/api/lots/{lotId}/ship", new
+        {
+            trackingNumber = "CDEK-123"
+        });
+        shipResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var shippedLot = await LoadLotAsync(lotId);
+        shippedLot.Status.Should().Be(LotStatus.Shipped);
+        shippedLot.TrackingNumber.Should().Be("CDEK-123");
+
+        Authenticate(client, otherUserId);
+        var otherUserConfirmResponse = await client.PostAsync($"/api/lots/{lotId}/confirm-delivery", null);
+        otherUserConfirmResponse.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        Authenticate(client, winnerId);
+        var confirmResponse = await client.PostAsync($"/api/lots/{lotId}/confirm-delivery", null);
+        confirmResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var completedTransactionLot = await LoadLotAsync(lotId);
+        completedTransactionLot.Status.Should().Be(LotStatus.TransactionComplete);
+
+        _factory.PaymentClient.SellerTransfers.Should().ContainSingle(transfer =>
+            transfer.SellerId == sellerId &&
+            transfer.Amount == 1485m &&
+            transfer.ServiceFee == 15m &&
+            transfer.LotId == lotId);
+
+        await using var scope = _factory.Services.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AuctionsDbContext>();
+        var trustScoreEventExists = await dbContext.TrustScoreEvents
+            .AnyAsync(trustEvent =>
+                trustEvent.UserId == sellerId &&
+                trustEvent.Subject == TrustScoreSubject.Seller &&
+                trustEvent.Reason == TrustScoreReason.SuccessfulSale &&
+                trustEvent.ReferenceId == lotId);
+
+        trustScoreEventExists.Should().BeTrue();
     }
 
     private async Task<Guid> CreateDraftLotAsync(HttpClient client, Guid sellerId, string title)
@@ -247,6 +376,19 @@ public class AuctionsPersistenceTests : IAsyncLifetime
         Authenticate(client, adminId, "Admin");
         var approveResponse = await client.PostAsync($"/api/lots/{lotId}/approve", null);
         approveResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    private static async Task PlaceBidAsync(HttpClient client, Guid lotId, Guid bidderId, decimal amount)
+    {
+        Authenticate(client, bidderId);
+        var bidResponse = await client.PostAsJsonAsync($"/api/lots/{lotId}/bids", new
+        {
+            amount,
+            idempotencyKey = Guid.NewGuid()
+        });
+
+        var bidBody = await bidResponse.Content.ReadAsStringAsync();
+        bidResponse.StatusCode.Should().Be(HttpStatusCode.OK, bidBody);
     }
 
     private async Task<Lot> LoadLotAsync(Guid lotId)
@@ -323,6 +465,7 @@ public class AuctionsPersistenceTests : IAsyncLifetime
     private sealed class FakePaymentClient : IPaymentClient
     {
         public List<FundsReservation> ReservedFunds { get; } = new();
+        public List<SellerTransfer> SellerTransfers { get; } = new();
 
         public Task<BalanceResult> GetBalanceAsync(Guid userId, CancellationToken ct = default)
         {
@@ -347,6 +490,7 @@ public class AuctionsPersistenceTests : IAsyncLifetime
 
         public Task<PaymentResult> TransferToSellerAsync(Guid sellerId, decimal amount, decimal serviceFee, Guid lotId, CancellationToken ct = default)
         {
+            SellerTransfers.Add(new SellerTransfer(sellerId, amount, serviceFee, lotId));
             return Task.FromResult(new PaymentResult(true));
         }
 
@@ -357,6 +501,7 @@ public class AuctionsPersistenceTests : IAsyncLifetime
     }
 
     private sealed record FundsReservation(Guid UserId, decimal Amount, Guid LotId);
+    private sealed record SellerTransfer(Guid SellerId, decimal Amount, decimal ServiceFee, Guid LotId);
 
     private sealed class NoopEventPublisher : IEventPublisher
     {

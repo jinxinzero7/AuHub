@@ -17,7 +17,7 @@ Current architecture:
 
 Verified on 2026-06-14:
 - backend build passes with 0 warnings and 0 errors;
-- backend test run contains 357 xUnit cases, currently 357 passed / 0 failed;
+- backend test run contains 359 xUnit cases, currently 359 passed / 0 failed;
 - all backend API services use FastEndpoints 8.1.0;
 - Auctions demo seed no longer calls the invalid `Approve()` then `Publish()` chain;
 - manual auction completion is admin-only through `/api/admin/lots/{id}/force-complete`;
@@ -52,7 +52,7 @@ Verified on 2026-06-14:
 - Payment integration tests cover authenticated demo top-up, balance and transaction history through in-memory repositories;
 - shared Testcontainers/PostgreSQL support exists; active Payment persistence tests cover top-up/balance/history, reserve/release, charge/refund and seller payout/platform fee;
 - active Identity persistence tests cover register/login, refresh token rotation, refresh token replay family revocation and admin self-registration guard;
-- active Auctions persistence tests cover draft creation, owner-only moderation submit, pending-moderation edit lock, admin approval/rejection, audit log persistence, editing rejected lots back to `Draft`, active public listing, bid placement with fake Payment client, bid/outbox persistence and fresh migration-chain application;
+- active Auctions persistence tests cover draft creation, owner-only moderation submit, pending-moderation edit lock, admin approval/rejection, audit log persistence, editing rejected lots back to `Draft`, active public listing, bid placement with fake Payment client, bid/outbox persistence, no-bid completion, delivery request, shipping, delivery confirmation, seller payout call, trust-score event persistence and fresh migration-chain application;
 - Auctions lot optimistic concurrency uses PostgreSQL `xmin` instead of a physical `bytea RowVersion` column;
 - Auctions settlement tests cover 1% commission, no seller payout on completion, seller payout and buyer refund;
 - Auctions reviews API lets the winning buyer leave one seller review after `TransactionComplete`;
