@@ -15,12 +15,13 @@ Current architecture:
 - Docker Compose deployment;
 - GitHub Actions CI.
 
-Verified on 2026-06-14:
+Verified on 2026-06-15:
 - backend build passes with 0 warnings and 0 errors;
-- backend test run contains 365 xUnit cases, currently 365 passed / 0 failed;
+- backend test run contains 366 xUnit cases, currently 366 passed / 0 failed;
 - all backend API services use FastEndpoints 8.1.0;
 - Auctions demo seed no longer calls the invalid `Approve()` then `Publish()` chain;
-- manual auction completion is admin-only through `/api/admin/lots/{id}/force-complete`;
+- manual operational auction completion is available to admins through `/api/admin/lots/{id}/force-complete`;
+- MVP/demo walkthroughs can use seller-only `/api/lots/{id}/demo-complete` to finish an active seller-owned lot with at least one bid immediately and show the delivery flow without waiting for the scheduled end time;
 - public registration always creates regular users; admin self-registration is disabled;
 - public registration stores email, phone number, full name and nickname;
 - login accepts email or phone through `identifier`, with legacy `email` request compatibility;
@@ -52,7 +53,7 @@ Verified on 2026-06-14:
 - Payment integration tests cover authenticated demo top-up, balance and transaction history through in-memory repositories;
 - shared Testcontainers/PostgreSQL support exists; active Payment persistence tests cover top-up/balance/history, reserve/release, charge/refund and seller payout/platform fee;
 - active Identity persistence tests cover register/login, refresh token rotation, refresh token replay family revocation and admin self-registration guard;
-- active Auctions persistence tests cover draft creation, owner-only moderation submit, pending-moderation edit lock, admin approval/rejection, audit log persistence, editing rejected lots back to `Draft`, active public listing, bid placement with fake Payment client, idempotent bid retry, previous-bidder release call, bid/release outbox persistence, no-bid completion, delivery request, shipping, delivery confirmation, seller payout call, trust-score event persistence and fresh migration-chain application;
+- active Auctions persistence tests cover draft creation, owner-only moderation submit, pending-moderation edit lock, admin approval/rejection, audit log persistence, editing rejected lots back to `Draft`, active public listing, bid placement with fake Payment client, idempotent bid retry, previous-bidder release call, bid/release outbox persistence, no-bid completion, seller demo-complete, delivery request, shipping, delivery confirmation, seller payout call, trust-score event persistence and fresh migration-chain application;
 - active Notifications persistence tests cover protected direct send, authenticated list, unread count, owner-only mark-as-read, read-state persistence and notification creation from consumers;
 - Auctions lot optimistic concurrency uses PostgreSQL `xmin` instead of a physical `bytea RowVersion` column;
 - Auctions settlement tests cover 1% commission, no seller payout on completion, seller payout and buyer refund;

@@ -224,6 +224,13 @@ public class AuctionsPersistenceTests : IAsyncLifetime
         var lotId = await CreateDraftLotAsync(client, sellerId, "No-bid lot");
         await SubmitAndApproveLotAsync(client, lotId, sellerId, adminId);
 
+        Authenticate(client, sellerId);
+        var sellerDemoCompleteResponse = await client.PostAsync($"/api/lots/{lotId}/demo-complete", null);
+        sellerDemoCompleteResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var activeLot = await LoadLotAsync(lotId);
+        activeLot.Status.Should().Be(LotStatus.Active);
+
         Authenticate(client, adminId, "Admin");
         var completeResponse = await client.PostAsync($"/api/admin/lots/{lotId}/force-complete", null);
         completeResponse.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -242,6 +249,39 @@ public class AuctionsPersistenceTests : IAsyncLifetime
                 log.TargetId == lotId);
 
         auditLogExists.Should().BeTrue();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task SellerDemoComplete_OwnedActiveLotWithBid_OpensDeliveryRequestWindow()
+    {
+        var sellerId = Guid.NewGuid();
+        var winnerId = Guid.NewGuid();
+        var otherUserId = Guid.NewGuid();
+        var adminId = Guid.NewGuid();
+        using var client = _factory.CreateClient();
+
+        var lotId = await CreateDraftLotAsync(client, sellerId, "Demo complete lot");
+        await SubmitAndApproveLotAsync(client, lotId, sellerId, adminId);
+        await PlaceBidAsync(client, lotId, winnerId, 1500m);
+
+        Authenticate(client, otherUserId);
+        var forbiddenResponse = await client.PostAsync($"/api/lots/{lotId}/demo-complete", null);
+        forbiddenResponse.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        Authenticate(client, sellerId);
+        var completeResponse = await client.PostAsync($"/api/lots/{lotId}/demo-complete", null);
+        completeResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var completedLot = await LoadLotAsync(lotId);
+        completedLot.Status.Should().Be(LotStatus.DeliveryRequestPending);
+        completedLot.WinnerId.Should().Be(winnerId);
+        completedLot.DeliveryRequestDeadlineAt.Should().NotBeNull();
+
+        _factory.PaymentClient.WinnerCharges.Should().ContainSingle(charge =>
+            charge.WinnerId == winnerId &&
+            charge.Amount == 1500m &&
+            charge.LotId == lotId);
     }
 
     [Fact]
@@ -527,6 +567,7 @@ public class AuctionsPersistenceTests : IAsyncLifetime
     {
         public List<FundsReservation> ReservedFunds { get; } = new();
         public List<FundsRelease> ReleasedFunds { get; } = new();
+        public List<WinnerCharge> WinnerCharges { get; } = new();
         public List<SellerTransfer> SellerTransfers { get; } = new();
 
         public Task<BalanceResult> GetBalanceAsync(Guid userId, CancellationToken ct = default)
@@ -548,6 +589,7 @@ public class AuctionsPersistenceTests : IAsyncLifetime
 
         public Task<PaymentResult> ChargeWinnerAsync(Guid winnerId, decimal amount, Guid lotId, CancellationToken ct = default)
         {
+            WinnerCharges.Add(new WinnerCharge(winnerId, amount, lotId));
             return Task.FromResult(new PaymentResult(true));
         }
 
@@ -565,6 +607,7 @@ public class AuctionsPersistenceTests : IAsyncLifetime
 
     private sealed record FundsReservation(Guid UserId, decimal Amount, Guid LotId);
     private sealed record FundsRelease(Guid UserId, decimal Amount, Guid LotId);
+    private sealed record WinnerCharge(Guid WinnerId, decimal Amount, Guid LotId);
     private sealed record SellerTransfer(Guid SellerId, decimal Amount, decimal ServiceFee, Guid LotId);
 
     private sealed class NoopEventPublisher : IEventPublisher

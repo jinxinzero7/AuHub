@@ -1,5 +1,6 @@
 using AuHub.Shared.Results;
 using AuHub.Shared.ValueObjects;
+using Auctions.Application.Services;
 using Auctions.Domain.Interfaces;
 
 namespace Auctions.Application.Commands.CompleteLot;
@@ -7,10 +8,14 @@ namespace Auctions.Application.Commands.CompleteLot;
 public class CompleteLotCommandHandler
 {
     private readonly ILotRepository _lotRepository;
+    private readonly AuctionSettlementService _settlementService;
 
-    public CompleteLotCommandHandler(ILotRepository lotRepository)
+    public CompleteLotCommandHandler(
+        ILotRepository lotRepository,
+        AuctionSettlementService settlementService)
     {
         _lotRepository = lotRepository;
+        _settlementService = settlementService;
     }
 
     public async Task<Result<CompleteLotResponse>> HandleAsync(
@@ -26,9 +31,26 @@ public class CompleteLotCommandHandler
                 return Result.Failure<CompleteLotResponse>("Lot not found", 404);
             }
 
+            if (command.RequireSellerOwnership && lot.SellerId != command.ActorUserId)
+            {
+                return Result.Failure<CompleteLotResponse>("Only seller can complete this lot", 403);
+            }
+
+            if (command.RequireBid && !lot.Bids.Any())
+            {
+                return Result.Failure<CompleteLotResponse>("At least one bid is required to complete the lot for demo flow", 400);
+            }
+
             lot.Complete();
             if (lot.WinnerId.HasValue)
             {
+                var chargeResult = await _settlementService.ChargeWinnerAsync(lot, cancellationToken);
+                if (chargeResult.IsFailure)
+                {
+                    lot.ClearDomainEvents();
+                    return Result.Failure<CompleteLotResponse>(chargeResult.Error, chargeResult.StatusCode);
+                }
+
                 lot.OpenDeliveryRequestWindow();
             }
 
