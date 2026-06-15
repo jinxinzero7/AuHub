@@ -60,6 +60,14 @@ ROBOKASSA_IS_TEST=true
 
 ## 4. Запустить проект
 
+Если AuHub уже запускался на этом ПК раньше, сначала сбрось старые Docker volumes. Иначе PostgreSQL может хранить старый пароль и API упадут с `password authentication failed`.
+
+```powershell
+docker compose down -v
+```
+
+На реально новом ПК этот шаг можно пропустить.
+
 ```powershell
 docker compose up -d --build
 ```
@@ -73,6 +81,19 @@ docker compose ps
 ```
 
 Все основные сервисы должны быть `Up`, backend API и Gateway должны быть `healthy`.
+
+Если какой-то API упал, сначала посмотри его лог:
+
+```powershell
+docker logs --tail 100 auhub-identity-api-1
+```
+
+Если в логе есть `password authentication failed for user "postgres"`, значит остались старые PostgreSQL volumes. Выполни:
+
+```powershell
+docker compose down -v
+docker compose up -d --build
+```
 
 Открыть:
 
