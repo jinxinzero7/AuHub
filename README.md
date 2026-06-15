@@ -69,6 +69,7 @@ Verified on 2026-06-14:
 - CI unit-test step runs unit test projects explicitly;
 - CI integration-test job runs backend `*.IntegrationTests` projects separately from the unit-test job.
 - Docker Compose fresh-start was verified from a clean backend/frontend clone with empty volumes on 2026-06-15.
+- Gateway applies baseline security headers and fixed-window rate limits to auth, lot and payment routes.
 
 Project docs:
 - project context: `../CONTEXT.md`
@@ -185,8 +186,8 @@ Start:
 docker compose up -d --build
 ```
 
-Required local secrets are listed in `.env.example`. At minimum, set `JWT_SECRET` and `INTERNAL_API_KEY` before starting the stack.
-Set `ADMIN_BOOTSTRAP_EMAIL`, `ADMIN_BOOTSTRAP_PASSWORD` and optionally `ADMIN_BOOTSTRAP_NAME` to seed one admin account through Identity startup. Leave them empty to disable admin bootstrap.
+Required local secrets are listed in `.env.example`. At minimum, set `POSTGRES_PASSWORD`, `JWT_SECRET`, `INTERNAL_API_KEY`, `RABBITMQ_PASSWORD` and `MINIO_ROOT_PASSWORD` before starting the stack.
+Set `ADMIN_BOOTSTRAP_EMAIL`, `ADMIN_BOOTSTRAP_PASSWORD` and optionally the other `ADMIN_BOOTSTRAP_*` values to seed one admin account through Identity startup. Leave email/password empty to disable admin bootstrap.
 
 The frontend build context expects the frontend repository as a sibling folder named `../auhub-frontend`.
 Compose uses project-scoped container names and volumes, so isolated checks can be run with a project name:

@@ -92,6 +92,8 @@ services:
       - AdminBootstrap__Email=${ADMIN_BOOTSTRAP_EMAIL:-}
       - AdminBootstrap__Password=${ADMIN_BOOTSTRAP_PASSWORD:-}
       - AdminBootstrap__Name=${ADMIN_BOOTSTRAP_NAME:-AuHub Admin}
+      - AdminBootstrap__PhoneNumber=${ADMIN_BOOTSTRAP_PHONE_NUMBER:-+70000000000}
+      - AdminBootstrap__Nickname=${ADMIN_BOOTSTRAP_NICKNAME:-auhub_admin}
       - MinIO__Endpoint=minio:9000
       - MinIO__AccessKey=${MINIO_ROOT_USER:-auhub-minio-admin}
       - MinIO__SecretKey=${MINIO_ROOT_PASSWORD:-AuHub_MinIO_2026_Secure!}
@@ -204,6 +206,8 @@ services:
       - PaymentProviders__Robokassa__MerchantLogin=${ROBOKASSA_MERCHANT_LOGIN:-}
       - PaymentProviders__Robokassa__Password1=${ROBOKASSA_PASSWORD1:-}
       - PaymentProviders__Robokassa__Password2=${ROBOKASSA_PASSWORD2:-}
+      - PaymentProviders__Robokassa__PaymentUrl=${ROBOKASSA_PAYMENT_URL:-https://auth.robokassa.ru/Merchant/Index.aspx}
+      - PaymentProviders__Robokassa__Culture=${ROBOKASSA_CULTURE:-ru}
       - PaymentProviders__Robokassa__IsTest=${ROBOKASSA_IS_TEST:-true}
       - RabbitMQ__Host=rabbitmq
       - RabbitMQ__User=${RABBITMQ_USER:-auhub}

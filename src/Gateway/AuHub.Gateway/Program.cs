@@ -17,7 +17,6 @@ builder.Host.UseSerilog((context, services, configuration) =>
         .Enrich.WithCorrelationId()
         .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{CorrelationId}] {Message:lj}{NewLine}{Exception}"));
 
-// 1. Configure CORS for Frontend + SignalR
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -37,9 +36,23 @@ builder.Services.AddCors(options =>
     });
 });
 
-// 2. Configure Rate Limiting
 builder.Services.AddRateLimiter(options =>
 {
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.ContentType = "application/json";
+        await context.HttpContext.Response.WriteAsync("""{"error":"Too many requests"}""", cancellationToken);
+    };
+
+    options.AddFixedWindowLimiter("auth-api-limiter", opt =>
+    {
+        opt.PermitLimit = 20;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueLimit = 0;
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+    });
+
     options.AddFixedWindowLimiter("auction-api-limiter", opt =>
     {
         opt.PermitLimit = 100;
@@ -48,13 +61,17 @@ builder.Services.AddRateLimiter(options =>
         opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
     });
 
-    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddFixedWindowLimiter("payment-api-limiter", opt =>
+    {
+        opt.PermitLimit = 30;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueLimit = 0;
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+    });
 });
 
-// 3. Health Checks for Gateway itself
 builder.Services.AddHealthChecks();
 
-// 4. Configure YARP Reverse Proxy
 builder.Services.AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
     .ConfigureHttpClient((context, handler) =>
@@ -64,8 +81,18 @@ builder.Services.AddReverseProxy()
 
 var app = builder.Build();
 
-// 4. Middleware Pipeline
 app.UseCorrelationId();
+
+app.Use(async (context, next) =>
+{
+    var headers = context.Response.Headers;
+    headers.TryAdd("X-Content-Type-Options", "nosniff");
+    headers.TryAdd("X-Frame-Options", "DENY");
+    headers.TryAdd("Referrer-Policy", "strict-origin-when-cross-origin");
+    headers.TryAdd("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
+    headers.TryAdd("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'");
+    await next();
+});
 
 app.UseRouting();
 
