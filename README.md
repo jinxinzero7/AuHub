@@ -74,6 +74,7 @@ Verified on 2026-06-14:
 Project docs:
 - project context: `../CONTEXT.md`
 - active backlog: `../TODO.md`
+- short new-PC launch guide: `NEW_PC_RUN_GUIDE.md`
 - diploma explanatory note: `docs/пояснительная-записка-auhub.docx`
 - frontend repo/folder: `../auhub-frontend`
 
