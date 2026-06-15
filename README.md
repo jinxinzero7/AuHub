@@ -68,6 +68,7 @@ Verified on 2026-06-14:
 - frontend repo also has a verified opt-in full-stack Playwright marketplace spec gated by `E2E_FULL_STACK=true`;
 - CI unit-test step runs unit test projects explicitly;
 - CI integration-test job runs backend `*.IntegrationTests` projects separately from the unit-test job.
+- Docker Compose fresh-start was verified from a clean backend/frontend clone with empty volumes on 2026-06-15.
 
 Project docs:
 - project context: `../CONTEXT.md`
@@ -186,6 +187,15 @@ docker compose up -d --build
 
 Required local secrets are listed in `.env.example`. At minimum, set `JWT_SECRET` and `INTERNAL_API_KEY` before starting the stack.
 Set `ADMIN_BOOTSTRAP_EMAIL`, `ADMIN_BOOTSTRAP_PASSWORD` and optionally `ADMIN_BOOTSTRAP_NAME` to seed one admin account through Identity startup. Leave them empty to disable admin bootstrap.
+
+The frontend build context expects the frontend repository as a sibling folder named `../auhub-frontend`.
+Compose uses project-scoped container names and volumes, so isolated checks can be run with a project name:
+
+```powershell
+docker compose -p auhub_clean_first_run up -d --build
+```
+
+Backend APIs and Gateway expose `/health`; compose waits for RabbitMQ, backend APIs and Gateway health before starting dependent services. A clean first run with empty volumes should seed the admin account when `ADMIN_BOOTSTRAP_*` is configured and seed demo lots when Auctions has no lots.
 
 Stop:
 
