@@ -71,6 +71,7 @@ Verified on 2026-06-15:
 - CI integration-test job runs backend `*.IntegrationTests` projects separately from the unit-test job.
 - Docker Compose fresh-start was verified from a clean backend/frontend clone with empty volumes on 2026-06-15.
 - Gateway applies baseline security headers and fixed-window rate limits to auth, lot and payment routes.
+- After the 2026-06-15 baseline, an Auctions PostgreSQL integration regression was added for overdue delivery request expiration: buyer refund, `DeliveryRequestExpired` persistence and buyer trust-score penalty. It requires a Docker/Testcontainers-enabled environment to execute.
 
 Project docs:
 - project context: `../CONTEXT.md`
@@ -247,6 +248,7 @@ Current state:
 - unit tests cover core domain/application behavior and currently pass;
 - bidding/payment money-side-effect coverage has been strengthened, but cross-service escrow integration coverage is still pending;
 - backend integration projects cover API host startup, basic auth/internal-key guards and selected PostgreSQL persistence flows;
+- Auctions integration coverage includes a regression for overdue delivery request expiration/refund/trust penalty;
 - frontend Playwright has self-contained app-shell/auth-form smoke coverage;
 - full Docker-backed marketplace UI E2E verifies seller registration, lot submission/moderation, buyer top-up and buyer bid through the real UI/Gateway/backend path;
 - CI workflow runs real unit test projects and a separate backend integration-test job.

@@ -5,6 +5,7 @@ using System.Text.Json.Nodes;
 using Auctions.Application.Services;
 using Auctions.Domain.Entities;
 using Auctions.Domain.Enums;
+using Auctions.Infrastructure.BackgroundServices;
 using Auctions.Infrastructure.Data;
 using AuHub.Shared.ValueObjects;
 using FluentAssertions;
@@ -17,6 +18,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace Auctions.IntegrationTests;
@@ -392,6 +394,57 @@ public class AuctionsPersistenceTests : IAsyncLifetime
 
     [Fact]
     [Trait("Category", "Integration")]
+    public async Task DeliveryRequestExpiration_OverdueWinnerWindow_RefundsBuyerAndPersistsTrustPenalty()
+    {
+        var sellerId = Guid.NewGuid();
+        var winnerId = Guid.NewGuid();
+        var adminId = Guid.NewGuid();
+        using var client = _factory.CreateClient();
+
+        var lotId = await CreateDraftLotAsync(client, sellerId, "Expired delivery request lot");
+        await SubmitAndApproveLotAsync(client, lotId, sellerId, adminId);
+        await PlaceBidAsync(client, lotId, winnerId, 1500m);
+
+        Authenticate(client, adminId, "Admin");
+        var completeResponse = await client.PostAsync($"/api/admin/lots/{lotId}/force-complete", null);
+        completeResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        await using (var scope = _factory.Services.CreateAsyncScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<AuctionsDbContext>();
+            var lot = await dbContext.Lots.SingleAsync(savedLot => savedLot.Id == lotId);
+            dbContext.Entry(lot).Property(nameof(Lot.DeliveryRequestDeadlineAt)).CurrentValue = DateTime.UtcNow.AddMinutes(-5);
+            await dbContext.SaveChangesAsync();
+        }
+
+        var expirationService = new DeliveryRequestExpirationService(
+            NullLogger<DeliveryRequestExpirationService>.Instance,
+            _factory.Services);
+
+        await expirationService.RunOnceAsync();
+
+        var expiredLot = await LoadLotAsync(lotId);
+        expiredLot.Status.Should().Be(LotStatus.DeliveryRequestExpired);
+
+        _factory.PaymentClient.RefundedFunds.Should().ContainSingle(refund =>
+            refund.UserId == winnerId &&
+            refund.Amount == 1500m &&
+            refund.LotId == lotId);
+
+        await using var verificationScope = _factory.Services.CreateAsyncScope();
+        var verificationDbContext = verificationScope.ServiceProvider.GetRequiredService<AuctionsDbContext>();
+        var trustScoreEventExists = await verificationDbContext.TrustScoreEvents
+            .AnyAsync(trustEvent =>
+                trustEvent.UserId == winnerId &&
+                trustEvent.Subject == TrustScoreSubject.Buyer &&
+                trustEvent.Reason == TrustScoreReason.DeliveryRequestExpired &&
+                trustEvent.ReferenceId == lotId);
+
+        trustScoreEventExists.Should().BeTrue();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
     public async Task PlaceBid_IdempotentRetry_ReturnsExistingBidWithoutDuplicatePersistenceOrReserve()
     {
         var sellerId = Guid.NewGuid();
@@ -569,6 +622,7 @@ public class AuctionsPersistenceTests : IAsyncLifetime
         public List<FundsRelease> ReleasedFunds { get; } = new();
         public List<WinnerCharge> WinnerCharges { get; } = new();
         public List<SellerTransfer> SellerTransfers { get; } = new();
+        public List<FundsRefund> RefundedFunds { get; } = new();
 
         public Task<BalanceResult> GetBalanceAsync(Guid userId, CancellationToken ct = default)
         {
@@ -601,6 +655,7 @@ public class AuctionsPersistenceTests : IAsyncLifetime
 
         public Task<PaymentResult> RefundFundsAsync(Guid userId, decimal amount, Guid lotId, CancellationToken ct = default)
         {
+            RefundedFunds.Add(new FundsRefund(userId, amount, lotId));
             return Task.FromResult(new PaymentResult(true));
         }
     }
@@ -609,6 +664,7 @@ public class AuctionsPersistenceTests : IAsyncLifetime
     private sealed record FundsRelease(Guid UserId, decimal Amount, Guid LotId);
     private sealed record WinnerCharge(Guid WinnerId, decimal Amount, Guid LotId);
     private sealed record SellerTransfer(Guid SellerId, decimal Amount, decimal ServiceFee, Guid LotId);
+    private sealed record FundsRefund(Guid UserId, decimal Amount, Guid LotId);
 
     private sealed class NoopEventPublisher : IEventPublisher
     {

@@ -30,7 +30,7 @@ public class DeliveryRequestExpirationService : BackgroundService
         {
             try
             {
-                await ExpireOverdueDeliveryRequests(stoppingToken);
+                await RunOnceAsync(stoppingToken);
             }
             catch (Exception ex)
             {
@@ -43,7 +43,7 @@ public class DeliveryRequestExpirationService : BackgroundService
         _logger.LogInformation("Delivery Request Expiration Service stopped");
     }
 
-    private async Task ExpireOverdueDeliveryRequests(CancellationToken cancellationToken)
+    public async Task RunOnceAsync(CancellationToken cancellationToken = default)
     {
         using var scope = _serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AuctionsDbContext>();
