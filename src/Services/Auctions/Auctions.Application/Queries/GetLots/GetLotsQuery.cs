@@ -9,4 +9,5 @@ public record GetLotsQuery
     public string? WinnerId { get; init; }
     public bool IncludeDrafts { get; init; } = false;
     public string? Search { get; init; }
+    public bool IncludePrivateDeliveryDetails { get; init; } = false;
 }

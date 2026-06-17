@@ -44,6 +44,7 @@ Verified on 2026-06-15:
 - lot creation supports seller-selected delivery providers: `Cdek`, `YandexDelivery`, `RussianPost`;
 - auction completion opens a 3-day winner delivery request window; winner request endpoint is `/api/lots/{id}/delivery-request`;
 - overdue delivery requests refund the buyer before moving to `DeliveryRequestExpired`; sellers can mark requested delivery as shipped through `/api/lots/{id}/ship`;
+- lot detail now exposes buyer delivery request details only to the seller, winner and admins; public lot list responses do not include private delivery request fields;
 - bidding tests cover previous bidder release, same-bidder non-release and reserve compensation on exhausted concurrency;
 - previous bidder release now has retryable outbox compensation if the direct Payment release path fails;
 - service commission is deposited to the platform wallet as a separate `ServiceFee` transaction;
@@ -286,8 +287,7 @@ Internal Payment operations and direct notification send are protected by `X-Int
 
 ## Development Notes
 
-- Keep `../CONTEXT.md` updated when architecture or service behavior changes.
-- Keep `../TODO.md` short and action-oriented.
+- Coordinator keeps `../CONTEXT.md` and `../TODO.md` updated; backend handoffs should provide suggested changes instead of editing those shared files directly.
 - Keep the diploma explanatory note in `docs/` synchronized with major architecture and business-flow changes.
 - Do not reintroduce outdated numbers like 7 services or 35 tests.
 - Treat `../CONTEXT.md` as the source of truth for current gaps and verified test/build state.

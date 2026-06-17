@@ -85,12 +85,7 @@ public class GetLotsEndpoint : EndpointWithoutRequest<GetLotsResponse>
                 WinnerId = l.WinnerId,
                 BidsCount = l.BidsCount,
                 CoverImageUrl = coverImageUrl,
-                TrackingNumber = l.TrackingNumber,
-                SelectedDeliveryProvider = l.SelectedDeliveryProvider,
-                DeliveryRequestedAt = l.DeliveryRequestedAt,
-                DeliveryRequestDeadlineAt = l.DeliveryRequestDeadlineAt,
-                SupportedDeliveryProviders = l.SupportedDeliveryProviders,
-                AdminComment = l.AdminComment
+                SupportedDeliveryProviders = l.SupportedDeliveryProviders
             });
         }
 
@@ -132,11 +127,5 @@ public record LotDto
     public Guid? WinnerId { get; init; }
     public int BidsCount { get; init; }
     public string? CoverImageUrl { get; init; }
-    public string? TrackingNumber { get; init; }
-    public string? DeliveryAddress { get; init; }
-    public string? SelectedDeliveryProvider { get; init; }
-    public DateTime? DeliveryRequestedAt { get; init; }
-    public DateTime? DeliveryRequestDeadlineAt { get; init; }
     public List<string> SupportedDeliveryProviders { get; init; } = new();
-    public string? AdminComment { get; init; }
 }

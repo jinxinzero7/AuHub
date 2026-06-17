@@ -20,6 +20,8 @@ public class LotDetailResponse
     public int BidsCount { get; set; }
     public string? TrackingNumber { get; set; }
     public string? DeliveryAddress { get; set; }
+    public string? DeliveryRecipientName { get; set; }
+    public string? DeliveryRecipientPhone { get; set; }
     public string? SelectedDeliveryProvider { get; set; }
     public DateTime? DeliveryRequestedAt { get; set; }
     public DateTime? DeliveryRequestDeadlineAt { get; set; }

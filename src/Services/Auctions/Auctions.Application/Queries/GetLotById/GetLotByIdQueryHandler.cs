@@ -26,7 +26,7 @@ public class GetLotByIdQueryHandler
                 return Result.Failure<LotDetailResponse>("Lot not found", 404);
             }
 
-            var response = lot.ToDetailResponse();
+            var response = lot.ToDetailResponse(query.RequesterUserId, query.RequesterIsAdmin);
 
             return Result.Success(response);
         }

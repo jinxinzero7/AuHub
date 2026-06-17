@@ -54,7 +54,7 @@ public class GetLotsQueryHandler
             var paginatedLots = lots
                 .Skip((query.Page - 1) * query.PageSize)
                 .Take(query.PageSize)
-                .Select(lot => lot.ToResponse())
+                .Select(lot => lot.ToResponse(query.IncludePrivateDeliveryDetails))
                 .ToList();
 
             var response = new PaginatedLotsResponse

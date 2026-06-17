@@ -33,7 +33,8 @@ public class GetAllLotsByStatusEndpoint : EndpointWithoutRequest<List<LotRespons
             Page = 1,
             PageSize = 1000,
             OnlyActive = false,
-            IncludeDrafts = true
+            IncludeDrafts = true,
+            IncludePrivateDeliveryDetails = true
         };
 
         var result = await _handler.HandleAsync(query, ct);

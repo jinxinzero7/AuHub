@@ -7,7 +7,7 @@ namespace Auctions.Application.Mappings;
 
 public static class LotMappings
 {
-    public static LotResponse ToResponse(this Lot lot)
+    public static LotResponse ToResponse(this Lot lot, bool includePrivateDeliveryDetails = false)
     {
         return new LotResponse
         {
@@ -24,18 +24,23 @@ public static class LotMappings
             WinnerId = lot.WinnerId,
             BidsCount = lot.Bids.Count,
             CoverImageUrl = lot.CoverImageUrl,
-            TrackingNumber = lot.TrackingNumber,
-            SelectedDeliveryProvider = lot.SelectedDeliveryProvider?.ToString(),
-            DeliveryRequestedAt = lot.DeliveryRequestedAt,
-            DeliveryRequestDeadlineAt = lot.DeliveryRequestDeadlineAt,
+            TrackingNumber = includePrivateDeliveryDetails ? lot.TrackingNumber : null,
+            DeliveryAddress = includePrivateDeliveryDetails ? lot.DeliveryAddress : null,
+            DeliveryRecipientName = includePrivateDeliveryDetails ? lot.DeliveryRecipientName : null,
+            DeliveryRecipientPhone = includePrivateDeliveryDetails ? lot.DeliveryRecipientPhone : null,
+            SelectedDeliveryProvider = includePrivateDeliveryDetails ? lot.SelectedDeliveryProvider?.ToString() : null,
+            DeliveryRequestedAt = includePrivateDeliveryDetails ? lot.DeliveryRequestedAt : null,
+            DeliveryRequestDeadlineAt = includePrivateDeliveryDetails ? lot.DeliveryRequestDeadlineAt : null,
             SupportedDeliveryProviders = lot.SupportedDeliveryProviders.Select(provider => provider.ToString()).ToList(),
             AdminComment = lot.AdminComment,
             CreatedAt = lot.CreatedAt
         };
     }
 
-    public static LotDetailResponse ToDetailResponse(this Lot lot)
+    public static LotDetailResponse ToDetailResponse(this Lot lot, Guid? requesterUserId = null, bool requesterIsAdmin = false)
     {
+        var includePrivateDeliveryDetails = CanViewPrivateDeliveryDetails(lot, requesterUserId, requesterIsAdmin);
+
         return new LotDetailResponse
         {
             Id = lot.Id,
@@ -52,14 +57,24 @@ public static class LotMappings
             CreatedAt = lot.CreatedAt,
             UpdatedAt = lot.UpdatedAt,
             BidsCount = lot.Bids.Count,
-            TrackingNumber = lot.TrackingNumber,
-            SelectedDeliveryProvider = lot.SelectedDeliveryProvider?.ToString(),
-            DeliveryRequestedAt = lot.DeliveryRequestedAt,
-            DeliveryRequestDeadlineAt = lot.DeliveryRequestDeadlineAt,
+            TrackingNumber = includePrivateDeliveryDetails ? lot.TrackingNumber : null,
+            DeliveryAddress = includePrivateDeliveryDetails ? lot.DeliveryAddress : null,
+            DeliveryRecipientName = includePrivateDeliveryDetails ? lot.DeliveryRecipientName : null,
+            DeliveryRecipientPhone = includePrivateDeliveryDetails ? lot.DeliveryRecipientPhone : null,
+            SelectedDeliveryProvider = includePrivateDeliveryDetails ? lot.SelectedDeliveryProvider?.ToString() : null,
+            DeliveryRequestedAt = includePrivateDeliveryDetails ? lot.DeliveryRequestedAt : null,
+            DeliveryRequestDeadlineAt = includePrivateDeliveryDetails ? lot.DeliveryRequestDeadlineAt : null,
             SupportedDeliveryProviders = lot.SupportedDeliveryProviders.Select(provider => provider.ToString()).ToList(),
-            AdminComment = lot.AdminComment,
+            AdminComment = requesterIsAdmin || requesterUserId == lot.SellerId ? lot.AdminComment : null,
             Bids = lot.Bids.Select(b => b.ToDetailDto()).OrderByDescending(b => b.PlacedAt).ToList()
         };
+    }
+
+    private static bool CanViewPrivateDeliveryDetails(Lot lot, Guid? requesterUserId, bool requesterIsAdmin)
+    {
+        return requesterIsAdmin ||
+               requesterUserId == lot.SellerId ||
+               requesterUserId == lot.WinnerId;
     }
 
     public static BidDto ToDetailDto(this Bid bid)

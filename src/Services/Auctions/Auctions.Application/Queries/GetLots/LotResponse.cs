@@ -19,6 +19,8 @@ public record LotResponse
     public string? CoverImageUrl { get; init; }
     public string? TrackingNumber { get; init; }
     public string? DeliveryAddress { get; init; }
+    public string? DeliveryRecipientName { get; init; }
+    public string? DeliveryRecipientPhone { get; init; }
     public string? SelectedDeliveryProvider { get; init; }
     public DateTime? DeliveryRequestedAt { get; init; }
     public DateTime? DeliveryRequestDeadlineAt { get; init; }
