@@ -1,6 +1,10 @@
 using System.Security.Claims;
 using Auctions.API.Hubs;
 using Auctions.API.SignalR;
+using Auctions.Domain.Entities;
+using Auctions.Domain.Enums;
+using Auctions.Domain.Interfaces;
+using AuHub.Shared.ValueObjects;
 using FluentAssertions;
 using Microsoft.AspNetCore.SignalR;
 using NSubstitute;
@@ -19,6 +23,35 @@ public class AuctionHubSecurityTests
         await hub.JoinUserGroup();
 
         await groups.Received(1).AddToGroupAsync("connection-1", $"user-{userId}");
+    }
+
+    [Fact]
+    public async Task JoinLotGroup_ActiveLot_AddsConnection()
+    {
+        var lot = CreateLot(active: true);
+        var groups = Substitute.For<IGroupManager>();
+        var lots = Substitute.For<ILotRepository>();
+        lots.GetByIdAsync(lot.Id, Arg.Any<CancellationToken>()).Returns(lot);
+        var hub = CreateHub(Guid.NewGuid().ToString(), groups, lots);
+
+        await hub.JoinLotGroup(lot.Id);
+
+        await groups.Received(1).AddToGroupAsync("connection-1", $"lot-{lot.Id}");
+    }
+
+    [Fact]
+    public async Task JoinLotGroup_DraftLot_IsRejected()
+    {
+        var lot = CreateLot(active: false);
+        var groups = Substitute.For<IGroupManager>();
+        var lots = Substitute.For<ILotRepository>();
+        lots.GetByIdAsync(lot.Id, Arg.Any<CancellationToken>()).Returns(lot);
+        var hub = CreateHub(Guid.NewGuid().ToString(), groups, lots);
+
+        var act = () => hub.JoinLotGroup(lot.Id);
+
+        await act.Should().ThrowAsync<HubException>().WithMessage("Lot is not publicly available");
+        await groups.DidNotReceiveWithAnyArgs().AddToGroupAsync(default!, default!);
     }
 
     [Fact]
@@ -67,7 +100,10 @@ public class AuctionHubSecurityTests
         payload.GetType().GetProperty("newPrice").Should().BeNull();
     }
 
-    private static AuctionHub CreateHub(string? userId, IGroupManager groups)
+    private static AuctionHub CreateHub(
+        string? userId,
+        IGroupManager groups,
+        ILotRepository? lots = null)
     {
         var context = Substitute.For<HubCallerContext>();
         context.ConnectionId.Returns("connection-1");
@@ -75,10 +111,29 @@ public class AuctionHubSecurityTests
             userId is null ? [] : [new Claim(ClaimTypes.NameIdentifier, userId)],
             "test")));
 
-        return new AuctionHub
+        return new AuctionHub(lots ?? Substitute.For<ILotRepository>())
         {
             Context = context,
             Groups = groups
         };
+    }
+
+    private static Lot CreateLot(bool active)
+    {
+        var lot = Lot.Create(
+            "Realtime lot",
+            "Description",
+            Money.FromDecimal(1000m),
+            TimeSpan.FromHours(24),
+            Guid.NewGuid(),
+            [DeliveryProvider.Cdek]);
+
+        if (active)
+        {
+            lot.SubmitForModeration();
+            lot.Approve();
+        }
+
+        return lot;
     }
 }

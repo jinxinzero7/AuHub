@@ -1,4 +1,6 @@
 using System.Security.Claims;
+using Auctions.Domain.Entities;
+using Auctions.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
@@ -7,8 +9,19 @@ namespace Auctions.API.Hubs;
 [Authorize]
 public class AuctionHub : Hub
 {
+    private readonly ILotRepository _lotRepository;
+
+    public AuctionHub(ILotRepository lotRepository)
+    {
+        _lotRepository = lotRepository;
+    }
+
     public async Task JoinLotGroup(Guid lotId)
     {
+        var lot = await _lotRepository.GetByIdAsync(lotId, Context.ConnectionAborted);
+        if (lot is null || lot.IsDeleted || lot.Status != LotStatus.Active)
+            throw new HubException("Lot is not publicly available");
+
         await Groups.AddToGroupAsync(Context.ConnectionId, $"lot-{lotId}");
     }
 
