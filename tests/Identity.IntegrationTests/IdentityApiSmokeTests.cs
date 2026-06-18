@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.Json;
 using Identity.API.Middleware;
 using Identity.Application.Services;
+using Identity.Application.Queries.GetAdminUserDetail;
 using Identity.Domain.Entities;
 using Identity.Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
@@ -151,6 +152,79 @@ public class IdentityApiSmokeTests
 
     [Fact]
     [Trait("Category", "Integration")]
+    public async Task AdminUserDetail_WithoutToken_ReturnsUnauthorized()
+    {
+        using var factory = new IdentityApiFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync($"/api/auth/users/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task AdminUserDetail_WithUserToken_ReturnsForbidden()
+    {
+        using var factory = new IdentityApiFactory();
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", CreateJwt(Guid.NewGuid(), "User"));
+
+        var response = await client.GetAsync($"/api/auth/users/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task AdminUserDetail_WithAdminToken_ReturnsSafeProfileAndDocumentMetadata()
+    {
+        using var factory = new IdentityApiFactory();
+        var user = User.Create("detail@example.com", "+79990001003", "detail_user", "hash", "Detail User", UserRole.User);
+        var documentRequest = DocumentVerificationRequest.Create(user.Id, "private/passport.jpg", "private/selfie.jpg");
+        factory.Repository.Seed(user);
+        factory.DocumentRepository.GetByUserIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns([documentRequest]);
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", CreateJwt(Guid.NewGuid(), "Admin"));
+
+        var response = await client.GetAsync($"/api/auth/users/{user.Id}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+        json.GetProperty("userId").GetGuid().Should().Be(user.Id);
+        json.GetProperty("documentVerificationHistory").EnumerateArray().Should().ContainSingle();
+        var rawJson = await response.Content.ReadAsStringAsync();
+        rawJson.Should().NotContain("passportImagePath");
+        rawJson.Should().NotContain("selfieImagePath");
+        rawJson.Should().NotContain("private/passport.jpg");
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task AdminUserDetail_UnknownUser_ReturnsNotFound()
+    {
+        using var factory = new IdentityApiFactory();
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", CreateJwt(Guid.NewGuid(), "Admin"));
+
+        var response = await client.GetAsync($"/api/auth/users/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Theory]
+    [InlineData("PassportImagePath")]
+    [InlineData("SelfieImagePath")]
+    [InlineData("PassportFile")]
+    [InlineData("SelfieFile")]
+    public void AdminUserDetailContract_DoesNotExposeDocumentStorageOrFiles(string propertyName)
+    {
+        typeof(AdminUserDetailResponse).GetProperty(propertyName).Should().BeNull();
+        typeof(AdminDocumentVerificationMetadata).GetProperty(propertyName).Should().BeNull();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
     public async Task DocumentVerificationUpload_ValidFiles_UploadsPrivateObjects()
     {
         using var factory = new IdentityApiFactory();
@@ -229,6 +303,7 @@ public class IdentityApiSmokeTests
     {
         public InMemoryUserRepository Repository { get; } = new();
         public IDocumentStorageService DocumentStorage { get; } = Substitute.For<IDocumentStorageService>();
+        public IDocumentVerificationRequestRepository DocumentRepository { get; } = Substitute.For<IDocumentVerificationRequestRepository>();
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
@@ -249,10 +324,12 @@ public class IdentityApiSmokeTests
                 services.RemoveAll<IRefreshTokenRepository>();
                 services.RemoveAll<IAdminAuditLogRepository>();
                 services.RemoveAll<IDocumentStorageService>();
+                services.RemoveAll<IDocumentVerificationRequestRepository>();
                 services.AddSingleton<IUserRepository>(Repository);
                 services.AddSingleton<IRefreshTokenRepository>(Repository);
                 services.AddSingleton<IAdminAuditLogRepository>(Repository);
                 services.AddSingleton(DocumentStorage);
+                services.AddSingleton(DocumentRepository);
             });
         }
     }

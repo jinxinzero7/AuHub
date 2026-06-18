@@ -16,6 +16,7 @@ public static class DependencyInjection
         services.AddScoped<Commands.Auth.EmailVerification.ConfirmEmailVerificationCommandHandler>();
         services.AddScoped<Commands.Auth.PhoneVerification.RequestPhoneVerificationCommandHandler>();
         services.AddScoped<Commands.Auth.PhoneVerification.ConfirmPhoneVerificationCommandHandler>();
+        services.AddScoped<Queries.GetAdminUserDetail.GetAdminUserDetailQueryHandler>();
 
         return services;
     }
