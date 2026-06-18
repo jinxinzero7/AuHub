@@ -189,6 +189,51 @@ public class LotTests
         act.Should().Throw<InvalidOperationException>().WithMessage("Only draft or rejected lots can be edited");
     }
 
+    [Theory]
+    [InlineData(LotStatus.Draft, true)]
+    [InlineData(LotStatus.Rejected, true)]
+    [InlineData(LotStatus.PendingModeration, false)]
+    [InlineData(LotStatus.Active, false)]
+    [InlineData(LotStatus.Frozen, false)]
+    [InlineData(LotStatus.Cancelled, false)]
+    [InlineData(LotStatus.Completed, false)]
+    [InlineData(LotStatus.DeliveryRequestPending, false)]
+    [InlineData(LotStatus.ShippingPending, false)]
+    [InlineData(LotStatus.Shipped, false)]
+    [InlineData(LotStatus.Delivered, false)]
+    [InlineData(LotStatus.TransactionComplete, false)]
+    [InlineData(LotStatus.Disputed, false)]
+    [InlineData(LotStatus.DeliveryRequestExpired, false)]
+    [InlineData(LotStatus.CompletedNoWinner, false)]
+    public void IsEditable_OnlyDraftAndRejectedAreEditable(LotStatus status, bool expected)
+    {
+        var lot = Lot.Create(
+            "Test Lot",
+            "Description",
+            Money.FromDecimal(100m),
+            TimeSpan.FromHours(1),
+            Guid.NewGuid(),
+            [DeliveryProvider.Cdek]);
+        typeof(Lot).GetProperty(nameof(Lot.Status))!.SetValue(lot, status);
+
+        lot.IsEditable.Should().Be(expected);
+    }
+
+    [Fact]
+    public void IsEditable_SoftDeletedDraft_ReturnsFalse()
+    {
+        var lot = Lot.Create(
+            "Test Lot",
+            "Description",
+            Money.FromDecimal(100m),
+            TimeSpan.FromHours(1),
+            Guid.NewGuid(),
+            [DeliveryProvider.Cdek]);
+        lot.SoftDelete();
+
+        lot.IsEditable.Should().BeFalse();
+    }
+
     [Fact]
     public void Publish_TransitionsDraftToPendingModeration()
     {

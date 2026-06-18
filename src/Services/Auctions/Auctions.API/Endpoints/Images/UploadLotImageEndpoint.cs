@@ -30,7 +30,7 @@ public class UploadLotImageEndpoint : EndpointWithoutRequest
         Summary(s =>
         {
             s.Summary = "Upload image for a lot";
-            s.Description = "Upload one or more images for an auction lot. Owner only.";
+            s.Description = "Upload one or more images for an owned Draft or Rejected lot.";
         });
     }
 
@@ -55,6 +55,12 @@ public class UploadLotImageEndpoint : EndpointWithoutRequest
         if (lot.SellerId != userId)
         {
             ThrowError("Only the lot owner can upload images", 403);
+            return;
+        }
+
+        if (!lot.IsEditable)
+        {
+            ThrowError("Images can only be changed for draft or rejected lots", 409);
             return;
         }
 

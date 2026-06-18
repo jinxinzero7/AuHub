@@ -56,6 +56,7 @@ public class Lot
 
     public string? CoverImageUrl => _images.FirstOrDefault()?.ObjectName;
     public int ImagesCount => _images.Count;
+    public bool IsEditable => !IsDeleted && Status is LotStatus.Draft or LotStatus.Rejected;
 
     private Lot() { }
 
@@ -126,7 +127,7 @@ public class Lot
         TimeSpan duration,
         IEnumerable<DeliveryProvider> supportedDeliveryProviders)
     {
-        if (Status != LotStatus.Draft && Status != LotStatus.Rejected)
+        if (!IsEditable)
             throw new InvalidOperationException("Only draft or rejected lots can be edited");
 
         var providers = NormalizeDeliveryProviders(supportedDeliveryProviders);

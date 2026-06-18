@@ -28,7 +28,7 @@ public class DeleteLotImageEndpoint : EndpointWithoutRequest
         Summary(s =>
         {
             s.Summary = "Delete image from a lot";
-            s.Description = "Delete an image from an auction lot. Owner only.";
+            s.Description = "Delete an image from an owned Draft or Rejected lot.";
         });
     }
 
@@ -54,6 +54,12 @@ public class DeleteLotImageEndpoint : EndpointWithoutRequest
         if (lot.SellerId != userId)
         {
             ThrowError("Only the lot owner can delete images", 403);
+            return;
+        }
+
+        if (!lot.IsEditable)
+        {
+            ThrowError("Images can only be changed for draft or rejected lots", 409);
             return;
         }
 
