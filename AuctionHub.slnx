@@ -18,6 +18,7 @@
   <Project Path="src/Services/Payment/Payment.Domain/Payment.Domain.csproj" />
   <Project Path="src/Services/Payment/Payment.Infrastructure/Payment.Infrastructure.csproj" />
   <Project Path="tests/Shared.UnitTests/Shared.UnitTests.csproj" />
+  <Project Path="tests/Gateway.IntegrationTests/Gateway.IntegrationTests.csproj" />
   <Project Path="tests/Auctions.UnitTests/Auctions.UnitTests.csproj" />
   <Project Path="tests/Auctions.IntegrationTests/Auctions.IntegrationTests.csproj" />
   <Project Path="tests/Identity.UnitTests/Identity.UnitTests.csproj" />
