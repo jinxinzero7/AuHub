@@ -37,6 +37,7 @@ Verified on 2026-06-15:
 - stale Auctions admin-user stub endpoints were removed; admin user moderation belongs to Identity/Gateway;
 - service-local admin audit logs exist in Identity and Auctions for user moderation, lot moderation/freeze/force-complete and dispute resolution actions;
 - admin user detail is available through `GET /api/admin/users/{userId}` and returns Identity-owned profile, verification and ban data plus document request metadata without storage paths or file content;
+- admin marketplace activity is available separately through `GET /api/admin/users/{userId}/activity`; Auctions returns local lot/bid/win/reputation summaries without Identity coupling or delivery recipient data;
 - Identity integration tests cover admin ban/list/unban, banned-user middleware behavior and PostgreSQL-backed register/login/refresh/replay flows;
 - banning a user revokes refresh tokens and blocks login/refresh with `403`;
 - lot moderation now uses `Draft -> PendingModeration -> Active`; seller submit endpoint is `/api/lots/{id}/submit-for-moderation`;

@@ -21,6 +21,7 @@ public static class DependencyInjection
         services.AddScoped<Queries.GetLotById.GetLotByIdQueryHandler>();
         services.AddScoped<Queries.GetBidsByLot.GetBidsByLotQueryHandler>();
         services.AddScoped<Queries.GetMyBids.GetMyBidsQueryHandler>();
+        services.AddScoped<Queries.GetAdminUserActivity.GetAdminUserActivityQueryHandler>();
 
         return services;
     }

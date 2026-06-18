@@ -73,7 +73,7 @@ public class TrustScoreService
     public async Task<SellerTrustScoreResponse> GetSellerTrustScoreAsync(Guid sellerId, CancellationToken cancellationToken = default)
     {
         var events = await _repository.GetByUserIdAsync(sellerId, TrustScoreSubject.Seller, cancellationToken);
-        var score = ClampScore(BaselineScore + events.Sum(trustEvent => trustEvent.Points));
+        var score = CalculateScore(events);
 
         return new SellerTrustScoreResponse
         {
@@ -104,12 +104,12 @@ public class TrustScoreService
         await _repository.SaveChangesAsync(cancellationToken);
     }
 
-    private static int ClampScore(int score)
+    public static int CalculateScore(IEnumerable<TrustScoreEvent> events)
     {
-        return Math.Clamp(score, 0, 100);
+        return Math.Clamp(BaselineScore + events.Sum(trustEvent => trustEvent.Points), 0, 100);
     }
 
-    private static string GetBadge(int score)
+    public static string GetBadge(int score)
     {
         return score switch
         {
