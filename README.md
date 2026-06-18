@@ -46,7 +46,8 @@ Verified on 2026-06-15:
 - auction completion opens a 3-day winner delivery request window; winner request endpoint is `/api/lots/{id}/delivery-request`;
 - overdue delivery requests refund the buyer before moving to `DeliveryRequestExpired`; sellers can mark requested delivery as shipped through `/api/lots/{id}/ship`;
 - lot detail now exposes buyer delivery request details only to the seller, winner and admins; public lot list responses do not include private delivery request fields;
-- bidding tests cover previous bidder release, same-bidder non-release and reserve compensation on exhausted concurrency;
+- bidding reserves only the increase delta when the current top bidder raises their own bid; a new bidder still reserves the full amount and releases the previous bidder;
+- bidding tests cover same-bidder delta reservation, previous bidder release and exact reserve compensation on exhausted concurrency;
 - previous bidder release now has retryable outbox compensation if the direct Payment release path fails;
 - service commission is deposited to the platform wallet as a separate `ServiceFee` transaction;
 - Payment keeps local immediate top-up through `IPaymentProvider`/`DemoPaymentProvider` and also supports Robokassa demo checkout through `IPaymentCheckoutProvider`;

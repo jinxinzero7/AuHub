@@ -46,6 +46,7 @@ public class PlaceBidCommandHandler
         const int maxRetries = 3;
         var fundsReserved = false;
         var reservedLotId = Guid.Empty;
+        var reservedAmount = 0m;
 
         if (command.IdempotencyKey.HasValue)
         {
@@ -74,26 +75,38 @@ public class PlaceBidCommandHandler
                 if (command.Amount <= lot.CurrentPrice)
                     return Result.Failure<PlaceBidResponse>("Bid amount must be higher than current price", 400);
 
-                var balanceResult = await _paymentClient.GetBalanceAsync(command.BidderId, cancellationToken);
-                if (!balanceResult.Success)
-                    return Result.Failure<PlaceBidResponse>("Payment service unavailable", 503);
-                if (balanceResult.Balance < command.Amount.Amount)
-                    return Result.Failure<PlaceBidResponse>(
-                        $"Insufficient funds. Required: {command.Amount}, Available: {balanceResult.Balance:C2}", 400);
-
                 var previousBid = lot.Bids.OrderByDescending(b => b.Amount).FirstOrDefault();
                 var previousBidderId = previousBid?.BidderId;
                 var previousBidAmount = lot.CurrentPrice;
+                var amountToReserve = previousBidderId == command.BidderId
+                    ? command.Amount.Amount - previousBidAmount.Amount
+                    : command.Amount.Amount;
+
+                var balanceResult = await _paymentClient.GetBalanceAsync(command.BidderId, cancellationToken);
+                if (!balanceResult.Success)
+                    return Result.Failure<PlaceBidResponse>("Payment service unavailable", 503);
+                if (balanceResult.Balance < amountToReserve)
+                    return Result.Failure<PlaceBidResponse>(
+                        $"Insufficient funds. Required: {amountToReserve:C2}, Available: {balanceResult.Balance:C2}", 400);
+
+                if (fundsReserved && reservedAmount != amountToReserve)
+                {
+                    await ReleaseReservedFundsAsync(
+                        command.BidderId, reservedAmount, reservedLotId, cancellationToken);
+                    fundsReserved = false;
+                    reservedAmount = 0m;
+                }
 
                 if (!fundsReserved)
                 {
                     var reserveResult = await _paymentClient.ReserveFundsAsync(
-                        command.BidderId, command.Amount.Amount, lot.Id, cancellationToken);
+                        command.BidderId, amountToReserve, lot.Id, cancellationToken);
                     if (!reserveResult.Success)
                         return Result.Failure<PlaceBidResponse>("Failed to reserve funds", 503);
 
                     fundsReserved = true;
                     reservedLotId = lot.Id;
+                    reservedAmount = amountToReserve;
                 }
 
                 lot.PlaceBid(command.Amount, command.BidderId, command.BidderName);
@@ -159,7 +172,8 @@ public class PlaceBidCommandHandler
             {
                 if (fundsReserved)
                 {
-                    await ReleaseReservedFundsAsync(command, reservedLotId, cancellationToken);
+                    await ReleaseReservedFundsAsync(
+                        command.BidderId, reservedAmount, reservedLotId, cancellationToken);
                 }
 
                 return Result.Failure<PlaceBidResponse>("Too many concurrent bids, please try again", 409);
@@ -168,7 +182,8 @@ public class PlaceBidCommandHandler
             {
                 if (fundsReserved)
                 {
-                    await ReleaseReservedFundsAsync(command, reservedLotId, cancellationToken);
+                    await ReleaseReservedFundsAsync(
+                        command.BidderId, reservedAmount, reservedLotId, cancellationToken);
                 }
 
                 return Result.Failure<PlaceBidResponse>(ex.Message, 400);
@@ -177,7 +192,8 @@ public class PlaceBidCommandHandler
             {
                 if (fundsReserved)
                 {
-                    await ReleaseReservedFundsAsync(command, reservedLotId, cancellationToken);
+                    await ReleaseReservedFundsAsync(
+                        command.BidderId, reservedAmount, reservedLotId, cancellationToken);
                 }
 
                 return Result.Failure<PlaceBidResponse>($"Failed to place bid: {ex.Message}", 500);
@@ -188,13 +204,14 @@ public class PlaceBidCommandHandler
     }
 
     private Task<PaymentResult> ReleaseReservedFundsAsync(
-        PlaceBidCommand command,
+        Guid bidderId,
+        decimal amount,
         Guid lotId,
         CancellationToken cancellationToken)
     {
         return _paymentClient.ReleaseFundsAsync(
-            command.BidderId,
-            command.Amount.Amount,
+            bidderId,
+            amount,
             lotId,
             cancellationToken);
     }

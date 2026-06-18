@@ -504,6 +504,39 @@ public class AuctionsPersistenceTests : IAsyncLifetime
             release.LotId == lotId);
     }
 
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task HigherBid_ByCurrentTopBidder_ReservesOnlyDeltaWithoutRelease()
+    {
+        var sellerId = Guid.NewGuid();
+        var bidderId = Guid.NewGuid();
+        var adminId = Guid.NewGuid();
+        using var client = _factory.CreateClient();
+
+        var lotId = await CreateDraftLotAsync(client, sellerId, "Same bidder delta reserve lot");
+        await SubmitAndApproveLotAsync(client, lotId, sellerId, adminId);
+        await PlaceBidAsync(client, lotId, bidderId, 1500m);
+        await PlaceBidAsync(client, lotId, bidderId, 1800m);
+
+        var lot = await LoadLotAsync(lotId);
+        lot.CurrentPrice.Amount.Should().Be(1800m);
+
+        await using var scope = _factory.Services.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AuctionsDbContext>();
+        var bids = await dbContext.Bids.AsNoTracking().Where(bid => bid.LotId == lotId).ToListAsync();
+        bids.Should().HaveCount(2);
+
+        _factory.PaymentClient.ReservedFunds.Should().ContainSingle(reservation =>
+            reservation.UserId == bidderId &&
+            reservation.Amount == 1500m &&
+            reservation.LotId == lotId);
+        _factory.PaymentClient.ReservedFunds.Should().ContainSingle(reservation =>
+            reservation.UserId == bidderId &&
+            reservation.Amount == 300m &&
+            reservation.LotId == lotId);
+        _factory.PaymentClient.ReleasedFunds.Should().NotContain(release => release.LotId == lotId);
+    }
+
     private async Task<Guid> CreateDraftLotAsync(HttpClient client, Guid sellerId, string title)
     {
         Authenticate(client, sellerId);

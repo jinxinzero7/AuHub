@@ -193,18 +193,20 @@ public class PlaceBidCommandHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_DoesNotReleaseSameBidderFunds()
+    public async Task HandleAsync_SameTopBidder_ReservesOnlyDeltaAndDoesNotReleasePreviousFunds()
     {
         var lot = CreateActiveLot();
         PlaceBidAndAttach(lot, Money.FromDecimal(1200m), BidderId, "SameBidder");
         _lotRepo.GetByIdAsync(LotId, Arg.Any<CancellationToken>()).Returns(lot);
         _paymentClient.GetBalanceAsync(BidderId, Arg.Any<CancellationToken>())
             .Returns(new BalanceResult(true, 5000m));
-        _paymentClient.ReserveFundsAsync(BidderId, 1500m, Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+        _paymentClient.ReserveFundsAsync(BidderId, 300m, Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(new PaymentResult(true));
 
         await _handler.HandleAsync(CreateCommand(1500m));
 
+        await _paymentClient.Received(1).ReserveFundsAsync(
+            BidderId, 300m, lot.Id, Arg.Any<CancellationToken>());
         await _paymentClient.DidNotReceive().ReleaseFundsAsync(
             Arg.Any<Guid>(), Arg.Any<decimal>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
@@ -226,6 +228,8 @@ public class PlaceBidCommandHandlerTests
         var result = await _handler.HandleAsync(CreateCommand(1500m));
 
         result.IsSuccess.Should().BeTrue();
+        await _paymentClient.Received(1).ReserveFundsAsync(
+            BidderId, 1500m, lot.Id, Arg.Any<CancellationToken>());
         await _paymentClient.Received(1).ReleaseFundsAsync(
             previousBidderId, 1200m, lot.Id, Arg.Any<CancellationToken>());
     }
@@ -422,5 +426,33 @@ public class PlaceBidCommandHandlerTests
             BidderId, 1500m, Arg.Any<Guid>(), Arg.Any<CancellationToken>());
         await _paymentClient.Received(1).ReleaseFundsAsync(
             BidderId, 1500m, Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task HandleAsync_SameTopBidderPersistenceFailure_CompensatesOnlyReservedDelta()
+    {
+        _lotRepo.GetByIdAsync(LotId, Arg.Any<CancellationToken>()).Returns(_ =>
+        {
+            var lot = CreateActiveLot();
+            PlaceBidAndAttach(lot, Money.FromDecimal(1200m), BidderId, "SameBidder");
+            return lot;
+        });
+        _paymentClient.GetBalanceAsync(BidderId, Arg.Any<CancellationToken>())
+            .Returns(new BalanceResult(true, 500m));
+        _paymentClient.ReserveFundsAsync(BidderId, 300m, Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(new PaymentResult(true));
+        _paymentClient.ReleaseFundsAsync(BidderId, 300m, Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(new PaymentResult(true));
+        _bidRepo.SaveChangesAsync(Arg.Any<CancellationToken>())
+            .Returns(_ => throw new DbUpdateConcurrencyException("Concurrency"));
+
+        var result = await _handler.HandleAsync(CreateCommand(1500m));
+
+        result.IsFailure.Should().BeTrue();
+        result.StatusCode.Should().Be(409);
+        await _paymentClient.Received(1).ReserveFundsAsync(
+            BidderId, 300m, Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await _paymentClient.Received(1).ReleaseFundsAsync(
+            BidderId, 300m, Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 }
