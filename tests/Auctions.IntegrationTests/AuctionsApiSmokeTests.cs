@@ -7,6 +7,7 @@ using System.IdentityModel.Tokens.Jwt;
 using FluentAssertions;
 using Auctions.API.Endpoints.Lots;
 using Auctions.Application.Queries.GetAdminUserActivity;
+using Auctions.Application.Queries.GetLots;
 using Auctions.Application.Services;
 using Auctions.Domain.Entities;
 using Auctions.Domain.Enums;
@@ -151,6 +152,53 @@ public class AuctionsApiSmokeTests
         response.Page.Should().Be(1);
         response.PageSize.Should().Be(9);
         response.TotalCount.Should().Be(1);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task PublicLots_IgnoreOwnerAndWinnerFilters()
+    {
+        using var factory = new AuctionsApiFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetFromJsonAsync<GetLotsResponse>(
+            $"/api/lots?sellerId={Guid.NewGuid()}&winnerId={Guid.NewGuid()}&includeDrafts=true");
+
+        response.Should().NotBeNull();
+        response!.Lots.Should().ContainSingle(lot => lot.Status == nameof(LotStatus.Active));
+        response.Lots.Should().NotContain(lot => lot.Status == nameof(LotStatus.Draft));
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task MyLots_UsesAuthenticatedUserIdentityAndIncludesDrafts()
+    {
+        using var factory = new AuctionsApiFactory();
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            CreateJwt(factory.SellerId, "User"));
+
+        var response = await client.GetFromJsonAsync<PaginatedLotsResponse>("/api/me/lots");
+
+        response.Should().NotBeNull();
+        response!.Lots.Should().HaveCount(2);
+        response.Lots.Should().Contain(lot => lot.Status == nameof(LotStatus.Draft));
+        response.Lots.Should().OnlyContain(lot => lot.SellerId == factory.SellerId);
+    }
+
+    [Theory]
+    [InlineData("/api/me/lots")]
+    [InlineData("/api/me/wins")]
+    [Trait("Category", "Integration")]
+    public async Task MyLotEndpoints_WithoutToken_ReturnUnauthorized(string route)
+    {
+        using var factory = new AuctionsApiFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync(route);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
     [Theory]
@@ -323,6 +371,8 @@ public class AuctionsApiSmokeTests
                 lotRepository.GetBySellerIdAsync(Arg.Any<Guid>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
                     .Returns(call => call.ArgAt<Guid>(0) == SellerId ? [activeLot, draftLot] : []);
                 lotRepository.GetByWinnerIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns([]);
+                lotRepository.GetPublicLotsAsync(Arg.Any<string?>(), Arg.Any<CancellationToken>()).Returns([activeLot]);
+                lotRepository.GetActiveLotsAsync(Arg.Any<string?>(), Arg.Any<CancellationToken>()).Returns([activeLot]);
                 var bidRepository = Substitute.For<IBidRepository>();
                 bidRepository.GetByBidderIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns([]);
                 var reviewRepository = Substitute.For<IReviewRepository>();

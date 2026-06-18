@@ -35,10 +35,10 @@ public class LotRepository : ILotRepository
         var query = _context.Lots
             .Include(l => l.Bids)
             .Include(l => l.Images)
-            .Where(l => l.Status == LotStatus.Active || 
-                        l.Status == LotStatus.Completed || 
-                        l.Status == LotStatus.CompletedNoWinner ||
-                        l.Status == LotStatus.Frozen);
+            .Where(l => !l.IsDeleted &&
+                       (l.Status == LotStatus.Active ||
+                        l.Status == LotStatus.Completed ||
+                        l.Status == LotStatus.CompletedNoWinner));
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
@@ -56,7 +56,7 @@ public class LotRepository : ILotRepository
         var query = _context.Lots
             .Include(l => l.Bids)
             .Include(l => l.Images)
-            .Where(l => l.Status == LotStatus.Active);
+            .Where(l => !l.IsDeleted && l.Status == LotStatus.Active);
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
@@ -74,7 +74,7 @@ public class LotRepository : ILotRepository
         var query = _context.Lots
             .Include(l => l.Bids)
             .Include(l => l.Images)
-            .Where(l => l.SellerId == sellerId);
+            .Where(l => l.SellerId == sellerId && !l.IsDeleted);
 
         if (!includeDrafts)
         {
@@ -91,7 +91,7 @@ public class LotRepository : ILotRepository
         return await _context.Lots
             .Include(l => l.Bids)
             .Include(l => l.Images)
-            .Where(l => l.WinnerId == winnerId)
+            .Where(l => l.WinnerId == winnerId && !l.IsDeleted)
             .OrderByDescending(l => l.EndTime)
             .ToListAsync(cancellationToken);
     }

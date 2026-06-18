@@ -32,9 +32,6 @@ public class GetLotsEndpoint : EndpointWithoutRequest<GetLotsResponse>
         var onlyActive = Query<bool>("onlyActive", isRequired: false);
         var page = Query<int>("page", isRequired: false);
         var pageSize = Query<int>("pageSize", isRequired: false);
-        var sellerId = Query<string>("sellerId", isRequired: false);
-        var winnerId = Query<string>("winnerId", isRequired: false);
-        var includeDrafts = Query<bool>("includeDrafts", isRequired: false);
         var search = Query<string>("search", isRequired: false);
 
         if (page < 1)
@@ -47,9 +44,6 @@ public class GetLotsEndpoint : EndpointWithoutRequest<GetLotsResponse>
             OnlyActive = onlyActive,
             Page = page,
             PageSize = pageSize,
-            SellerId = sellerId,
-            WinnerId = winnerId,
-            IncludeDrafts = includeDrafts,
             Search = search
         };
 
