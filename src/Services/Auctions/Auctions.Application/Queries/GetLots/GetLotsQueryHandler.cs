@@ -25,6 +25,15 @@ public class GetLotsQueryHandler
             {
                 var sellerId = Guid.Parse(query.SellerId);
                 lots = await _lotRepository.GetBySellerIdAsync(sellerId, query.IncludeDrafts, cancellationToken);
+
+                if (query.OnlyActive)
+                {
+                    lots = lots
+                        .Where(lot => lot.SellerId == sellerId &&
+                                      lot.Status == Auctions.Domain.Entities.LotStatus.Active &&
+                                      !lot.IsDeleted)
+                        .ToList();
+                }
             }
             else if (!string.IsNullOrEmpty(query.WinnerId))
             {

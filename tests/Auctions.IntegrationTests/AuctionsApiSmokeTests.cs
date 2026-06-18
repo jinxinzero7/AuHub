@@ -5,12 +5,19 @@ using System.Security.Claims;
 using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 using FluentAssertions;
+using Auctions.API.Endpoints.Lots;
+using Auctions.Application.Services;
+using Auctions.Domain.Entities;
+using Auctions.Domain.Enums;
+using Auctions.Domain.Interfaces;
+using AuHub.Shared.ValueObjects;
 using MassTransit;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Tokens;
 using NSubstitute;
 
@@ -86,6 +93,47 @@ public class AuctionsApiSmokeTests
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task SellerLots_Anonymous_ReturnsOnlyActivePublicLotsForSeller()
+    {
+        using var factory = new AuctionsApiFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetFromJsonAsync<GetLotsResponse>(
+            $"/api/sellers/{factory.SellerId}/lots");
+
+        response.Should().NotBeNull();
+        response!.Lots.Should().ContainSingle(lot =>
+            lot.SellerId == factory.SellerId && lot.Status == nameof(LotStatus.Active));
+        response.Page.Should().Be(1);
+        response.PageSize.Should().Be(9);
+        response.TotalCount.Should().Be(1);
+    }
+
+    [Theory]
+    [InlineData("?page=0&pageSize=0", 1, 9)]
+    [InlineData("?page=2&pageSize=101", 2, 9)]
+    [InlineData("?page=2&pageSize=20&includeDrafts=true", 2, 20)]
+    [Trait("Category", "Integration")]
+    public async Task SellerLots_NormalizesPaginationAndIgnoresPrivateFilters(
+        string queryString,
+        int expectedPage,
+        int expectedPageSize)
+    {
+        using var factory = new AuctionsApiFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetFromJsonAsync<GetLotsResponse>(
+            $"/api/sellers/{Guid.NewGuid()}/lots{queryString}");
+
+        response.Should().NotBeNull();
+        response!.Lots.Should().BeEmpty();
+        response.Page.Should().Be(expectedPage);
+        response.PageSize.Should().Be(expectedPageSize);
+        response.TotalCount.Should().Be(0);
+    }
+
     private static string CreateJwt(Guid userId, string role)
     {
         var claims = new[]
@@ -107,6 +155,8 @@ public class AuctionsApiSmokeTests
 
     private sealed class AuctionsApiFactory : WebApplicationFactory<Program>
     {
+        public Guid SellerId { get; } = Guid.NewGuid();
+
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.UseEnvironment("Testing");
@@ -130,8 +180,41 @@ public class AuctionsApiSmokeTests
             });
             builder.ConfigureTestServices(services =>
             {
+                var activeLot = CreateActiveLot(SellerId, "Public seller lot");
+                var draftLot = CreateDraftLot(SellerId, "Private seller draft");
+                var otherSellerLot = CreateActiveLot(Guid.NewGuid(), "Other seller lot");
+                var lotRepository = Substitute.For<ILotRepository>();
+                lotRepository.GetBySellerIdAsync(
+                        Arg.Any<Guid>(),
+                        Arg.Any<bool>(),
+                        Arg.Any<CancellationToken>())
+                    .Returns([activeLot, draftLot, otherSellerLot]);
+
+                services.RemoveAll<ILotRepository>();
+                services.RemoveAll<IImageStorageService>();
+                services.AddSingleton(lotRepository);
+                services.AddSingleton(Substitute.For<IImageStorageService>());
                 services.AddSingleton(Substitute.For<IPublishEndpoint>());
             });
         }
+    }
+
+    private static Lot CreateDraftLot(Guid sellerId, string title)
+    {
+        return Lot.Create(
+            title,
+            "Description",
+            Money.FromDecimal(1000m),
+            TimeSpan.FromDays(1),
+            sellerId,
+            [DeliveryProvider.Cdek]);
+    }
+
+    private static Lot CreateActiveLot(Guid sellerId, string title)
+    {
+        var lot = CreateDraftLot(sellerId, title);
+        lot.SubmitForModeration();
+        lot.Approve();
+        return lot;
     }
 }

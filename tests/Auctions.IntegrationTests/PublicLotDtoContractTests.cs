@@ -13,7 +13,11 @@ public class PublicLotDtoContractTests
     [InlineData("SelectedDeliveryProvider")]
     [InlineData("DeliveryRequestedAt")]
     [InlineData("DeliveryRequestDeadlineAt")]
-    public void PublicLotDto_DoesNotExposePrivateDeliveryRequestFields(string propertyName)
+    [InlineData("AdminComment")]
+    [InlineData("WinnerId")]
+    [InlineData("BidderId")]
+    [InlineData("Bids")]
+    public void PublicLotDto_DoesNotExposePrivateDealFields(string propertyName)
     {
         typeof(LotDto).GetProperty(propertyName).Should().BeNull();
     }

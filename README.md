@@ -63,6 +63,8 @@ Verified on 2026-06-15:
 - Auctions reviews API lets the winning buyer leave one seller review after `TransactionComplete`;
 - seller review aggregation is available through `GET /api/sellers/{sellerId}/reviews`;
 - seller trust score events are stored in Auctions and public seller trust summary is available through `GET /api/sellers/{sellerId}/trust`;
+- public seller pages can load only active seller lots through `GET /api/sellers/{sellerId}/lots?page=1&pageSize=9`; unknown sellers and sellers without active lots return an empty page without an Identity existence lookup;
+- public lot summary DTOs exclude winner IDs, bidder IDs, admin comments and private delivery/deal fields;
 - safe public seller account profile is available through `GET /api/auth/users/{id}/public-profile` for verified seller badges;
 - backend integration projects contain API smoke tests; `.NET E2E.Tests` is still a placeholder;
 - frontend production build passes without Google Fonts network dependency;

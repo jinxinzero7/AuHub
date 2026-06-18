@@ -60,34 +60,7 @@ public class GetLotsEndpoint : EndpointWithoutRequest<GetLotsResponse>
             ThrowError(result.Error, result.StatusCode);
         }
 
-        var lotDtos = new List<LotDto>();
-        foreach (var l in result.Value.Lots)
-        {
-            string? coverImageUrl = null;
-            if (!string.IsNullOrEmpty(l.CoverImageUrl))
-            {
-                var fileName = l.CoverImageUrl.Split('/').Last();
-                coverImageUrl = await _storageService.GetPresignedUrlAsync($"lots/{l.Id}/{fileName}", 1440, ct);
-            }
-
-            lotDtos.Add(new LotDto
-            {
-                Id = l.Id,
-                Title = l.Title,
-                Description = l.Description,
-                StartingPrice = l.StartingPrice,
-                CurrentPrice = l.CurrentPrice,
-                DurationHours = l.DurationHours,
-                StartTime = l.StartTime,
-                EndTime = l.EndTime,
-                Status = l.Status,
-                SellerId = l.SellerId,
-                WinnerId = l.WinnerId,
-                BidsCount = l.BidsCount,
-                CoverImageUrl = coverImageUrl,
-                SupportedDeliveryProviders = l.SupportedDeliveryProviders
-            });
-        }
+        var lotDtos = await PublicLotDtoMapper.MapAsync(result.Value.Lots, _storageService, ct);
 
         Response = new GetLotsResponse
         {
@@ -124,7 +97,6 @@ public record LotDto
     public DateTime? EndTime { get; init; }
     public string Status { get; init; } = string.Empty;
     public Guid SellerId { get; init; }
-    public Guid? WinnerId { get; init; }
     public int BidsCount { get; init; }
     public string? CoverImageUrl { get; init; }
     public List<string> SupportedDeliveryProviders { get; init; } = new();
