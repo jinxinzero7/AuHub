@@ -52,6 +52,47 @@ public class AuctionsApiSmokeTests
 
     [Fact]
     [Trait("Category", "Integration")]
+    public async Task AuctionHubNegotiate_WithoutToken_ReturnsUnauthorized()
+    {
+        using var factory = new AuctionsApiFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.PostAsync("/hubs/auction/negotiate?negotiateVersion=1", null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task AuctionHubNegotiate_WithQueryToken_ReturnsOk()
+    {
+        using var factory = new AuctionsApiFactory();
+        using var client = factory.CreateClient();
+        var token = CreateJwt(Guid.NewGuid(), "User");
+
+        var response = await client.PostAsync(
+            $"/hubs/auction/negotiate?negotiateVersion=1&access_token={Uri.EscapeDataString(token)}",
+            null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task RegularApi_WithQueryToken_RemainsUnauthorized()
+    {
+        using var factory = new AuctionsApiFactory();
+        using var client = factory.CreateClient();
+        var token = CreateJwt(Guid.NewGuid(), "Admin");
+
+        var response = await client.GetAsync(
+            $"/api/admin/lots/pending?access_token={Uri.EscapeDataString(token)}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
     public async Task PendingModeration_WithoutToken_ReturnsUnauthorized()
     {
         using var factory = new AuctionsApiFactory();

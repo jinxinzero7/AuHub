@@ -18,7 +18,7 @@ public class SignalREventPublisher : IEventPublisher
         await _hubContext.Clients.Group($"lot-{lotId}").SendAsync("NewBidPlaced", new
         {
             lotId,
-            newPrice,
+            currentPrice = newPrice,
             bidderName,
             timestamp = DateTime.UtcNow
         }, ct);
