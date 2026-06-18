@@ -33,7 +33,7 @@ public class LotDetailResponse
 public class BidDto
 {
     public Guid Id { get; set; }
-    public Guid BidderId { get; set; }
+    public Guid? BidderId { get; set; }
     public Money Amount { get; set; } = Money.Zero;
     public DateTime PlacedAt { get; set; }
 }

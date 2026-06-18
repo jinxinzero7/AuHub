@@ -1,6 +1,7 @@
 using FastEndpoints;
 using Auctions.Domain.Interfaces;
 using Auctions.Application.Services;
+using System.Security.Claims;
 
 namespace Auctions.API.Endpoints.Images;
 
@@ -8,13 +9,16 @@ public class GetLotImagesEndpoint : EndpointWithoutRequest
 {
     private readonly IImageStorageService _storageService;
     private readonly ILotImageRepository _imageRepository;
+    private readonly ILotRepository _lotRepository;
 
     public GetLotImagesEndpoint(
         IImageStorageService storageService,
-        ILotImageRepository imageRepository)
+        ILotImageRepository imageRepository,
+        ILotRepository lotRepository)
     {
         _storageService = storageService;
         _imageRepository = imageRepository;
+        _lotRepository = lotRepository;
     }
 
     public override void Configure()
@@ -31,6 +35,12 @@ public class GetLotImagesEndpoint : EndpointWithoutRequest
     public override async Task HandleAsync(CancellationToken ct)
     {
         var lotId = Route<Guid>("id");
+        var lot = await _lotRepository.GetByIdAsync(lotId, ct);
+        if (lot == null || !LotVisibilityPolicy.CanViewDetails(lot, GetRequesterUserId(), User.IsInRole("Admin")))
+        {
+            HttpContext.Response.StatusCode = 404;
+            return;
+        }
 
         var images = await _imageRepository.GetByLotIdAsync(lotId, ct);
 
@@ -51,5 +61,11 @@ public class GetLotImagesEndpoint : EndpointWithoutRequest
 
         HttpContext.Response.StatusCode = 200;
         await HttpContext.Response.WriteAsJsonAsync(result, ct);
+    }
+
+    private Guid? GetRequesterUserId()
+    {
+        var value = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return Guid.TryParse(value, out var userId) ? userId : null;
     }
 }

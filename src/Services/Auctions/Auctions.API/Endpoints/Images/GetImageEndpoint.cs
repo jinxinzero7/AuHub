@@ -1,6 +1,7 @@
 using FastEndpoints;
 using Auctions.Domain.Interfaces;
 using Auctions.Application.Services;
+using System.Security.Claims;
 
 namespace Auctions.API.Endpoints.Images;
 
@@ -8,13 +9,16 @@ public class GetImageEndpoint : EndpointWithoutRequest
 {
     private readonly IImageStorageService _storageService;
     private readonly ILotImageRepository _imageRepository;
+    private readonly ILotRepository _lotRepository;
 
     public GetImageEndpoint(
         IImageStorageService storageService,
-        ILotImageRepository imageRepository)
+        ILotImageRepository imageRepository,
+        ILotRepository lotRepository)
     {
         _storageService = storageService;
         _imageRepository = imageRepository;
+        _lotRepository = lotRepository;
     }
 
     public override void Configure()
@@ -39,6 +43,13 @@ public class GetImageEndpoint : EndpointWithoutRequest
             return;
         }
 
+        var lot = await _lotRepository.GetByIdAsync(lotId, ct);
+        if (lot == null || !LotVisibilityPolicy.CanViewDetails(lot, GetRequesterUserId(), User.IsInRole("Admin")))
+        {
+            HttpContext.Response.StatusCode = 404;
+            return;
+        }
+
         var image = await _imageRepository.GetByFileNameAsync(lotId, fileName, ct);
         if (image == null)
         {
@@ -48,5 +59,11 @@ public class GetImageEndpoint : EndpointWithoutRequest
 
         var presignedUrl = await _storageService.GetPresignedUrlAsync(image.ObjectName, 1440, ct);
         HttpContext.Response.Redirect(presignedUrl, permanent: false);
+    }
+
+    private Guid? GetRequesterUserId()
+    {
+        var value = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return Guid.TryParse(value, out var userId) ? userId : null;
     }
 }

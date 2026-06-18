@@ -94,6 +94,38 @@ public class LotMappingsTests
         response.DeliveryRequestedAt.Should().BeNull();
     }
 
+    [Fact]
+    public void ToDetailResponse_AnonymousDoesNotReceiveWinnerOrBidderIdentity()
+    {
+        var winnerId = Guid.NewGuid();
+        var lot = CreateLotWithDeliveryRequest(Guid.NewGuid(), winnerId);
+        var bid = Bid.Create(lot.Id, winnerId, Money.FromDecimal(1200m));
+        var bidsField = typeof(Lot).GetField("_bids", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+        ((List<Bid>)bidsField.GetValue(lot)!).Add(bid);
+
+        var response = lot.ToDetailResponse();
+
+        response.WinnerId.Should().BeNull();
+        response.Bids.Should().ContainSingle();
+        response.Bids[0].BidderId.Should().BeNull();
+    }
+
+    [Fact]
+    public void ToDetailResponse_AdminReceivesWinnerAndBidderIdentity()
+    {
+        var winnerId = Guid.NewGuid();
+        var lot = CreateLotWithDeliveryRequest(Guid.NewGuid(), winnerId);
+        var bid = Bid.Create(lot.Id, winnerId, Money.FromDecimal(1200m));
+        var bidsField = typeof(Lot).GetField("_bids", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+        ((List<Bid>)bidsField.GetValue(lot)!).Add(bid);
+
+        var response = lot.ToDetailResponse(Guid.NewGuid(), requesterIsAdmin: true);
+
+        response.WinnerId.Should().Be(winnerId);
+        response.Bids.Should().ContainSingle();
+        response.Bids[0].BidderId.Should().Be(winnerId);
+    }
+
     private static Lot CreateLotWithDeliveryRequest(Guid sellerId, Guid winnerId)
     {
         var lot = Lot.Create(

@@ -52,7 +52,7 @@ public static class LotMappings
             StartTime = lot.StartTime,
             EndTime = lot.EndTime,
             SellerId = lot.SellerId,
-            WinnerId = lot.WinnerId,
+            WinnerId = CanViewDealParticipantIdentity(lot, requesterUserId, requesterIsAdmin) ? lot.WinnerId : null,
             Status = lot.Status.ToString(),
             CreatedAt = lot.CreatedAt,
             UpdatedAt = lot.UpdatedAt,
@@ -66,7 +66,7 @@ public static class LotMappings
             DeliveryRequestDeadlineAt = includePrivateDeliveryDetails ? lot.DeliveryRequestDeadlineAt : null,
             SupportedDeliveryProviders = lot.SupportedDeliveryProviders.Select(provider => provider.ToString()).ToList(),
             AdminComment = requesterIsAdmin || requesterUserId == lot.SellerId ? lot.AdminComment : null,
-            Bids = lot.Bids.Select(b => b.ToDetailDto()).OrderByDescending(b => b.PlacedAt).ToList()
+            Bids = lot.Bids.Select(b => b.ToDetailDto(requesterIsAdmin)).OrderByDescending(b => b.PlacedAt).ToList()
         };
     }
 
@@ -77,23 +77,28 @@ public static class LotMappings
                requesterUserId == lot.WinnerId;
     }
 
-    public static BidDto ToDetailDto(this Bid bid)
+    private static bool CanViewDealParticipantIdentity(Lot lot, Guid? requesterUserId, bool requesterIsAdmin)
+    {
+        return requesterIsAdmin || requesterUserId == lot.SellerId || requesterUserId == lot.WinnerId;
+    }
+
+    public static BidDto ToDetailDto(this Bid bid, bool includeBidderIdentity = false)
     {
         return new BidDto
         {
             Id = bid.Id,
-            BidderId = bid.BidderId,
+            BidderId = includeBidderIdentity ? bid.BidderId : null,
             Amount = bid.Amount,
             PlacedAt = bid.PlacedAt
         };
     }
 
-    public static BidResponse ToResponse(this Bid bid)
+    public static BidResponse ToResponse(this Bid bid, bool includeBidderIdentity = false)
     {
         return new BidResponse
         {
             Id = bid.Id,
-            BidderId = bid.BidderId,
+            BidderId = includeBidderIdentity ? bid.BidderId : null,
             Amount = bid.Amount,
             PlacedAt = bid.PlacedAt
         };

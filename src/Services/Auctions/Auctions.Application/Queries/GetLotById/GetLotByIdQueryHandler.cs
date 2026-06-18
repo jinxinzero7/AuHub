@@ -1,6 +1,6 @@
 using AuHub.Shared.Results;
 using Auctions.Application.Mappings;
-using Auctions.Domain.Entities;
+using Auctions.Application.Services;
 using Auctions.Domain.Interfaces;
 
 namespace Auctions.Application.Queries.GetLotById;
@@ -22,7 +22,7 @@ public class GetLotByIdQueryHandler
         {
             var lot = await _lotRepository.GetByIdAsync(query.LotId, cancellationToken);
 
-            if (lot == null || !CanView(lot, query))
+            if (lot == null || !LotVisibilityPolicy.CanViewDetails(lot, query.RequesterUserId, query.RequesterIsAdmin))
             {
                 return Result.Failure<LotDetailResponse>("Lot not found", 404);
             }
@@ -37,18 +37,4 @@ public class GetLotByIdQueryHandler
         }
     }
 
-    private static bool CanView(Lot lot, GetLotByIdQuery query)
-    {
-        if (query.RequesterIsAdmin)
-            return true;
-
-        if (lot.IsDeleted)
-            return false;
-
-        if (query.RequesterUserId.HasValue &&
-            (query.RequesterUserId.Value == lot.SellerId || query.RequesterUserId.Value == lot.WinnerId))
-            return true;
-
-        return lot.Status is LotStatus.Active or LotStatus.Completed or LotStatus.CompletedNoWinner;
-    }
 }

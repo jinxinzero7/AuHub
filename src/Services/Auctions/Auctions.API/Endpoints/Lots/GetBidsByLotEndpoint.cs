@@ -1,5 +1,6 @@
 using Auctions.Application.Queries.GetBidsByLot;
 using FastEndpoints;
+using System.Security.Claims;
 
 namespace Auctions.API.Endpoints.Lots;
 
@@ -29,7 +30,9 @@ public class GetBidsByLotEndpoint : EndpointWithoutRequest<GetBidsResponse>
         
         var query = new GetBidsByLotQuery
         {
-            LotId = lotId
+            LotId = lotId,
+            RequesterUserId = GetRequesterUserId(),
+            RequesterIsAdmin = User.IsInRole("Admin")
         };
 
         var result = await _handler.HandleAsync(query, ct);
@@ -44,6 +47,12 @@ public class GetBidsByLotEndpoint : EndpointWithoutRequest<GetBidsResponse>
             Success = true,
             Bids = result.Value
         };
+    }
+
+    private Guid? GetRequesterUserId()
+    {
+        var value = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return Guid.TryParse(value, out var userId) ? userId : null;
     }
 }
 
