@@ -17,7 +17,7 @@ public class CreateTopUpCheckoutEndpoint : Endpoint<CreateTopUpCheckoutRequest, 
     public override void Configure()
     {
         Post("/api/payment/topup/checkout");
-        Roles("Admin", "User");
+        Roles("User");
     }
 
     public override async Task HandleAsync(CreateTopUpCheckoutRequest req, CancellationToken ct)

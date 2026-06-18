@@ -1,5 +1,9 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Security.Claims;
+using System.Text;
+using System.IdentityModel.Tokens.Jwt;
 using FluentAssertions;
 using MassTransit;
 using Microsoft.AspNetCore.Hosting;
@@ -7,6 +11,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using NSubstitute;
 
 namespace Auctions.IntegrationTests;
@@ -47,6 +52,57 @@ public class AuctionsApiSmokeTests
         var response = await client.GetAsync("/api/admin/lots/pending");
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Theory]
+    [InlineData("/api/lots")]
+    [InlineData("/api/lots/00000000-0000-0000-0000-000000000001/bids")]
+    [Trait("Category", "Integration")]
+    public async Task MarketplaceMutation_WithAdminToken_ReturnsForbidden(string route)
+    {
+        using var factory = new AuctionsApiFactory();
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            CreateJwt(Guid.NewGuid(), "Admin"));
+
+        var response = await client.PostAsJsonAsync(route, new { Amount = 1500m });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task AdminRead_WithUserToken_ReturnsForbidden()
+    {
+        using var factory = new AuctionsApiFactory();
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            CreateJwt(Guid.NewGuid(), "User"));
+
+        var response = await client.GetAsync("/api/admin/lots/pending");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    private static string CreateJwt(Guid userId, string role)
+    {
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+            new Claim(ClaimTypes.Role, role)
+        };
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("AuHub_Test_Jwt_Secret_That_Is_Long_Enough_2026"));
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        var token = new JwtSecurityToken(
+            issuer: "AuHub",
+            audience: "AuHub-Users",
+            claims: claims,
+            expires: DateTime.UtcNow.AddHours(1),
+            signingCredentials: credentials);
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
     private sealed class AuctionsApiFactory : WebApplicationFactory<Program>

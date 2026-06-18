@@ -32,6 +32,7 @@ Verified on 2026-06-15:
 - Payment internal operations and Notifications direct-send endpoint require `X-Internal-Api-Key`;
 - `X-Internal-Api-Key` must be explicitly configured; there is no hardcoded fallback key;
 - public payment balance is JWT-scoped and no longer supports arbitrary public `userId` lookup;
+- admins are excluded from marketplace user mutations; wallet top-up/checkout, bidding, seller lot lifecycle, delivery, reviews and lot image mutations require the `User` role;
 - Payment no longer registers the duplicate `AuctionCompletedEvent` consumer;
 - stale Auctions admin-user stub endpoints were removed; admin user moderation belongs to Identity/Gateway;
 - service-local admin audit logs exist in Identity and Auctions for user moderation, lot moderation/freeze/force-complete and dispute resolution actions;

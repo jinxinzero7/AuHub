@@ -58,6 +58,23 @@ public class PaymentApiSmokeTests
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
+    [Theory]
+    [InlineData("/api/payment/topup")]
+    [InlineData("/api/payment/topup/checkout")]
+    [Trait("Category", "Integration")]
+    public async Task MarketplaceWalletMutation_WithAdminToken_ReturnsForbidden(string route)
+    {
+        using var factory = new PaymentApiFactory();
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            CreateJwt(Guid.NewGuid(), "Admin"));
+
+        var response = await client.PostAsJsonAsync(route, new { Amount = 500m });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
     [Fact]
     [Trait("Category", "Integration")]
     public async Task TopUp_ThenBalanceAndHistory_ReturnsDemoWalletState()
@@ -134,12 +151,12 @@ public class PaymentApiSmokeTests
         historyJson.GetProperty("transactions").EnumerateArray().Should().ContainSingle();
     }
 
-    private static string CreateJwt(Guid userId)
+    private static string CreateJwt(Guid userId, string role = "User")
     {
         var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
-            new Claim(ClaimTypes.Role, "User")
+            new Claim(ClaimTypes.Role, role)
         };
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("AuHub_Test_Jwt_Secret_That_Is_Long_Enough_2026"));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

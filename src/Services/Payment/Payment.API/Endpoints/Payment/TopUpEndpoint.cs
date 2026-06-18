@@ -17,7 +17,7 @@ public class TopUpEndpoint : Endpoint<TopUpRequest>
     public override void Configure()
     {
         Post("/api/payment/topup");
-        Roles("Admin", "User");
+        Roles("User");
         Summary(s =>
         {
             s.Summary = "Top up wallet balance";
