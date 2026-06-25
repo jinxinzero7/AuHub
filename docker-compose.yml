@@ -295,6 +295,7 @@ services:
 
   # Frontend - Next.js
   frontend:
+    profiles: ["frontend"]
     build:
       context: ../auhub-frontend
       dockerfile: Dockerfile
