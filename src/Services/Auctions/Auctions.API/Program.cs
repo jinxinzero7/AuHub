@@ -168,7 +168,7 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "https://auhub.yourdomain.com")
+        policy.WithOrigins("http://localhost:3000", "https://auhub-frontend.vercel.app")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
