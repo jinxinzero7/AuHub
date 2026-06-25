@@ -132,7 +132,7 @@ services:
       - Notifications__BaseUrl=http://notifications-api:8080
       - Payment__BaseUrl=http://payment-api:8080
       - MinIO__Endpoint=minio:9000
-      - MinIO__ExternalEndpoint=http://localhost:9000
+      - MinIO__ExternalEndpoint=${MINIO_EXTERNAL_ENDPOINT:-http://localhost:9000}
       - MinIO__AccessKey=${MINIO_ROOT_USER:-auhub-minio-admin}
       - MinIO__SecretKey=${MINIO_ROOT_PASSWORD:-AuHub_MinIO_2026_Secure!}
       - MinIO__BucketName=auhub-lots
