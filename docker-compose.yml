@@ -128,7 +128,7 @@ services:
       - Jwt__Issuer=AuHub
       - Jwt__Audience=AuHub-Users
       - InternalApiKey=${INTERNAL_API_KEY:?INTERNAL_API_KEY is required}
-      - ExternalUrl__BaseUrl=http://localhost:5000
+      - ExternalUrl__BaseUrl=${EXTERNAL_BASE_URL:-http://localhost:5000}
       - Notifications__BaseUrl=http://notifications-api:8080
       - Payment__BaseUrl=http://payment-api:8080
       - MinIO__Endpoint=minio:9000

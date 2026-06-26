@@ -57,8 +57,10 @@ public class GetImageEndpoint : EndpointWithoutRequest
             return;
         }
 
-        var presignedUrl = await _storageService.GetPresignedUrlAsync(image.ObjectName, 1440, ct);
-        HttpContext.Response.Redirect(presignedUrl, permanent: false);
+        var (stream, contentType, size) = await _storageService.GetStreamAsync(image.ObjectName, ct);
+        HttpContext.Response.ContentType = contentType;
+        HttpContext.Response.ContentLength = size;
+        await stream.CopyToAsync(HttpContext.Response.Body, ct);
     }
 
     private Guid? GetRequesterUserId()

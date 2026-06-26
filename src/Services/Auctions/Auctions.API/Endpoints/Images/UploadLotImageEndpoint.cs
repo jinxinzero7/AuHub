@@ -1,7 +1,9 @@
 using FastEndpoints;
 using Auctions.Domain.Interfaces;
 using Auctions.Application.Services;
+using Auctions.Application.Options;
 using Auctions.Domain.Entities;
+using Microsoft.Extensions.Options;
 using System.Security.Claims;
 
 namespace Auctions.API.Endpoints.Images;
@@ -11,15 +13,18 @@ public class UploadLotImageEndpoint : EndpointWithoutRequest
     private readonly IImageStorageService _storageService;
     private readonly ILotImageRepository _imageRepository;
     private readonly ILotRepository _lotRepository;
+    private readonly ExternalUrlOptions _externalUrl;
 
     public UploadLotImageEndpoint(
         IImageStorageService storageService,
         ILotImageRepository imageRepository,
-        ILotRepository lotRepository)
+        ILotRepository lotRepository,
+        IOptions<ExternalUrlOptions> externalUrl)
     {
         _storageService = storageService;
         _imageRepository = imageRepository;
         _lotRepository = lotRepository;
+        _externalUrl = externalUrl.Value;
     }
 
     public override void Configure()
@@ -99,13 +104,11 @@ public class UploadLotImageEndpoint : EndpointWithoutRequest
             await _imageRepository.AddAsync(image, ct);
             await _imageRepository.SaveChangesAsync(ct);
 
-            var presignedUrl = await _storageService.GetPresignedUrlAsync(objectName, 60, ct);
-
             uploadedImages.Add(new
             {
                 image.Id,
                 image.FileName,
-                Url = presignedUrl,
+                Url = $"{_externalUrl.BaseUrl.TrimEnd('/')}/api/lots/{lotId}/images/{Uri.EscapeDataString(file.FileName)}",
                 image.ContentType,
                 image.Size,
                 image.UploadedAt
