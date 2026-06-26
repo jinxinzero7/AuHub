@@ -23,10 +23,14 @@ public class MinioImageStorageService : IImageStorageService
         if (!string.IsNullOrEmpty(externalEndpoint))
         {
             var uri = new Uri(externalEndpoint);
-            _presignClient = new MinioClient()
+            var builder = new MinioClient()
                 .WithEndpoint(uri.Host, uri.Port)
-                .WithCredentials(accessKey, secretKey)
-                .Build();
+                .WithCredentials(accessKey, secretKey);
+
+            if (uri.Scheme == "https")
+                builder = builder.WithSSL();
+
+            _presignClient = builder.Build();
         }
         else
         {
