@@ -108,7 +108,7 @@ public class UploadLotImageEndpoint : EndpointWithoutRequest
             {
                 image.Id,
                 image.FileName,
-                Url = $"{_externalUrl.BaseUrl.TrimEnd('/')}/api/lots/{lotId}/images/{Uri.EscapeDataString(file.FileName)}",
+                Url = $"{_externalUrl.BaseUrl.TrimEnd('/')}/api/lots/{lotId}/images/{image.Id}",
                 image.ContentType,
                 image.Size,
                 image.UploadedAt

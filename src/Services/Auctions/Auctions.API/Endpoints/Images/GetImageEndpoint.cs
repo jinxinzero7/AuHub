@@ -2,6 +2,7 @@ using FastEndpoints;
 using Auctions.Domain.Interfaces;
 using Auctions.Application.Services;
 using System.Security.Claims;
+using Auctions.Domain.Entities;
 
 namespace Auctions.API.Endpoints.Images;
 
@@ -23,45 +24,53 @@ public class GetImageEndpoint : EndpointWithoutRequest
 
     public override void Configure()
     {
-        Get("/api/lots/{id}/images/{fileName}");
+        Get("/api/lots/{id}/images/{imageId}");
         AllowAnonymous();
         Summary(s =>
         {
             s.Summary = "Get lot image";
-            s.Description = "Redirect to a pre-signed MinIO URL.";
+            s.Description = "Stream image from storage via backend proxy.";
         });
     }
 
     public override async Task HandleAsync(CancellationToken ct)
     {
         var lotId = Route<Guid>("id");
-        var fileName = Route<string?>("fileName");
-
-        if (string.IsNullOrEmpty(fileName))
-        {
-            HttpContext.Response.StatusCode = 400;
-            return;
-        }
+        var imageId = Route<Guid>("imageId");
 
         var lot = await _lotRepository.GetByIdAsync(lotId, ct);
         if (lot == null || !LotVisibilityPolicy.CanViewDetails(lot, GetRequesterUserId(), User.IsInRole("Admin")))
         {
             HttpContext.Response.StatusCode = 404;
+            await HttpContext.Response.Body.FlushAsync(ct);
             return;
         }
 
-        var image = await _imageRepository.GetByFileNameAsync(lotId, fileName, ct);
-        if (image == null)
+        var image = await _imageRepository.GetByIdAsync(imageId, ct);
+        if (image == null || image.LotId != lotId)
         {
             HttpContext.Response.StatusCode = 404;
+            await HttpContext.Response.Body.FlushAsync(ct);
             return;
         }
 
-        var (stream, contentType, size) = await _storageService.GetStreamAsync(image.ObjectName, ct);
-        HttpContext.Response.StatusCode = 200;
-        HttpContext.Response.ContentType = contentType;
-        HttpContext.Response.ContentLength = size;
-        await stream.CopyToAsync(HttpContext.Response.Body, ct);
+        try
+        {
+            var (stream, contentType, size) = await _storageService.GetStreamAsync(image.ObjectName, ct);
+            HttpContext.Response.StatusCode = 200;
+            HttpContext.Response.ContentType = contentType;
+            HttpContext.Response.ContentLength = size;
+            await stream.CopyToAsync(HttpContext.Response.Body, ct);
+            await HttpContext.Response.Body.FlushAsync(ct);
+        }
+        catch
+        {
+            if (!HttpContext.Response.HasStarted)
+            {
+                HttpContext.Response.StatusCode = 500;
+                await HttpContext.Response.Body.FlushAsync(ct);
+            }
+        }
     }
 
     private Guid? GetRequesterUserId()
