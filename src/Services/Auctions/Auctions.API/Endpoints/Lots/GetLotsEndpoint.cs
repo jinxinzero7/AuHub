@@ -55,7 +55,7 @@ public class GetLotsEndpoint : EndpointWithoutRequest<GetLotsResponse>
             ThrowError(result.Error, result.StatusCode);
         }
 
-        var lotDtos = PublicLotDtoMapper.Map(result.Value.Lots, _externalUrl.BaseUrl);
+        var lotDtos = PublicLotDtoMapper.Map(result.Value.Lots, _externalUrl.StorageUrl);
 
         Response = new GetLotsResponse
         {

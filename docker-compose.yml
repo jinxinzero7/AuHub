@@ -129,6 +129,7 @@ services:
       - Jwt__Audience=AuHub-Users
       - InternalApiKey=${INTERNAL_API_KEY:?INTERNAL_API_KEY is required}
       - ExternalUrl__BaseUrl=${EXTERNAL_BASE_URL:-http://localhost:5000}
+      - ExternalUrl__StorageUrl=${STORAGE_BASE_URL:-http://localhost:9000/auhub-lots}
       - Notifications__BaseUrl=http://notifications-api:8080
       - Payment__BaseUrl=http://payment-api:8080
       - MinIO__Endpoint=minio:9000

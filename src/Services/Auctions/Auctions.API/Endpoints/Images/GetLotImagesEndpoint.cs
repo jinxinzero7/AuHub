@@ -50,7 +50,7 @@ public class GetLotImagesEndpoint : EndpointWithoutRequest
         {
             image.Id,
             image.FileName,
-            Url = $"{_externalUrl.BaseUrl.TrimEnd('/')}/api/lots/{lotId}/images/{image.Id}",
+            Url = $"{_externalUrl.StorageUrl.TrimEnd('/')}/{image.ObjectName}",
             image.ContentType,
             image.Size,
             image.UploadedAt

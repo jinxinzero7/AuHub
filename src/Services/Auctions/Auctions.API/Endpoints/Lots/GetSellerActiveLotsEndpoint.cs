@@ -59,7 +59,7 @@ public class GetSellerActiveLotsEndpoint : EndpointWithoutRequest<GetLotsRespons
         Response = new GetLotsResponse
         {
             Success = true,
-            Lots = PublicLotDtoMapper.Map(result.Value.Lots, _externalUrl.BaseUrl),
+            Lots = PublicLotDtoMapper.Map(result.Value.Lots, _externalUrl.StorageUrl),
             Page = result.Value.Page,
             PageSize = result.Value.PageSize,
             TotalCount = result.Value.TotalCount,

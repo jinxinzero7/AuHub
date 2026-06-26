@@ -6,9 +6,9 @@ internal static class PublicLotDtoMapper
 {
     public static List<LotDto> Map(
         IEnumerable<LotResponse> lots,
-        string baseUrl)
+        string storageUrl)
     {
-        var trimmedBase = baseUrl.TrimEnd('/');
+        var trimmedStorage = storageUrl.TrimEnd('/');
 
         return lots.Select(lot => new LotDto
         {
@@ -25,7 +25,7 @@ internal static class PublicLotDtoMapper
             BidsCount = lot.BidsCount,
             CoverImageUrl = string.IsNullOrEmpty(lot.CoverImageUrl)
                 ? null
-                : $"{trimmedBase}/api/lots/{lot.Id}/images/{Uri.EscapeDataString(lot.CoverImageUrl)}",
+                : $"{trimmedStorage}/{lot.CoverImageUrl}",
             SupportedDeliveryProviders = lot.SupportedDeliveryProviders
         }).ToList();
     }
