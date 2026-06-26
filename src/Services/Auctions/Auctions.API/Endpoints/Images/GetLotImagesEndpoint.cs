@@ -1,24 +1,26 @@
 using FastEndpoints;
 using Auctions.Domain.Interfaces;
 using Auctions.Application.Services;
+using Auctions.Application.Options;
+using Microsoft.Extensions.Options;
 using System.Security.Claims;
 
 namespace Auctions.API.Endpoints.Images;
 
 public class GetLotImagesEndpoint : EndpointWithoutRequest
 {
-    private readonly IImageStorageService _storageService;
     private readonly ILotImageRepository _imageRepository;
     private readonly ILotRepository _lotRepository;
+    private readonly ExternalUrlOptions _externalUrl;
 
     public GetLotImagesEndpoint(
-        IImageStorageService storageService,
         ILotImageRepository imageRepository,
-        ILotRepository lotRepository)
+        ILotRepository lotRepository,
+        IOptions<ExternalUrlOptions> externalUrl)
     {
-        _storageService = storageService;
         _imageRepository = imageRepository;
         _lotRepository = lotRepository;
+        _externalUrl = externalUrl.Value;
     }
 
     public override void Configure()
@@ -44,20 +46,15 @@ public class GetLotImagesEndpoint : EndpointWithoutRequest
 
         var images = await _imageRepository.GetByLotIdAsync(lotId, ct);
 
-        var result = new List<object>();
-        foreach (var image in images)
+        var result = images.Select(image => new
         {
-            var url = await _storageService.GetPresignedUrlAsync(image.ObjectName, 1440, ct);
-            result.Add(new
-            {
-                image.Id,
-                image.FileName,
-                Url = url,
-                image.ContentType,
-                image.Size,
-                image.UploadedAt
-            });
-        }
+            image.Id,
+            image.FileName,
+            Url = $"{_externalUrl.BaseUrl.TrimEnd('/')}/api/lots/{lotId}/images/{Uri.EscapeDataString(image.FileName)}",
+            image.ContentType,
+            image.Size,
+            image.UploadedAt
+        }).ToList<object>();
 
         HttpContext.Response.StatusCode = 200;
         await HttpContext.Response.WriteAsJsonAsync(result, ct);

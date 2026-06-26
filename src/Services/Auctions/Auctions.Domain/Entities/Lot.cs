@@ -54,7 +54,7 @@ public class Lot
     private readonly List<LotImage> _images = new();
     public IReadOnlyCollection<LotImage> Images => _images.AsReadOnly();
 
-    public string? CoverImageUrl => _images.FirstOrDefault()?.ObjectName;
+    public string? CoverImageUrl => _images.FirstOrDefault()?.FileName;
     public int ImagesCount => _images.Count;
     public bool IsEditable => !IsDeleted && Status is LotStatus.Draft or LotStatus.Rejected;
 

@@ -1,6 +1,7 @@
 using Auctions.Application.Queries.GetLots;
-using Auctions.Application.Services;
+using Auctions.Application.Options;
 using FastEndpoints;
+using Microsoft.Extensions.Options;
 
 namespace Auctions.API.Endpoints.Lots;
 
@@ -10,14 +11,14 @@ public class GetSellerActiveLotsEndpoint : EndpointWithoutRequest<GetLotsRespons
     private const int MaxPageSize = 100;
 
     private readonly GetLotsQueryHandler _handler;
-    private readonly IImageStorageService _storageService;
+    private readonly ExternalUrlOptions _externalUrl;
 
     public GetSellerActiveLotsEndpoint(
         GetLotsQueryHandler handler,
-        IImageStorageService storageService)
+        IOptions<ExternalUrlOptions> externalUrl)
     {
         _handler = handler;
-        _storageService = storageService;
+        _externalUrl = externalUrl.Value;
     }
 
     public override void Configure()
@@ -58,7 +59,7 @@ public class GetSellerActiveLotsEndpoint : EndpointWithoutRequest<GetLotsRespons
         Response = new GetLotsResponse
         {
             Success = true,
-            Lots = await PublicLotDtoMapper.MapAsync(result.Value.Lots, _storageService, ct),
+            Lots = PublicLotDtoMapper.Map(result.Value.Lots, _externalUrl.BaseUrl),
             Page = result.Value.Page,
             PageSize = result.Value.PageSize,
             TotalCount = result.Value.TotalCount,

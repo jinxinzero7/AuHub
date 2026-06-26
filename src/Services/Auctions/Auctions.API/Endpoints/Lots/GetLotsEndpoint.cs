@@ -1,19 +1,20 @@
 using Auctions.Application.Queries.GetLots;
-using Auctions.Application.Services;
+using Auctions.Application.Options;
 using AuHub.Shared.ValueObjects;
 using FastEndpoints;
+using Microsoft.Extensions.Options;
 
 namespace Auctions.API.Endpoints.Lots;
 
 public class GetLotsEndpoint : EndpointWithoutRequest<GetLotsResponse>
 {
     private readonly GetLotsQueryHandler _handler;
-    private readonly IImageStorageService _storageService;
+    private readonly ExternalUrlOptions _externalUrl;
 
-    public GetLotsEndpoint(GetLotsQueryHandler handler, IImageStorageService storageService)
+    public GetLotsEndpoint(GetLotsQueryHandler handler, IOptions<ExternalUrlOptions> externalUrl)
     {
         _handler = handler;
-        _storageService = storageService;
+        _externalUrl = externalUrl.Value;
     }
 
     public override void Configure()
@@ -54,7 +55,7 @@ public class GetLotsEndpoint : EndpointWithoutRequest<GetLotsResponse>
             ThrowError(result.Error, result.StatusCode);
         }
 
-        var lotDtos = await PublicLotDtoMapper.MapAsync(result.Value.Lots, _storageService, ct);
+        var lotDtos = PublicLotDtoMapper.Map(result.Value.Lots, _externalUrl.BaseUrl);
 
         Response = new GetLotsResponse
         {
