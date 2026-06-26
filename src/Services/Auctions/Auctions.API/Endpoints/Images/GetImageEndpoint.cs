@@ -39,28 +39,26 @@ public class GetImageEndpoint : EndpointWithoutRequest
 
         if (string.IsNullOrEmpty(fileName))
         {
-            HttpContext.Response.StatusCode = 400;
+            await SendAsync(null, 400, ct);
             return;
         }
 
         var lot = await _lotRepository.GetByIdAsync(lotId, ct);
         if (lot == null || !LotVisibilityPolicy.CanViewDetails(lot, GetRequesterUserId(), User.IsInRole("Admin")))
         {
-            HttpContext.Response.StatusCode = 404;
+            await SendNotFoundAsync(ct);
             return;
         }
 
         var image = await _imageRepository.GetByFileNameAsync(lotId, fileName, ct);
         if (image == null)
         {
-            HttpContext.Response.StatusCode = 404;
+            await SendNotFoundAsync(ct);
             return;
         }
 
         var (stream, contentType, size) = await _storageService.GetStreamAsync(image.ObjectName, ct);
-        HttpContext.Response.ContentType = contentType;
-        HttpContext.Response.ContentLength = size;
-        await stream.CopyToAsync(HttpContext.Response.Body, ct);
+        await SendStreamAsync(stream, contentType: contentType, fileLengthBytes: size, cancellation: ct);
     }
 
     private Guid? GetRequesterUserId()
